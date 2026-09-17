@@ -1,5 +1,6 @@
 (() => {
-  const RAW_BASE = 'https://raw.githubusercontent.com/ssz66666/jy3-mirror/master/JY3/script';
+  const UPSTREAM_REV = 'c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8';
+  const RAW_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3/script`;
 
   // Keep this list deliberately small for now: it contains the original object tables
   // required by p_order.lua + p_newgame.lua. More tables will be added per vertical slice.
@@ -74,6 +75,7 @@
   }
 
   window.JYUpstream = {
+    UPSTREAM_REV,
     RAW_BASE,
     CORE_DATA,
     CORE_PROGRAMS,
