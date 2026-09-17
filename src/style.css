@@ -35,6 +35,9 @@ button:disabled { opacity: .45; cursor: wait; }
 .portrait { float: left; width: 54px; height: 64px; margin-right: 10px; display: grid; place-items: center; font-size: 28px; background: #3b3126; color: #d7c59e; border: 2px solid #806744; }
 .stat-grid { font: 11px/1.55 ui-monospace, Consolas, monospace; min-height: 64px; }
 .money { clear: both; border-top: 1px solid #846f4c66; padding-top: 7px; margin-top: 8px; font-size: 12px; }
+.save-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.save-actions button { border: 1px solid #6d5735; background: #efe1bf; color: #332718; padding: 5px 7px; font-size: 11px; border-radius: 2px; }
+.save-actions button:hover:not(:disabled) { background: #d7c29a; }
 .dialogue { position: absolute; z-index: 20; left: 14%; right: 7%; bottom: 54px; min-height: 150px; padding: 20px 23px; background: #e8dab7f2; border: 2px solid #58462e; box-shadow: 7px 8px 0 #21190f88; }
 .speaker { display: inline-block; margin-top: -36px; padding: 5px 15px; background: #36291e; color: #eadbb6; border: 1px solid #8c7651; }
 .dialogue-text { padding: 10px 4px; min-height: 55px; line-height: 1.75; font-size: 16px; }
