@@ -12,6 +12,10 @@
     '01_data/o_item.lua'
   ];
 
+  const CORE_PROGRAMS = [
+    '04_program/p_order.lua'
+  ];
+
   function luaLongString(text) {
     let level = 0;
     while (text.includes(`]${'='.repeat(level)}]`)) level += 1;
@@ -39,8 +43,7 @@
       loaded += 1;
     }
     fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
-    const stats = fengari.load('return __jy_data_stats()', '@web/data-stats')();
-    return { loadedModules: loaded, stats };
+    return { loadedModules: loaded };
   }
 
   async function loadProgram(path) {
@@ -49,5 +52,28 @@
     return path;
   }
 
-  window.JYUpstream = { RAW_BASE, CORE_DATA, bootstrapData, loadProgram, fetchText };
+  async function loadPrograms(paths, onProgress) {
+    let loaded = 0;
+    for (const path of paths) {
+      onProgress?.(`加载原程序 ${loaded + 1}/${paths.length}: ${path.split('/').pop()}`);
+      await loadProgram(path);
+      loaded += 1;
+    }
+    return loaded;
+  }
+
+  async function bootstrapPrograms(onProgress) {
+    return loadPrograms(CORE_PROGRAMS, onProgress);
+  }
+
+  window.JYUpstream = {
+    RAW_BASE,
+    CORE_DATA,
+    CORE_PROGRAMS,
+    bootstrapData,
+    bootstrapPrograms,
+    loadProgram,
+    loadPrograms,
+    fetchText
+  };
 })();
