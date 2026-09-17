@@ -32,6 +32,7 @@ jobs:
           node --check tools/smoke-niujia-events.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/test-resource-resolver.mjs
+          node --check tools/vendor-upstream.mjs
 
       - name: Validate resource id resolver
         run: node tools/test-resource-resolver.mjs
