@@ -1,6 +1,7 @@
 (() => {
   const UPSTREAM_REV = 'c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8';
   const RAW_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3/script`;
+  const LOCAL_BASE = './vendor/upstream/JY3/script';
 
   const CORE_DATA = [
     '01_data/o_body.lua',
@@ -143,6 +144,13 @@
   }
 
   async function fetchText(path) {
+    try {
+      const local = await fetch(`${LOCAL_BASE}/${path}`);
+      if (local.ok) return local.text();
+    } catch (_) {
+      // Development fallback below.
+    }
+
     const response = await fetch(`${RAW_BASE}/${path}`);
     if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
     return response.text();
@@ -191,6 +199,7 @@
   window.JYUpstream = {
     UPSTREAM_REV,
     RAW_BASE,
+    LOCAL_BASE,
     CORE_DATA,
     CORE_PROGRAMS,
     normalizeLuaSource,
