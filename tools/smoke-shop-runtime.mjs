@@ -29,6 +29,19 @@ local objects,tables={},{}
 local G={api={}}
 package.preload['gf']=function() return G end
 package.preload['gfbase']=function() return G end
+package.preload['co']=function()
+  return {
+    create=coroutine.create,
+    resume=coroutine.resume,
+    yield=coroutine.yield,
+    running=coroutine.running,
+    status=coroutine.status,
+    wrap=coroutine.wrap,
+    weak_meta={__mode='kv'},
+    error=function(err) error(err,2) end,
+    wait_time=function() return true end,
+  }
+end
 package.preload['js']=function()
   return {global={JYWeb={},Array={}},new=function() return {push=function() end} end}
 end
