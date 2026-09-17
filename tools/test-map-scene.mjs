@@ -88,4 +88,8 @@ if (!luaCalls.at(-1)?.includes('__jy_enter_map(268828673)')) throw new Error('li
 listeners.rollOver({ handle: eventHandle });
 if (!status.textContent.includes('牛家村穆念慈')) throw new Error('hover did not expose hotspot name');
 
-console.log('map scene PASS: original coordinates, event hotspot, linked map');
+const html = fs.readFileSync('index.html', 'utf8');
+if (/data-event\s*=/.test(html)) throw new Error('temporary HTML event buttons returned; village must use map hotspots');
+if (!html.includes('id="villageActions"')) throw new Error('compatibility villageActions mount point missing');
+
+console.log('map scene PASS: original coordinates, event hotspot, linked map, no fixed NPC buttons');
