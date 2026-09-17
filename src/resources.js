@@ -2,6 +2,7 @@
   const UPSTREAM_REV = 'c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8';
   const REMOTE_ASSET_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
   const ASSET_BASE = window.JY_CONFIG?.assetBase || REMOTE_ASSET_BASE;
+  const IMAGE_SIZES = window.JY_CONFIG?.imageSizes || {};
 
   // Mirrors JY3/dir.lua. Runtime resource ids carry an additional high-nibble
   // type tag (e.g. 0x56050001); the path id used by dir.lua is 0x06050001.
@@ -106,17 +107,24 @@
     return hit?.extension ? hit.url : null;
   }
 
+  function metadataSize(id) {
+    const hit = resolve(id);
+    if (!hit) return null;
+    return IMAGE_SIZES[hit.relativePath] || null;
+  }
+
   function addImage(id, sourceId = id) {
     const targetId = u32(id);
     const source = resolve(sourceId);
     if (!source || source.extension !== '.png') return false;
 
+    const size = IMAGE_SIZES[source.relativePath] || null;
     const entry = {
       id: targetId,
       sourceId: u32(sourceId),
       url: source.url,
-      width: 0,
-      height: 0,
+      width: Number(size?.width) || 0,
+      height: Number(size?.height) || 0,
       loaded: false,
       error: false,
       image: null,
@@ -127,8 +135,8 @@
     const image = new Image();
     entry.image = image;
     image.onload = () => {
-      entry.width = image.naturalWidth || image.width || 0;
-      entry.height = image.naturalHeight || image.height || 0;
+      entry.width = image.naturalWidth || image.width || entry.width || 0;
+      entry.height = image.naturalHeight || image.height || entry.height || 0;
       entry.loaded = true;
     };
     image.onerror = () => { entry.error = true; };
@@ -137,11 +145,13 @@
   }
 
   function imageWidth(id) {
-    return images.get(u32(id))?.width || 0;
+    const key = u32(id);
+    return images.get(key)?.width || Number(metadataSize(key)?.width) || 0;
   }
 
   function imageHeight(id) {
-    return images.get(u32(id))?.height || 0;
+    const key = u32(id);
+    return images.get(key)?.height || Number(metadataSize(key)?.height) || 0;
   }
 
   function hasImage(id) {
@@ -152,6 +162,7 @@
     UPSTREAM_REV,
     ASSET_BASE,
     REMOTE_ASSET_BASE,
+    IMAGE_SIZES,
     DIRS,
     canonicalPathId,
     resolve,
