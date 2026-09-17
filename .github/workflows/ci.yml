@@ -95,6 +95,7 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
+          test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
@@ -109,5 +110,6 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
