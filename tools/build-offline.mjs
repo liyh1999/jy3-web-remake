@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 
 const root = process.cwd();
 const dist = path.join(root, 'dist');
+const vendor = path.join(root, 'vendor');
 
 function ensureDir(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -17,7 +19,12 @@ function writeFile(filePath, content) {
 function copyEntry(relativePath) {
   const source = path.join(root, relativePath);
   const target = path.join(dist, relativePath);
+  if (!fs.existsSync(source)) throw new Error(`missing build input: ${relativePath}`);
   fs.cpSync(source, target, { recursive: true });
+}
+
+function sha256(bytes) {
+  return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
 function pngDimensions(bytes) {
@@ -30,72 +37,74 @@ function pngDimensions(bytes) {
   };
 }
 
-async function fetchWithRetry(url, attempts = 6) {
-  let lastStatus = 0;
-  for (let i = 0; i < attempts; i += 1) {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'jy3-web-remake-offline-builder' }
-    });
-    if (response.ok) return Buffer.from(await response.arrayBuffer());
-    lastStatus = response.status;
-    if (response.status !== 429 && response.status < 500) break;
-    await new Promise(resolve => setTimeout(resolve, 400 * (i + 1)));
-  }
-  throw new Error(`HTTP ${lastStatus}: ${url}`);
-}
-
-// Reuse the runtime's single source of truth for upstream revision and required Lua modules.
+// Load only constants from source. This script performs no fetch/network access.
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync(path.join(root, 'src/upstream.js'), 'utf8'), {
   filename: 'src/upstream.js'
 });
-const { UPSTREAM_REV, RAW_BASE, CORE_DATA, CORE_PROGRAMS } = globalThis.window.JYUpstream;
-const upstreamJY3Base = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
-const offlineAssets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
+const { UPSTREAM_REV, CORE_DATA, CORE_PROGRAMS } = globalThis.window.JYUpstream;
+const requiredScripts = [...new Set([...CORE_DATA, ...CORE_PROGRAMS])];
+const requiredAssets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
+
+const manifestPath = path.join(vendor, 'manifest.json');
+if (!fs.existsSync(manifestPath)) {
+  throw new Error('offline cache missing. Run `npm run cache:offline` on a networked machine first.');
+}
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+if (manifest.upstreamRevision !== UPSTREAM_REV) {
+  throw new Error(`offline cache revision mismatch: ${manifest.upstreamRevision} != ${UPSTREAM_REV}`);
+}
+
+const entryByPath = new Map((manifest.entries || []).map(entry => [entry.path, entry]));
+for (const entry of manifest.entries || []) {
+  const filePath = path.join(vendor, entry.path);
+  if (!fs.existsSync(filePath)) throw new Error(`offline cache file missing: ${entry.path}`);
+  const bytes = fs.readFileSync(filePath);
+  const actual = sha256(bytes);
+  if (actual !== entry.sha256) {
+    throw new Error(`offline cache hash mismatch: ${entry.path}`);
+  }
+}
+
+for (const remotePath of requiredScripts) {
+  const relative = `upstream/JY3/script/${remotePath}`;
+  if (!entryByPath.has(relative)) throw new Error(`script absent from offline manifest: ${remotePath}`);
+}
+for (const remotePath of requiredAssets) {
+  const relative = `upstream/JY3/${remotePath}`;
+  if (!entryByPath.has(relative)) throw new Error(`asset absent from offline manifest: ${remotePath}`);
+}
+if (!entryByPath.has('fengari/fengari-web.js')) {
+  throw new Error('Fengari absent from offline manifest');
+}
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 
 for (const entry of ['src', 'lua']) copyEntry(entry);
+fs.cpSync(path.join(vendor, 'upstream'), path.join(dist, 'vendor', 'upstream'), { recursive: true });
+fs.cpSync(path.join(vendor, 'fengari'), path.join(dist, 'vendor', 'fengari'), { recursive: true });
 
 let indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 indexHtml = indexHtml.replace(
   'https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js',
-  './vendor/fengari/fengari-web.min.js'
+  './vendor/fengari/fengari-web.js'
 );
 indexHtml = indexHtml.replace(
   '<script src="./src/resources.js"></script>',
   '<script src="./runtime-config.js"></script>\n  <script src="./src/resources.js"></script>'
 );
+if (indexHtml.includes('cdn.jsdelivr.net/npm/fengari-web')) {
+  throw new Error('failed to rewrite Fengari CDN reference in index.html');
+}
 writeFile(path.join(dist, 'index.html'), indexHtml);
 
-const fengariCandidates = [
-  path.join(root, 'node_modules/fengari-web/dist/fengari-web.min.js'),
-  path.join(root, 'node_modules/fengari-web/dist/fengari-web.js')
-];
-const fengariSource = fengariCandidates.find(candidate => fs.existsSync(candidate));
-if (!fengariSource) {
-  throw new Error('fengari-web not installed. Run `npm install` before `npm run build`.');
-}
-ensureDir(path.join(dist, 'vendor/fengari/fengari-web.min.js'));
-fs.copyFileSync(fengariSource, path.join(dist, 'vendor/fengari/fengari-web.min.js'));
-
-const scriptFiles = [...new Set([...CORE_DATA, ...CORE_PROGRAMS])];
-for (const remotePath of scriptFiles) {
-  const bytes = await fetchWithRetry(`${RAW_BASE}/${remotePath}`);
-  writeFile(path.join(dist, 'vendor/upstream/JY3/script', remotePath), bytes);
-  console.log(`cached script: ${remotePath}`);
-}
-
 const imageSizes = {};
-for (const relativePath of offlineAssets) {
-  const bytes = await fetchWithRetry(`${upstreamJY3Base}/${relativePath}`);
-  writeFile(path.join(dist, 'vendor/upstream/JY3', relativePath), bytes);
-  if (relativePath.toLowerCase().endsWith('.png')) {
-    const size = pngDimensions(bytes);
-    if (size) imageSizes[relativePath] = size;
-  }
-  console.log(`cached asset: ${relativePath}`);
+for (const relativePath of requiredAssets) {
+  if (!relativePath.toLowerCase().endsWith('.png')) continue;
+  const bytes = fs.readFileSync(path.join(vendor, 'upstream', 'JY3', relativePath));
+  const size = pngDimensions(bytes);
+  if (size) imageSizes[relativePath] = size;
 }
 
 const runtimeConfig = {
@@ -103,6 +112,7 @@ const runtimeConfig = {
   upstreamScriptBase: './vendor/upstream/JY3/script',
   assetBase: './vendor/upstream/JY3',
   upstreamRevision: UPSTREAM_REV,
+  fengariVersion: manifest.fengariVersion,
   imageSizes,
 };
 writeFile(
@@ -110,14 +120,21 @@ writeFile(
   `window.JY_CONFIG = Object.freeze(${JSON.stringify(runtimeConfig, null, 2)});\n`
 );
 
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const buildInfo = {
-  runtimeVersion: JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version,
+  runtimeVersion: packageJson.version,
   upstreamRevision: UPSTREAM_REV,
+  fengariVersion: manifest.fengariVersion,
   generatedAt: new Date().toISOString(),
-  cachedScripts: scriptFiles,
-  cachedAssets: offlineAssets,
+  cacheGeneratedAt: manifest.generatedAt,
+  cachedScripts: requiredScripts,
+  cachedAssets: requiredAssets,
+  cacheEntries: manifest.entries.length,
+  cacheBytes: manifest.totalBytes,
   imageSizes,
 };
 writeFile(path.join(dist, 'build-info.json'), `${JSON.stringify(buildInfo, null, 2)}\n`);
 
 console.log(`offline build complete: ${dist}`);
+console.log(`upstream: ${UPSTREAM_REV}`);
+console.log(`cached files verified: ${manifest.entries.length}`);
