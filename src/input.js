@@ -186,6 +186,10 @@
   }
 
   function handleHtmlModalKey(event, normalized) {
+    if (visible('#personPanel') && normalized.code === 27) {
+      document.querySelector('#personClose')?.click();
+      return true;
+    }
     if (visible('#inventoryPanel') && normalized.code === 27) {
       document.querySelector('#inventoryClose')?.click();
       return true;
