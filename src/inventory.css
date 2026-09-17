@@ -1,0 +1,36 @@
+.save-actions { grid-template-columns: repeat(3, 1fr); }
+.inventory-panel { position: absolute; inset: 0; z-index: 45; }
+.inventory-backdrop { position: absolute; inset: 0; width: 100%; border: 0; margin: 0; padding: 0; background: #0d0a07aa; cursor: default; }
+.inventory-window { position: absolute; left: 7%; right: 7%; top: 92px; bottom: 52px; display: grid; grid-template-rows: auto auto auto minmax(0,1fr); padding: 14px; background: #e6d6afeF; border: 2px solid #57432c; box-shadow: 8px 10px 0 #1f160d99; color: #2d2116; }
+.inventory-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #7c6546; padding-bottom: 9px; }
+.inventory-header > div { display: flex; align-items: baseline; gap: 18px; }
+.inventory-header strong { font-size: 21px; letter-spacing: .12em; }
+.inventory-header span { font-size: 12px; }
+.inventory-close, .inventory-action, .inventory-slot { border: 1px solid #665136; background: #f2e4c2; color: #332619; border-radius: 2px; }
+.inventory-close { padding: 6px 13px; }
+.inventory-slots { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 7px; padding: 10px 0; }
+.inventory-slot { min-height: 54px; padding: 5px 7px; display: flex; align-items: center; gap: 8px; text-align: left; }
+.inventory-slot:disabled { opacity: .72; cursor: default; }
+.inventory-slot img { width: 38px; height: 38px; object-fit: contain; image-rendering: pixelated; }
+.inventory-slot span { display: grid; min-width: 0; }
+.inventory-slot b { font-size: 12px; }
+.inventory-slot small { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #725f45; }
+.inventory-status { min-height: 24px; padding: 3px 2px 7px; color: #7f321f; font-size: 12px; }
+.inventory-list { overflow: auto; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; align-content: start; padding-right: 4px; }
+.inventory-item { min-height: 85px; display: grid; grid-template-columns: 48px minmax(0,1fr) auto; gap: 9px; align-items: center; padding: 8px; border: 1px solid #8b7555; background: #f0e2bf; }
+.inventory-item.equipped { outline: 2px solid #8c3927; outline-offset: -3px; }
+.inventory-icon { width: 46px; height: 46px; display: grid; place-items: center; background: #3a3024; color: #d9c8a5; border: 1px solid #766044; }
+.inventory-icon img { max-width: 44px; max-height: 44px; image-rendering: pixelated; }
+.inventory-item-body { min-width: 0; }
+.inventory-item-title { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.inventory-item-title span { color: #7d3828; }
+.inventory-item-meta { margin-top: 2px; color: #755f40; font-size: 10px; }
+.inventory-item p { margin: 4px 0 0; font-size: 11px; line-height: 1.35; max-height: 31px; overflow: hidden; }
+.inventory-action { min-width: 52px; padding: 6px 8px; }
+.inventory-action:hover:not(:disabled), .inventory-close:hover, .inventory-slot:hover:not(:disabled) { background: #d3bd91; }
+.inventory-empty { grid-column: 1/-1; padding: 35px; text-align: center; color: #77664e; border: 1px dashed #927b58; }
+@media (max-width: 760px) {
+  .inventory-window { left: 3%; right: 3%; top: 82px; bottom: 46px; }
+  .inventory-list { grid-template-columns: 1fr; }
+  .inventory-slots { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
