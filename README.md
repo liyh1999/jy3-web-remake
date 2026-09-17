@@ -59,35 +59,80 @@ http://127.0.0.1:8080
 
 ## 完全离线部署
 
-安装依赖并生成自包含静态目录：
+离线包分为“缓存”和“构建”两步。浏览器运行阶段以及 `build:offline` 阶段都不依赖外网。
+
+### 首次准备：有网机器缓存固定依赖
 
 ```bash
-npm install
-npm run build
+npm run cache:offline
 ```
 
-构建结果：
+这一步会缓存：
+
+- Fengari Web 官方 `v0.1.4` Release
+- 固定 revision 的原 Lua / 数据
+- 当前纵向切片所需图片和音频
+- 每个缓存文件的 SHA-256 清单
+
+缓存目录是：
+
+```text
+vendor/
+```
+
+`vendor/` 不提交到 Git，可直接复制到目标服务器。
+
+### 断网也能重新构建
+
+只要服务器保留 `vendor/`：
+
+```bash
+npm run build:offline
+npm run verify:offline
+```
+
+这两个命令不会下载任何文件。构建器会先校验缓存 revision 和 SHA-256，再生成：
 
 ```text
 dist/
 ```
 
-其中包含：
+### 首次部署也可以一条命令完成
 
-- 本地 Fengari
-- 当前运行所需的固定版本原 Lua/数据
-- 当前运行所需的原资源
-- Web Runtime 源码
-- `runtime-config.js`
-- `build-info.json`
+有网环境直接执行：
 
-服务器部署时只需要发布 `dist/`：
+```bash
+npm run package
+```
+
+等价于：
+
+```bash
+npm run cache:offline
+npm run build:offline
+```
+
+### 启动离线包
+
+```bash
+npm run serve:dist
+```
+
+或者：
 
 ```bash
 python3 -m http.server 8080 --directory dist --bind 0.0.0.0
 ```
 
-浏览器运行阶段的核心开局/牛家村纵向切片不再要求从 GitHub Raw 或 jsDelivr 获取文件。
+然后访问：
+
+```text
+http://服务器IP:8080
+```
+
+`dist/runtime-config.js` 会强制 `offline: true`。此模式下如果某个 Lua 没有被打进离线包，会直接报告“离线包缺文件”，不会偷偷回退 GitHub Raw。
+
+CI 还会用一个禁止外部 `fetch` 的模拟环境逐个读取当前全部核心 Lua/程序，并检查牛家村背景、音频和页面依赖都来自 `dist/`。
 
 ## 完全复刻路线
 
