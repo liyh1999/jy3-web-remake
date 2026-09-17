@@ -14,10 +14,18 @@
     '01_data/o_achieve.lua',
     '01_data/o_item.lua',
     '01_data/o_note.lua',
-    '01_data/o_love.lua'
+    '01_data/o_love.lua',
+    '01_data/o_teammate.lua',
+    '01_data/o_shop.lua',
+    '01_data/o_citymap_system_map.lua',
+    '01_data/o_citymap_system_city.lua'
   ];
 
-  const CORE_PROGRAMS = ['04_program/p_order.lua'];
+  const CORE_PROGRAMS = [
+    '04_program/p_order.lua',
+    '04_program/p_newgame.lua',
+    '04_program/p_niujiacun.lua'
+  ];
 
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
