@@ -12,7 +12,7 @@
   };
 
   const labels = {15:'侠义',16:'臂力',17:'根骨',18:'悟性',19:'福缘',20:'灵敏',21:'定力',22:'拳掌',23:'指法',24:'剑术',25:'刀法',26:'奇门',32:'用毒',33:'医疗',34:'暗器'};
-  const state = { points:{}, money:2000, items:{}, team:[], skills:[], lastBattle:0 };
+  const state = { points:{}, money:0, items:{}, team:[], skills:[], lastBattle:0 };
   let modalCallback = null;
   let battleCallback = null;
   let battleState = null;
@@ -43,7 +43,7 @@
 
   function resetJsState() {
     state.points = {};
-    state.money = 2000;
+    state.money = 0;
     state.items = {};
     state.team = [];
     state.skills = [];
@@ -60,8 +60,10 @@
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
+    setMoney(value) { state.money = Number(value) || 0; renderStats(); return state.money; },
     addMoney(delta) { state.money += Number(delta); renderStats(); return state.money; },
     getMoney() { return state.money; },
+    setItem(id, count) { state.items[String(id)] = Number(count) || 0; },
     getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
     learnMagic(id) { if (!state.skills.includes(Number(id))) state.skills.push(Number(id)); },
@@ -198,8 +200,8 @@
       fengari.load(compat, '@gf_web.lua')();
 
       try {
-        await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
-        ui.status.textContent = '原始数据已载入';
+        const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
+        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 通用程序 ${loaded.loadedPrograms} 个已载入`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
         ui.status.textContent = '原数据加载失败，进入兼容层降级模式';
