@@ -20,6 +20,16 @@ function copyEntry(relativePath) {
   fs.cpSync(source, target, { recursive: true });
 }
 
+function pngDimensions(bytes) {
+  if (bytes.length < 24) return null;
+  const signature = '89504e470d0a1a0a';
+  if (bytes.subarray(0, 8).toString('hex') !== signature) return null;
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  };
+}
+
 async function fetchWithRetry(url, attempts = 6) {
   let lastStatus = 0;
   for (let i = 0; i < attempts; i += 1) {
@@ -77,20 +87,27 @@ for (const remotePath of scriptFiles) {
   console.log(`cached script: ${remotePath}`);
 }
 
+const imageSizes = {};
 for (const relativePath of offlineAssets) {
   const bytes = await fetchWithRetry(`${upstreamJY3Base}/${relativePath}`);
   writeFile(path.join(dist, 'vendor/upstream/JY3', relativePath), bytes);
+  if (relativePath.toLowerCase().endsWith('.png')) {
+    const size = pngDimensions(bytes);
+    if (size) imageSizes[relativePath] = size;
+  }
   console.log(`cached asset: ${relativePath}`);
 }
 
+const runtimeConfig = {
+  offline: true,
+  upstreamScriptBase: './vendor/upstream/JY3/script',
+  assetBase: './vendor/upstream/JY3',
+  upstreamRevision: UPSTREAM_REV,
+  imageSizes,
+};
 writeFile(
   path.join(dist, 'runtime-config.js'),
-  `window.JY_CONFIG = Object.freeze({\n` +
-    `  offline: true,\n` +
-    `  upstreamScriptBase: './vendor/upstream/JY3/script',\n` +
-    `  assetBase: './vendor/upstream/JY3',\n` +
-    `  upstreamRevision: '${UPSTREAM_REV}'\n` +
-  `});\n`
+  `window.JY_CONFIG = Object.freeze(${JSON.stringify(runtimeConfig, null, 2)});\n`
 );
 
 const buildInfo = {
@@ -98,7 +115,8 @@ const buildInfo = {
   upstreamRevision: UPSTREAM_REV,
   generatedAt: new Date().toISOString(),
   cachedScripts: scriptFiles,
-  cachedAssets: offlineAssets
+  cachedAssets: offlineAssets,
+  imageSizes,
 };
 writeFile(path.join(dist, 'build-info.json'), `${JSON.stringify(buildInfo, null, 2)}\n`);
 
