@@ -45,4 +45,16 @@ function G.imageSize(id)
     return width, height
 end
 
+function G.Play(resource_id, channel, loop, volume)
+    channel = tonumber(channel) or 1
+    loop = loop and true or false
+    volume = tonumber(volume) or 1
+    return resources:play(resource_id, channel, loop, volume) and true or false
+end
+
+function G.Stop(channel)
+    channel = tonumber(channel) or 1
+    return resources:stop(channel) and true or false
+end
+
 return true
