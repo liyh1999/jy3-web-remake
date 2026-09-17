@@ -14,6 +14,7 @@
     '01_data/o_skill.lua',
     '01_data/o_achieve.lua',
     '01_data/o_item.lua',
+    '01_data/o_equip.lua',
     '01_data/o_note.lua',
     '01_data/o_love.lua',
     '01_data/o_teammate.lua',
