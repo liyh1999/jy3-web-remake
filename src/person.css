@@ -1,0 +1,40 @@
+.person-panel { position: absolute; inset: 0; z-index: 46; }
+.person-backdrop { position: absolute; inset: 0; width: 100%; border: 0; margin: 0; padding: 0; background: #0d0a07b8; cursor: default; }
+.person-window { position: absolute; left: 8%; right: 8%; top: 78px; bottom: 54px; display: grid; grid-template-rows: auto minmax(0,1fr); background: #e6d6af; border: 2px solid #57432c; box-shadow: 8px 10px 0 #1f160d99; color: #2d2116; }
+.person-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #7c6546; }
+.person-header strong { font-size: 21px; letter-spacing: .12em; }
+.person-close { border: 1px solid #665136; background: #f2e4c2; color: #332619; padding: 6px 13px; border-radius: 2px; }
+.person-close:hover { background: #d3bd91; }
+.person-content { min-height: 0; display: grid; grid-template-columns: 180px minmax(0,1fr); gap: 14px; padding: 14px; overflow: hidden; }
+.person-identity { display: grid; grid-template-rows: auto auto; align-content: start; gap: 10px; }
+.person-portrait { width: 154px; height: 154px; margin: 0 auto; display: grid; place-items: center; background: #34291e; border: 1px solid #725c3e; color: #d9c8a5; font-size: 36px; }
+.person-portrait img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
+.person-id-card { display: grid; gap: 4px; padding: 9px; border: 1px solid #8b7555; background: #f0e2bf; font-size: 11px; }
+.person-id-card h2 { margin: 0 0 3px; font-size: 18px; }
+.person-id-card span { color: #725f45; }
+.person-id-row { display: flex; justify-content: space-between; gap: 8px; }
+.person-main { min-width: 0; overflow: auto; padding-right: 3px; }
+.person-section { margin-bottom: 12px; }
+.person-section h3 { margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid #8c7555; font-size: 13px; letter-spacing: .08em; }
+.person-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.person-qualities { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }
+.person-stat { min-height: 44px; display: grid; align-content: center; padding: 6px 8px; background: #f0e2bf; border: 1px solid #9a825e; }
+.person-stat span { font-size: 10px; color: #725f45; }
+.person-stat b { margin-top: 2px; font-size: 14px; }
+.person-stat.compact { text-align: center; }
+.person-slots { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 7px; }
+.person-slot { min-height: 58px; display: grid; grid-template-columns: 42px minmax(0,1fr); align-items: center; gap: 8px; padding: 6px; border: 1px solid #8b7555; background: #eadbb8; }
+.person-slot.equipped { background: #f0e2bf; outline: 1px solid #8c3927; outline-offset: -2px; }
+.person-slot-icon { width: 40px; height: 40px; display: grid; place-items: center; background: #3a3024; color: #d9c8a5; border: 1px solid #766044; }
+.person-slot-icon img { max-width: 38px; max-height: 38px; object-fit: contain; image-rendering: pixelated; }
+.person-slot div:last-child { min-width: 0; display: grid; }
+.person-slot span { font-size: 10px; color: #725f45; }
+.person-slot b { margin-top: 2px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  .person-window { left: 3%; right: 3%; top: 70px; bottom: 48px; }
+  .person-content { grid-template-columns: 130px minmax(0,1fr); }
+  .person-portrait { width: 112px; height: 112px; }
+  .person-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .person-qualities { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .person-slots { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
