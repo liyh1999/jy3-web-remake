@@ -71,7 +71,7 @@ local function sync_item_to_web(code)
     code = tonumber(code)
     if not code then return end
     local item = G.QueryName(0x100b0000 + code - 1)
-    web:setItem(code, tonumber(item.数量) or 0)
+    web:setItem(code, tonumber(item["数量"]) or 0)
 end
 
 local function sync_web_snapshot()
@@ -189,8 +189,6 @@ function G.call(name, ...)
         return coroutine.yield()
     elseif name == "menu" then
         local question = tostring(args[3] or "")
-        -- Original scripts have several menu signatures. The options table is commonly
-        -- arg 7 in p_newgame, but appears at other positions elsewhere, so discover it.
         local options = first_array_arg(args, 4)
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
         return coroutine.yield()
@@ -216,18 +214,12 @@ function G.call(name, ...)
            name == "notice1" or name == "list" then
         return true
     elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "指令_存储属性" then
-        -- Temporary compatibility boundary. These will be replaced separately by
-        -- diagnostics, IndexedDB saves and a verified derived-stat implementation.
         return true
     end
 
-    -- Most G.call targets are already implemented by the original Lua program layer
-    -- (not by gcore). Prefer those implementations whenever p_order/p_init/etc loaded.
     local found, result = call_lua_api(name, args)
     if found then return result end
 
-    -- Degraded fallbacks keep the small bundled demo functional if upstream files
-    -- cannot be fetched. They are not used when the original p_order implementation exists.
     if name == "get_point" then
         return fallback_get_point(args[1])
     elseif name == "set_point" then
@@ -247,11 +239,11 @@ function G.call(name, ...)
         return body()["110"]
     elseif name == "get_item" then
         local item = G.QueryName(0x100b0000 + (tonumber(args[1]) or 1) - 1)
-        return tonumber(item.数量) or 0
+        return tonumber(item["数量"]) or 0
     elseif name == "add_item" then
         local code = tonumber(args[1]) or 1
         local item = G.QueryName(0x100b0000 + code - 1)
-        item.数量 = math.max(0, (tonumber(item.数量) or 0) + (tonumber(args[2]) or 1))
+        item["数量"] = math.max(0, (tonumber(item["数量"]) or 0) + (tonumber(args[2]) or 1))
         sync_item_to_web(code)
         return true
     elseif name == "learnmagic" then
@@ -295,18 +287,14 @@ end
 
 function __jy_missing_calls()
     local rows = {}
-    for name, count in pairs(missing_calls) do
-        rows[#rows + 1] = name .. ":" .. count
-    end
+    for name, count in pairs(missing_calls) do rows[#rows + 1] = name .. ":" .. count end
     table.sort(rows)
     return table.concat(rows, ", ")
 end
 
 function __jy_missing_objects()
     local rows = {}
-    for id, count in pairs(missing_objects) do
-        rows[#rows + 1] = string.format("0x%08x:%d", id, count)
-    end
+    for id, count in pairs(missing_objects) do rows[#rows + 1] = string.format("0x%08x:%d", id, count) end
     table.sort(rows)
     return table.concat(rows, ", ")
 end
@@ -314,9 +302,7 @@ end
 function __jy_run(event_name)
     if active and coroutine.status(active) ~= "dead" then return false end
     local fn = G.api[event_name]
-    if type(fn) ~= "function" then
-        error("unknown JY3 event: " .. tostring(event_name))
-    end
+    if type(fn) ~= "function" then error("unknown JY3 event: " .. tostring(event_name)) end
     active = coroutine.create(function() fn() end)
     local ok, err = coroutine.resume(active)
     if not ok then error(err) end
