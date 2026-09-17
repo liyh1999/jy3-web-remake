@@ -144,6 +144,9 @@ function G.Shape() return wrap_node(renderer:createNodeHandle("quad")) end
 function G.FindNode(path, separator)
     return wrap_node(renderer:findNodeHandle(path, separator or "|"))
 end
+function G.NodeByHandle(handle)
+    return wrap_node(handle)
+end
 function G.setImageGrid(id, left, top, right, bottom)
     return renderer:setImageGrid(id, left, top, right, bottom)
 end
@@ -157,6 +160,98 @@ function G.ToHexUINT(value)
     if type(value) == "number" then return value end
     local hex = string.match(tostring(value or ""), "^([0-9a-fA-F]+)")
     return hex and (tonumber(hex, 16) or 0) or 0
+end
+
+local input_listeners = {}
+local input_listener_id = 0
+local focus_node = nil
+
+function G.SetFocus(node)
+    focus_node = node
+    return true
+end
+
+function G.GetFocus()
+    return focus_node
+end
+
+function G.onInput(kind, callback, priority)
+    assert(type(callback) == "function", "input callback must be a function")
+    input_listener_id = input_listener_id + 1
+    local row = { id = input_listener_id, callback = callback, priority = tonumber(priority) or 0 }
+    local key = tostring(kind or "")
+    input_listeners[key] = input_listeners[key] or {}
+    table.insert(input_listeners[key], row)
+    table.sort(input_listeners[key], function(a, b)
+        if a.priority == b.priority then return a.id < b.id end
+        return a.priority > b.priority
+    end)
+    return row.id
+end
+
+function G.offInput(token)
+    token = tonumber(token)
+    if not token then return false end
+    for _, list in pairs(input_listeners) do
+        for i = #list, 1, -1 do
+            if list[i].id == token then
+                table.remove(list, i)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function dispatch_component_chain(kind, target, info)
+    local node = target
+    while node do
+        node.sendMsg(kind, target, info)
+        node = node.parent
+    end
+end
+
+local function dispatch_keyboard(kind, target, info)
+    if focus_node then
+        dispatch_component_chain(kind, focus_node, info)
+        return
+    end
+    local stage = G.Stage()
+    for i = stage.childCount - 1, 0, -1 do
+        local root = stage.getChildAt(i)
+        if root then root.sendMsg(kind, target or root, info) end
+    end
+end
+
+local function dispatch_listeners(kind, target, x, y, info, slot, hotkey)
+    for _, row in ipairs(input_listeners[kind] or {}) do
+        if row.callback(target, x, y, info, slot, hotkey) == true then return true end
+    end
+    return false
+end
+
+function __jy_input_event(kind, handle, x, y, info, slot)
+    kind = tostring(kind or "")
+    local target = wrap_node(handle)
+    info = tostring(info or "")
+    slot = tonumber(slot) or 0
+
+    if kind == "keyDown" or kind == "keyUp" then
+        dispatch_keyboard(kind, target, info)
+    elseif target then
+        dispatch_component_chain(kind, target, info)
+    end
+
+    local hotkey = nil
+    if kind == "keyDown" and slot > 0 then
+        local o_hotkey = G.QueryName(0x100c0001)
+        hotkey = o_hotkey and o_hotkey[tostring(slot)] or nil
+        if dispatch_listeners("hotkey", target, tonumber(x) or 0, tonumber(y) or 0, info, slot, hotkey) then
+            return true
+        end
+    end
+
+    return dispatch_listeners(kind, target, tonumber(x) or 0, tonumber(y) or 0, info, slot, hotkey)
 end
 
 -- `require 'gcore.c'` in original scripts resolves to the same surface as GF.
