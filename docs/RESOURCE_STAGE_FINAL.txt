@@ -1,0 +1,1 @@
+A2 resource mapping and integrity scanning complete.
