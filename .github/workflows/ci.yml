@@ -25,6 +25,7 @@ jobs:
           node --check src/resources.js
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
+          node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
           node --check tools/smoke-inventory.mjs
           node --check tools/smoke-original-opening.mjs
@@ -71,7 +72,7 @@ jobs:
       - name: Execute original Niujia Village events
         run: node tools/smoke-niujia-events.mjs
 
-      - name: Smoke-test static server
+      - name: Smoke-test source static server
         run: |
           python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/jy3-http.log 2>&1 &
           SERVER_PID=$!
@@ -85,3 +86,28 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
+
+      - name: Build offline distribution
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          test -f dist/vendor/fengari/fengari-web.min.js
+          test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
+          test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
+          test -f dist/runtime-config.js
+          test -f dist/build-info.json
+
+      - name: Smoke-test offline dist
+        run: |
+          python3 -m http.server 8090 --directory dist --bind 127.0.0.1 >/tmp/jy3-dist-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 1
+          curl --fail --silent --show-error http://127.0.0.1:8090/index.html >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.min.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
+          grep -q "offline: true" dist/runtime-config.js
+          grep -q "./vendor/upstream/JY3" dist/runtime-config.js
