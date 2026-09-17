@@ -25,6 +25,7 @@ jobs:
           node --check src/input.js
           node --check src/inventory.js
           node --check src/map-scene.js
+          node --check src/person.js
           node --check src/resource-catalog.js
           node --check src/resources.js
           node --check src/renderer.js
@@ -38,6 +39,7 @@ jobs:
           node --check tools/smoke-niujia-events.mjs
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
+          node --check tools/smoke-person-profile.mjs
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/test-input.mjs
@@ -74,6 +76,7 @@ jobs:
           luac5.3 -p lua/runtime_shims.lua
           luac5.3 -p lua/save_state.lua
           luac5.3 -p lua/inventory_web.lua
+          luac5.3 -p lua/person_web.lua
           luac5.3 -p lua/jy3_demo.lua
 
       - name: Map bridge with original data
@@ -81,6 +84,9 @@ jobs:
 
       - name: Inventory adapter behavior
         run: node tools/smoke-inventory.mjs
+
+      - name: Player profile adapter behavior
+        run: node tools/smoke-person-profile.mjs
 
       - name: Save-state roundtrip
         run: node tools/smoke-save-state.mjs
@@ -111,6 +117,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gcore_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/save_state.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/inventory_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/lua/person_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/renderer.js >/dev/null
@@ -119,6 +126,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/gcore-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/person.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/person.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
 
       - name: Cache pinned offline inputs
@@ -150,7 +159,10 @@ jobs:
           test -f dist/src/input.js
           test -f dist/src/map-scene.js
           test -f dist/src/gcore-scene.js
+          test -f dist/src/person.js
+          test -f dist/src/person.css
           test -f dist/lua/gcore_web.lua
+          test -f dist/lua/person_web.lua
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
@@ -180,5 +192,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/map-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/person.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/person.css >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/lua/person_web.lua >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
