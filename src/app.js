@@ -21,10 +21,19 @@
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
-      ui.scene.innerHTML = `<div class="mountains"></div><div class="ink ink-a"></div><div class="ink ink-b"></div><div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>当前按钮直接触发原版 <code>p_niujiacun.lua</code> 事件；画面资源仍是 Web 占位层。</p></div>`;
+      const villageBackground = window.JYResources?.url(0x56050001);
+      ui.scene.style.backgroundImage = villageBackground
+        ? `linear-gradient(90deg, rgba(18,16,12,.40), rgba(18,16,12,.08)), url("${villageBackground}")`
+        : '';
+      ui.scene.style.backgroundSize = 'cover';
+      ui.scene.style.backgroundPosition = 'center';
+      ui.scene.innerHTML = `<div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>背景已通过原资源 ID <code>0x56050001</code> 解析；NPC 按钮直接触发原版 <code>p_niujiacun.lua</code>。</p></div>`;
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
     } else {
+      ui.scene.style.backgroundImage = '';
+      ui.scene.style.backgroundSize = '';
+      ui.scene.style.backgroundPosition = '';
       ui.actions.classList.add('hidden');
     }
   }
