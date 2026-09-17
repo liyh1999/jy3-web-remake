@@ -1,7 +1,14 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-globalThis.window = {};
+globalThis.window = {
+  JY_CONFIG: {
+    assetBase: './vendor/upstream/JY3',
+    imageSizes: {
+      'image/bjmap/0001.png': { width: 853, height: 480 },
+    },
+  },
+};
 vm.runInThisContext(fs.readFileSync('src/resources.js', 'utf8'), { filename: 'src/resources.js' });
 const R = globalThis.window.JYResources;
 
@@ -26,4 +33,12 @@ if (R.canonicalPathId(0x56050001) !== 0x06050001) {
   throw new Error('resource type nibble was not stripped correctly');
 }
 
-console.log(`resource resolver PASS: ${cases.length} canonical image/audio ids`);
+if (R.resolve(0x56050001).url !== './vendor/upstream/JY3/image/bjmap/0001.png') {
+  throw new Error('offline asset base override was not applied');
+}
+
+if (R.imageWidth(0x56050001) !== 853 || R.imageHeight(0x56050001) !== 480) {
+  throw new Error('synchronous image-size metadata lookup failed');
+}
+
+console.log(`resource resolver PASS: ${cases.length} ids + synchronous image metadata`);
