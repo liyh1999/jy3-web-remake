@@ -1,15 +1,21 @@
 (() => {
   const RAW_BASE = 'https://raw.githubusercontent.com/ssz66666/jy3-mirror/master/JY3/script';
 
+  // Keep this list deliberately small for now: it contains the original object tables
+  // required by p_order.lua + p_newgame.lua. More tables will be added per vertical slice.
   const CORE_DATA = [
     '01_data/o_body.lua',
+    '01_data/o_newbody.lua',
     '01_data/o_hotkey.lua',
     '01_data/o_files.lua',
     '01_data/o_misc.lua',
     '01_data/o_storehouse.lua',
     '01_data/o_role.lua',
+    '01_data/o_skill.lua',
     '01_data/o_achieve.lua',
-    '01_data/o_item.lua'
+    '01_data/o_item.lua',
+    '01_data/o_note.lua',
+    '01_data/o_love.lua'
   ];
 
   const CORE_PROGRAMS = [
