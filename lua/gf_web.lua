@@ -280,7 +280,7 @@ function G.call(name, ...)
            name == "all_over" or name == "dark" or name == "turn_map" or
            name == "notice1" or name == "list" then
         return true
-    elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "指令_存储属性" then
+    elseif name == "地图系统_防修改监控" or name == "通用_存档" then
         return true
     end
 
