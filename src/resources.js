@@ -44,6 +44,7 @@
   ]);
 
   const BASES = [...DIRS.keys()].sort((a, b) => b - a);
+  const images = new Map();
 
   function u32(value) {
     return Number(value) >>> 0;
@@ -104,6 +105,48 @@
     return hit?.extension ? hit.url : null;
   }
 
+  function addImage(id, sourceId = id) {
+    const targetId = u32(id);
+    const source = resolve(sourceId);
+    if (!source || source.extension !== '.png') return false;
+
+    const entry = {
+      id: targetId,
+      sourceId: u32(sourceId),
+      url: source.url,
+      width: 0,
+      height: 0,
+      loaded: false,
+      error: false,
+      image: null,
+    };
+    images.set(targetId, entry);
+
+    if (typeof Image === 'undefined') return true;
+    const image = new Image();
+    entry.image = image;
+    image.onload = () => {
+      entry.width = image.naturalWidth || image.width || 0;
+      entry.height = image.naturalHeight || image.height || 0;
+      entry.loaded = true;
+    };
+    image.onerror = () => { entry.error = true; };
+    image.src = source.url;
+    return true;
+  }
+
+  function imageWidth(id) {
+    return images.get(u32(id))?.width || 0;
+  }
+
+  function imageHeight(id) {
+    return images.get(u32(id))?.height || 0;
+  }
+
+  function hasImage(id) {
+    return images.has(u32(id));
+  }
+
   window.JYResources = {
     UPSTREAM_REV,
     ASSET_BASE,
@@ -112,5 +155,9 @@
     resolve,
     getPath,
     url,
+    addImage,
+    imageWidth,
+    imageHeight,
+    hasImage,
   };
 })();
