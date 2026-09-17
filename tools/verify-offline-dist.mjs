@@ -80,6 +80,9 @@ try {
 if (!missingFailedLocally) throw new Error('offline loader did not fail locally for a missing Lua file');
 if (externalFetchAttempts !== 0) throw new Error(`offline loader attempted ${externalFetchAttempts} external fetch(es)`);
 
+vm.runInContext(fs.readFileSync(path.join(dist, 'src/resource-catalog.js'), 'utf8'), context, {
+  filename: 'src/resource-catalog.js'
+});
 vm.runInContext(fs.readFileSync(path.join(dist, 'src/resources.js'), 'utf8'), context, {
   filename: 'src/resources.js'
 });
