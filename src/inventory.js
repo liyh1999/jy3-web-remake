@@ -152,11 +152,14 @@
         action: String(action || '')
       });
     },
-    slot(label, id, name, icon) {
-      const pointMap = { 武器: '193', 暗器: '198', 内衣: '194', 外衣: '195' };
+    slot(label, id, name, icon, point) {
+      const pointMap = {
+        武器: '193', 暗器: '198', 内衣: '194', 外衣: '195',
+        头戴: '头戴', 手戴: '手戴', 脚穿: '脚穿', 印记: '印记'
+      };
       model.slots.push({
         label: String(label || ''),
-        point: pointMap[String(label || '')] || '',
+        point: String(point || pointMap[String(label || '')] || ''),
         id: Number(id) || 0,
         name: String(name || '未装备'),
         icon: Number(icon) || 0
