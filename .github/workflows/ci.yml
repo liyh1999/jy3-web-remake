@@ -36,6 +36,7 @@ jobs:
           node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
           node --check tools/vendor-upstream.mjs
+          node --check tools/verify-offline-dist.mjs
 
       - name: Validate resource id resolver
         run: node tools/test-resource-resolver.mjs
@@ -93,11 +94,13 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
 
-      - name: Build offline distribution
+      - name: Cache pinned offline inputs
+        run: npm run cache:offline
+
+      - name: Build distribution from local cache only
         run: |
-          npm install --ignore-scripts --no-audit --no-fund
-          npm run build
-          test -f dist/vendor/fengari/fengari-web.min.js
+          npm run build:offline
+          test -f dist/vendor/fengari/fengari-web.js
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
@@ -106,6 +109,9 @@ jobs:
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
+      - name: Simulate disconnected runtime
+        run: npm run verify:offline
+
       - name: Smoke-test offline dist
         run: |
           python3 -m http.server 8090 --directory dist --bind 127.0.0.1 >/tmp/jy3-dist-http.log 2>&1 &
@@ -113,7 +119,7 @@ jobs:
           trap 'kill $SERVER_PID' EXIT
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8090/index.html >/dev/null
-          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.min.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
