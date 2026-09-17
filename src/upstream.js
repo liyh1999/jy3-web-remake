@@ -34,18 +34,6 @@
     return fengari.load(wrapper, '@web/register-data')();
   }
 
-  async function bootstrapData(onProgress) {
-    let loaded = 0;
-    for (const path of CORE_DATA) {
-      onProgress?.(`加载原数据 ${loaded + 1}/${CORE_DATA.length}: ${path.split('/').pop()}`);
-      const source = await fetchText(path);
-      registerDataSource(source, path);
-      loaded += 1;
-    }
-    fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
-    return { loadedModules: loaded };
-  }
-
   async function loadProgram(path) {
     const source = await fetchText(path);
     fengari.load(source, `@upstream/${path}`)();
@@ -64,6 +52,19 @@
 
   async function bootstrapPrograms(onProgress) {
     return loadPrograms(CORE_PROGRAMS, onProgress);
+  }
+
+  async function bootstrapData(onProgress) {
+    let loaded = 0;
+    for (const path of CORE_DATA) {
+      onProgress?.(`加载原数据 ${loaded + 1}/${CORE_DATA.length}: ${path.split('/').pop()}`);
+      const source = await fetchText(path);
+      registerDataSource(source, path);
+      loaded += 1;
+    }
+    fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
+    const loadedPrograms = await bootstrapPrograms(onProgress);
+    return { loadedModules: loaded, loadedPrograms };
   }
 
   window.JYUpstream = {
