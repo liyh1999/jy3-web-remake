@@ -1,19 +1,21 @@
 (() => {
-  const VILLAGE_BACKGROUND = 0x56050001;
+  const DEFAULT_VILLAGE_MAP = 0x10060003;
 
-  function mountVillage() {
-    const renderer = window.JYRenderer;
-    const scene = document.querySelector('#scene');
-    if (!renderer || !scene) return false;
+  function currentMapId() {
+    if (!window.fengari?.load) return 0;
+    try { return Number(window.fengari.load('return __jy_current_map()', '@web/current-map')()) || 0; }
+    catch (_) { return 0; }
+  }
 
-    // app.js still owns the temporary HTML controls. The actual scene image is now
-    // rendered by the gcore Canvas path instead of CSS background-image.
-    scene.style.backgroundImage = 'none';
-    scene.style.backgroundSize = '';
-    scene.style.backgroundPosition = '';
-    renderer.ensureCanvas();
-    renderer.setBackground(VILLAGE_BACKGROUND);
-    return true;
+  function mountCurrentMap(fallback = DEFAULT_VILLAGE_MAP) {
+    if (!window.fengari?.load || !window.JYMapHost) return false;
+    const mapId = currentMapId() || Number(fallback) || DEFAULT_VILLAGE_MAP;
+    try {
+      return window.fengari.load(`return __jy_enter_map(${mapId})`, '@web/mount-map')() !== false;
+    } catch (error) {
+      console.error('[jy3-web] unable to mount current map', error);
+      return false;
+    }
   }
 
   function install() {
@@ -26,14 +28,14 @@
     if (enterVillage) {
       web.enterVillage = (...args) => {
         const result = enterVillage(...args);
-        mountVillage();
+        mountCurrentMap(DEFAULT_VILLAGE_MAP);
         return result;
       };
     }
     if (finishNewGame) {
       web.finishNewGame = (...args) => {
         const result = finishNewGame(...args);
-        mountVillage();
+        mountCurrentMap(DEFAULT_VILLAGE_MAP);
         return result;
       };
     }
@@ -43,8 +45,9 @@
   }
 
   window.JYGcoreScene = {
-    VILLAGE_BACKGROUND,
-    mountVillage,
+    DEFAULT_VILLAGE_MAP,
+    currentMapId,
+    mountCurrentMap,
     install,
   };
 
