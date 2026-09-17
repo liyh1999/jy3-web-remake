@@ -4,21 +4,29 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-// This smoke test validates the original opening without a browser UI.
-// It uses standard Lua 5.3 after the exact same source normalization as the Web build.
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
-const { RAW_BASE, normalizeLuaSource, CORE_DATA } = globalThis.window.JYUpstream;
+const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-opening-'));
+const SMOKE_DATA = ['01_data/o_body.lua', '01_data/o_files.lua'];
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchSource(remotePath) {
-  const response = await fetch(`${RAW_BASE}/${remotePath}`);
-  if (!response.ok) throw new Error(`${remotePath}: HTTP ${response.status}`);
-  return response.text();
+  const url = `${RAW_BASE}/${remotePath}`;
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const response = await fetch(url, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
+    if (response.ok) return response.text();
+    lastStatus = response.status;
+    if (response.status !== 429 && response.status < 500) break;
+    await sleep(300 * (attempt + 1));
+  }
+  throw new Error(`${remotePath}: HTTP ${lastStatus}`);
 }
 
-for (const remotePath of CORE_DATA) {
+for (const remotePath of SMOKE_DATA) {
   const source = normalizeLuaSource(await fetchSource(remotePath));
   fs.writeFileSync(path.join(tmp, remotePath.split('/').pop()), source, 'utf8');
 }
@@ -113,7 +121,7 @@ assert(first_ui.text:find('回答问题', 1, true), 'unexpected opening story te
 print('original opening runtime smoke PASS')
 `;
 
-const dataFiles = CORE_DATA.map(p => path.join(tmp, p.split('/').pop()));
+const dataFiles = SMOKE_DATA.map(p => path.join(tmp, p.split('/').pop()));
 const harnessPath = path.join(tmp, 'harness.lua');
 fs.writeFileSync(harnessPath, harness, 'utf8');
 const run = spawnSync('lua5.3', [harnessPath, ...dataFiles], { encoding: 'utf8' });
