@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>金庸群侠传3 Web Runtime POC</title>
+  <title>金庸群侠传3 Web Runtime</title>
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
   <main id="shell">
-    <section id="game" aria-label="JY3 web runtime proof of concept">
+    <section id="game" aria-label="JY3 web runtime">
       <header class="topbar">
         <div>
           <div class="brand">金庸群侠传 3</div>
-          <div class="subtitle">Web Runtime · Lua compatibility proof</div>
+          <div class="subtitle">Web Runtime · original Lua compatibility layer</div>
         </div>
         <div class="runtime" id="runtimeStatus">加载 Lua Runtime…</div>
       </header>
@@ -24,10 +24,10 @@
         <div class="title-copy">
           <div class="seal">叁</div>
           <h1>金庸群侠传</h1>
-          <p>以 jy3-mirror 的 Lua 调用约定为基础，替换缺失的 gcore 桌面运行时。</p>
+          <p>保留 jy3-mirror 原 Lua 剧情/数据，替换缺失的 gcore 桌面运行时。</p>
           <button id="startBtn" class="primary" disabled>开始兼容层验证</button>
           <button id="villageBtn" class="ghost" disabled>直接进入牛家村测试</button>
-          <button id="originalBtn" class="ghost" disabled>尝试运行 GitHub 原 p_newgame.lua</button>
+          <button id="originalBtn" class="ghost" disabled>运行原 p_newgame.lua</button>
         </div>
       </section>
 
@@ -72,13 +72,14 @@
 
       <footer class="footer">
         <span>逻辑：Lua 5.3 / Fengari</span>
-        <span>画面：HTML5 / DOM</span>
-        <span>目标分辨率：853 × 480</span>
+        <span>运行时：HTML5 / JS</span>
+        <span>原设计：853 × 480</span>
       </footer>
     </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js"></script>
+  <script src="./src/upstream.js"></script>
   <script src="./src/app.js"></script>
 </body>
 </html>
