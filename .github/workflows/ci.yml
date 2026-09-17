@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/app.js
+          node --check src/upstream.js
+          node --check tools/audit-newgame.mjs
+
+      - name: Install Lua 5.3 compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.3
+
+      - name: Check Lua syntax
+        run: |
+          luac5.3 -p lua/gf_web.lua
+          luac5.3 -p lua/jy3_demo.lua
+
+      - name: Audit original opening API coverage
+        run: node tools/audit-newgame.mjs
+
+      - name: Smoke-test static server
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 >/tmp/jy3-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 1
+          curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
