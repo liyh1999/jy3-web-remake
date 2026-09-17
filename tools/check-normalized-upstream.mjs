@@ -11,6 +11,7 @@ const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
 const targets = [
   '04_program/p_order.lua',
   '04_program/p_newgame.lua',
+  '04_program/p_niujiacun.lua',
 ];
 
 function printContext(source, stderr) {
@@ -27,7 +28,7 @@ function printContext(source, stderr) {
 }
 
 for (const target of targets) {
-  const response = await fetch(`${RAW_BASE}/${target}`);
+  const response = await fetch(`${RAW_BASE}/${target}`, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
   if (!response.ok) throw new Error(`${target}: HTTP ${response.status}`);
   const original = await response.text();
   const normalized = normalizeLuaSource(original);
