@@ -24,6 +24,7 @@ jobs:
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
           node --check tools/check-normalized-upstream.mjs
+          node --check tools/smoke-original-opening.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -40,6 +41,9 @@ jobs:
 
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
+
+      - name: Run original opening to first UI yield
+        run: node tools/smoke-original-opening.mjs
 
       - name: Smoke-test static server
         run: |
