@@ -2,84 +2,108 @@
 
 把《金庸群侠传 3》的 Lua 重制版逻辑迁移到现代浏览器运行时，不再依赖 Flash 或原桌面 `gcore` 引擎。
 
-当前阶段不是重新编写一套“类似金3”的游戏，而是验证并逐步实现一层 **Web Runtime compatibility layer**，尽可能保留现有 Lua 剧情、事件和数值逻辑。
+项目路线不是重新编写一套“类似金3”的游戏，而是实现一层 **Web Runtime compatibility layer**，尽可能直接运行原 Lua 剧情、事件、数据和数值规则；浏览器负责渲染、输入、音频、存档和其他平台能力。
 
 ## 基础来源
 
 参考工程：[`ssz66666/jy3-mirror`](https://github.com/ssz66666/jy3-mirror)
 
-目前已确认该仓库包含较完整的：
-
-- Lua 剧情与事件脚本
-- 战斗逻辑
-- 人物 / 武功 / 物品 / 商店等数据
-- 图片、音频、字体及动画资源目录
-- 原 `gf / gcore` 调用体系
-
-但缺少可直接用于 Web 的底层运行时，因此本项目的核心工作是重新实现原 `gcore.c / gf` 依赖。
-
-## 当前 POC
-
-第一阶段使用 Fengari 在浏览器中运行 Lua 5.3，并实现一小部分兼容 API：
-
-- `G.api` 事件注册
-- `G.call('menu')`
-- `G.call('talk')`
-- `G.call('story')`
-- 属性读写
-- 银两 / 物品 / 武功 / 队伍基础接口
-- `call_battle -> get_battle`
-- Lua coroutine 与浏览器异步 UI 的桥接
-
-当前验证目标：
+当前固定上游 revision：
 
 ```text
-浏览器启动
-  -> Lua Runtime
-  -> 开局问答
-  -> 牛家村
-  -> NPC 对话
-  -> 简化战斗
-  -> 属性变化 / 入队
+c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8
 ```
 
-## 启动
+上游包含较完整的 Lua 剧情/战斗/人物/武功/物品/商店数据以及图片、音频、字体和动画资源；缺失的是可直接用于 Web 的原 `gcore` 宿主。
 
-不要直接双击 `index.html`，请使用本地 HTTP 服务：
+## 当前可运行能力
+
+目前已经不是只验证菜单的最小 POC，主线基线包括：
+
+- Fengari 运行 Lua 5.3
+- 中文 Lua 标识符自动归一化
+- `G.api / G.call / QueryName / DBTable`
+- 原 `p_order.lua / p_newgame.lua / p_niujiacun.lua`
+- 原版开局问答完整执行并进入牛家村
+- 牛家村秀才、茶博士、穆念慈原事件回归
+- 基础商店桥接
+- 基础背包/装备适配器
+- 原 Lua 对象存档/读档 roundtrip
+- 资源 ID -> Web 路径解析
+- 牛家村原背景资源显示
+- CI 自动覆盖开局、牛家村、背包、存档和资源解析
+
+复刻一致性进度见 [`docs/PARITY_MATRIX.md`](docs/PARITY_MATRIX.md)。
+
+## 开发模式启动
+
+源码目录仍可直接以静态服务器启动：
 
 ```bash
-python -m http.server 8080
+python3 -m http.server 8080 --bind 0.0.0.0
 ```
 
-Windows 也可以直接运行：
+Windows 可运行：
 
 ```text
 start_windows.bat
 ```
 
-然后打开：
+打开：
 
 ```text
 http://127.0.0.1:8080
 ```
 
-当前 POC 首次运行需要联网加载 Fengari，后续会改为项目内置依赖，实现离线运行。
+开发模式会优先读取本地 `vendor/`，缺失时允许回退到固定版本的上游资源。
 
-## 路线
+## 完全离线部署
 
-优先级：
+安装依赖并生成自包含静态目录：
 
-1. 跑通原 `p_newgame.lua`
-2. 实现 `QueryName` / 原静态数据加载
-3. 建立资源 ID -> Web 图片 / 音频映射
-4. 跑通原 `p_niujiacun.lua`
-5. 接商店、物品、装备、地图
-6. 移植 `p_battle.lua` 显示与输入层
-7. IndexedDB 存档
-8. 逐步提高原脚本 API 覆盖率
+```bash
+npm install
+npm run build
+```
+
+构建结果：
+
+```text
+dist/
+```
+
+其中包含：
+
+- 本地 Fengari
+- 当前运行所需的固定版本原 Lua/数据
+- 当前运行所需的原资源
+- Web Runtime 源码
+- `runtime-config.js`
+- `build-info.json`
+
+服务器部署时只需要发布 `dist/`：
+
+```bash
+python3 -m http.server 8080 --directory dist --bind 0.0.0.0
+```
+
+浏览器运行阶段的核心开局/牛家村纵向切片不再要求从 GitHub Raw 或 jsDelivr 获取文件。
+
+## 完全复刻路线
+
+总验收：[#19](https://github.com/liyh1999/jy3-web-remake/issues/19)
+
+执行路线：[#20](https://github.com/liyh1999/jy3-web-remake/issues/20)
+
+主要阶段：
+
+1. 资源 ID、离线构建、基础渲染、输入
+2. 地图、背包装备、商店、人物成长、原战斗
+3. 动画、音频、小游戏、全剧情/门派/任务
+4. 正式多槽存档、视觉还原、浏览器 E2E 与发布验收
 
 具体兼容进度见 [`docs/API_PROGRESS.md`](docs/API_PROGRESS.md)。
 
 ## 版权与资源
 
-本仓库现阶段主要保存自行编写的 Web Runtime / compatibility code，不默认重新分发来源仓库中许可状态不明确的完整原始素材。后续资源接入会单独整理来源、许可和分发方式。
+本仓库主要保存自行编写的 Web Runtime / compatibility code。原始游戏内容来自参考仓库，其许可状态需要在公开发布完整资源包前单独确认；当前构建工具在构建阶段按固定 revision 获取运行所需内容。
