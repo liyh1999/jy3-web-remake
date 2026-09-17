@@ -18,7 +18,7 @@
     hotspotRoot = null;
   }
 
-  function beginMap(mapId, name, background, showMenu, showRest, showWoods) {
+  function beginMap(mapId, name, background, showMenu, showRest, showWoods, showRiver = 0) {
     if (!R) return false;
     const scene = document.querySelector('#scene');
     if (scene) {
@@ -43,6 +43,7 @@
       showMenu: Number(showMenu) || 0,
       showRest: Number(showRest) || 0,
       showWoods: Number(showWoods) || 0,
+      showRiver: Number(showRiver) || 0,
       count: 0,
     };
 
@@ -51,7 +52,7 @@
     return true;
   }
 
-  function addHotspot(index, cityId, name, icon, x, y, eventName, linkedMap, locked, showName) {
+  function addHotspot(index, cityId, name, icon, x, y, eventName, linkedMap, locked, showName, eventRecord = 0) {
     if (!hotspotRoot || !R) return 0;
     const point = logicalFromOriginal(x, y);
     const node = R.quad();
@@ -61,7 +62,9 @@
     node.height = 64;
     node.x = point.x;
     node.y = point.y;
-    node.mouseEnabled = !Number(locked);
+    // Locked locations still receive hover in the original UI; activation is
+    // blocked in Lua so the user can still see which destination is locked.
+    node.mouseEnabled = true;
     node.alpha = Number(locked) ? 128 : 255;
     hotspotRoot.addChild(node);
 
@@ -76,6 +79,7 @@
       linkedMap: Number(linkedMap) || 0,
       locked: !!Number(locked),
       showName: Number(showName) || 0,
+      eventRecord: Number(eventRecord) || 0,
       handle: node.handle,
     };
     hotspotByHandle.set(node.handle, row);
@@ -89,6 +93,7 @@
       label.height = 24;
       label.x = point.x;
       label.y = point.y - 42;
+      label.mouseEnabled = false;
       hotspotRoot.addChild(label);
     }
 
@@ -114,14 +119,8 @@
   }
 
   function activate(row) {
-    if (!row || row.locked) return false;
-    if (row.eventName) {
-      return runLua(`return __jy_run(${JSON.stringify(row.eventName)})`, '@web/map-event');
-    }
-    if (row.linkedMap) {
-      return runLua(`return __jy_enter_map(${Number(row.linkedMap) || 0})`, '@web/map-enter');
-    }
-    return false;
+    if (!row) return false;
+    return runLua(`return __jy_activate_city(${Number(row.cityId) || 0})`, '@web/map-city');
   }
 
   function setHoverStatus(row) {
