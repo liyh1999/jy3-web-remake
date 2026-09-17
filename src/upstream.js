@@ -36,6 +36,7 @@
   function normalizeLuaSource(source) {
     let out = '';
     let i = 0;
+    let tableDepth = 0;
 
     while (i < source.length) {
       const ch = source[i];
@@ -86,7 +87,6 @@
         }
       }
 
-      // Never treat the second dot of Lua's concat operator (`..foo`) as field access.
       if (ch === '.' && source[i - 1] !== '.' && IDENT_START.test(source[i + 1] || '')) {
         let j = i + 1;
         while (j < source.length && IDENT_PART.test(source[j])) j += 1;
@@ -106,7 +106,7 @@
           let k = j;
           while (/\s/.test(source[k] || '')) k += 1;
           const prev = out.trimEnd().slice(-1);
-          if ((prev === '{' || prev === ',') && source[k] === '=') {
+          if (tableDepth > 0 && (prev === '{' || prev === ',') && source[k] === '=') {
             out += `[${JSON.stringify(name)}]`;
           } else {
             out += encodedIdentifier(name);
@@ -118,6 +118,8 @@
         continue;
       }
 
+      if (ch === '{') tableDepth += 1;
+      if (ch === '}') tableDepth = Math.max(0, tableDepth - 1);
       out += ch;
       i += 1;
     }
