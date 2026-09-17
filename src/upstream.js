@@ -33,8 +33,6 @@
     return match ? { open: match[0], close: `]${match[1]}]` } : null;
   }
 
-  // The original engine accepts localized identifiers (e.g. `int_选项`, `o.难度`).
-  // Standard Lua/Fengari does not. Normalize only code tokens while preserving strings/comments.
   function normalizeLuaSource(source) {
     let out = '';
     let i = 0;
@@ -88,7 +86,8 @@
         }
       }
 
-      if (ch === '.' && IDENT_START.test(source[i + 1] || '')) {
+      // Never treat the second dot of Lua's concat operator (`..foo`) as field access.
+      if (ch === '.' && source[i - 1] !== '.' && IDENT_START.test(source[i + 1] || '')) {
         let j = i + 1;
         while (j < source.length && IDENT_PART.test(source[j])) j += 1;
         const name = source.slice(i + 1, j);
