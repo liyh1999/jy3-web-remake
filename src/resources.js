@@ -1,6 +1,7 @@
 (() => {
   const UPSTREAM_REV = 'c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8';
-  const ASSET_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
+  const REMOTE_ASSET_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
+  const ASSET_BASE = window.JY_CONFIG?.assetBase || REMOTE_ASSET_BASE;
 
   // Mirrors JY3/dir.lua. Runtime resource ids carry an additional high-nibble
   // type tag (e.g. 0x56050001); the path id used by dir.lua is 0x06050001.
@@ -150,6 +151,7 @@
   window.JYResources = {
     UPSTREAM_REV,
     ASSET_BASE,
+    REMOTE_ASSET_BASE,
     DIRS,
     canonicalPathId,
     resolve,
