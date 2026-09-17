@@ -47,6 +47,7 @@
 
   const BASES = [...DIRS.keys()].sort((a, b) => b - a);
   const images = new Map();
+  const audioChannels = new Map();
 
   function u32(value) {
     return Number(value) >>> 0;
@@ -158,6 +159,56 @@
     return images.has(u32(id));
   }
 
+  function normalizedVolume(volume) {
+    const value = Number(volume);
+    if (!Number.isFinite(value)) return 1;
+    if (value <= 1) return Math.max(0, value);
+    return Math.max(0, Math.min(1, value / 100));
+  }
+
+  function stop(channel = 1) {
+    const key = Number(channel) || 1;
+    const current = audioChannels.get(key);
+    if (!current) return false;
+    try {
+      current.pause?.();
+      if ('currentTime' in current) current.currentTime = 0;
+    } catch (_) {}
+    audioChannels.delete(key);
+    return true;
+  }
+
+  function play(resourceId, channel = 1, loop = false, volume = 1) {
+    const source = resolve(resourceId);
+    if (!source || source.extension !== '.mp3') return false;
+    const key = Number(channel) || 1;
+
+    stop(key);
+    if (typeof Audio === 'undefined') {
+      // Node/CI can still validate routing without a browser audio implementation.
+      audioChannels.set(key, { resourceId: u32(resourceId), url: source.url, loop: !!loop, volume: normalizedVolume(volume) });
+      return true;
+    }
+
+    const audio = new Audio(source.url);
+    audio.loop = !!loop;
+    audio.volume = normalizedVolume(volume);
+    audio.preload = 'auto';
+    audioChannels.set(key, audio);
+    const promise = audio.play();
+    if (promise?.catch) {
+      promise.catch((error) => {
+        // Browser autoplay restrictions are expected before the first user gesture.
+        console.debug?.('[jy3-web] audio play deferred/blocked', source.url, error?.message || error);
+      });
+    }
+    return true;
+  }
+
+  function activeAudio(channel = 1) {
+    return audioChannels.get(Number(channel) || 1) || null;
+  }
+
   window.JYResources = {
     UPSTREAM_REV,
     ASSET_BASE,
@@ -172,5 +223,8 @@
     imageWidth,
     imageHeight,
     hasImage,
+    play,
+    stop,
+    activeAudio,
   };
 })();
