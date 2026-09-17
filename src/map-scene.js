@@ -20,6 +20,14 @@
 
   function beginMap(mapId, name, background, showMenu, showRest, showWoods) {
     if (!R) return false;
+    const scene = document.querySelector('#scene');
+    if (scene) {
+      scene.querySelectorAll('.title-copy').forEach(node => node.remove());
+      scene.style.backgroundImage = 'none';
+      scene.style.backgroundSize = '';
+      scene.style.backgroundPosition = '';
+    }
+
     R.ensureCanvas?.();
     R.setBackground(Number(background) || 0);
     clearHotspots();
@@ -93,13 +101,25 @@
     return currentMap?.count || 0;
   }
 
+  function runLua(chunk, name) {
+    if (!window.fengari?.load) return false;
+    try {
+      return window.fengari.load(chunk, name)() !== false;
+    } catch (error) {
+      console.error('[jy3-web] map action failed', error);
+      const status = document.querySelector('#runtimeStatus');
+      if (status) status.textContent = `地图事件错误：${error.message || error}`;
+      return false;
+    }
+  }
+
   function activate(row) {
     if (!row || row.locked) return false;
     if (row.eventName) {
-      return window.JYWeb?.runEvent?.(row.eventName) !== false;
+      return runLua(`return __jy_run(${JSON.stringify(row.eventName)})`, '@web/map-event');
     }
     if (row.linkedMap) {
-      return window.JYWeb?.enterMap?.(row.linkedMap) !== false;
+      return runLua(`return __jy_enter_map(${Number(row.linkedMap) || 0})`, '@web/map-enter');
     }
     return false;
   }
@@ -141,8 +161,8 @@
     current: () => currentMap ? { ...currentMap } : null,
     hotspots: () => [...hotspotByHandle.values()].map(row => ({ ...row })),
     refresh() {
-      if (!currentMap?.id || !window.fengari?.load) return false;
-      return !!window.fengari.load(`return __jy_render_map(${currentMap.id})`, '@web/map-refresh')();
+      if (!currentMap?.id) return false;
+      return runLua(`return __jy_render_map(${currentMap.id})`, '@web/map-refresh');
     },
     clear: clearHotspots,
   };
