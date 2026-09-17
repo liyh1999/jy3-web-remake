@@ -1,0 +1,13 @@
+{
+  "name": "jy3-web-remake",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JY3 browser runtime and compatibility layer",
+  "scripts": {
+    "build": "node tools/build-offline.mjs",
+    "serve:dist": "python3 -m http.server 8080 --directory dist --bind 0.0.0.0"
+  },
+  "dependencies": {
+    "fengari-web": "0.1.4"
+  }
+}
