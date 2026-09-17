@@ -267,6 +267,11 @@ local function event_name(event_id)
     return tostring(event["名称"] or "")
 end
 
+local function object_id(value)
+    if type(value) == "table" then return tonumber(value.name) or 0 end
+    return tonumber(value) or 0
+end
+
 function __jy_current_map()
     local body = G.QueryName(0x10030001)
     return tonumber(body[tostring(140)]) or 0
@@ -284,7 +289,8 @@ function __jy_render_map(map_id)
         tonumber(map["地图背景"]) or 0,
         tonumber(map["显示主菜单"]) or 0,
         tonumber(map["显示休息"]) or 0,
-        tonumber(map["显示树林"]) or 0
+        tonumber(map["显示树林"]) or 0,
+        tonumber(map["显示河边"]) or 0
     )
 
     local count = 0
@@ -295,6 +301,8 @@ function __jy_render_map(map_id)
             local city = G.QueryName(city_id)
             local pos = row["位置"] or {}
             local locked = city["锁定"] == true or tonumber(city["锁定"]) == 1
+            local show_name = city["显示名称"]
+            if show_name == nil then show_name = 1 else show_name = tonumber(show_name) or 0 end
             map_host:addHotspot(
                 index,
                 city_id,
@@ -305,7 +313,8 @@ function __jy_render_map(map_id)
                 event_name(city["关联事件"]),
                 tonumber(city["关联地图"]) or 0,
                 locked and 1 or 0,
-                tonumber(city["显示名称"]) or 0
+                show_name,
+                tonumber(city["事件记录"]) or 0
             )
             count = count + 1
         end
@@ -317,15 +326,81 @@ end
 function __jy_enter_map(map_id)
     map_id = tonumber(map_id) or 0
     if map_id == 0 then return false end
+    local map = G.QueryName(map_id)
+    if type(map) ~= "table" or map.__placeholder then return false end
     G.QueryName(0x10030001)[tostring(140)] = map_id
     G.misc()["当前地图"] = map_id
+    G.misc()["music"] = tonumber(map["音乐"]) or 0
     return __jy_render_map(map_id)
+end
+
+function __jy_activate_city(city_id)
+    city_id = tonumber(city_id) or 0
+    if city_id == 0 then return false end
+    local city = G.QueryName(city_id)
+    if type(city) ~= "table" or city.__placeholder then return false end
+
+    local linked_map = tonumber(city["关联地图"]) or 0
+    local event_id = tonumber(city["关联事件"]) or 0
+    local locked = city["锁定"] == true or tonumber(city["锁定"]) == 1
+    local event_record = tonumber(city["事件记录"])
+
+    -- Original c_citymap_system_city writes the sect/event record even when the
+    -- destination is a regular linked map.
+    if event_record then
+        G.QueryName(0x10030001)[tostring(190)] = event_record
+    end
+
+    if linked_map ~= 0 then
+        if locked then return false end
+        local map = G.QueryName(linked_map)
+        if type(G.api["地图系统_进入地图"]) == "function" then
+            return G.call("地图系统_进入地图", map) ~= false
+        end
+        return __jy_enter_map(linked_map)
+    end
+
+    if event_id ~= 0 then
+        local name = event_name(event_id)
+        if name ~= "" then return __jy_run(name) end
+    end
+    return false
+end
+
+function __jy_render_legacy_map(title, map_index, map_family)
+    if not map_host_ready() then return false end
+    map_index = tonumber(map_index) or 0
+    map_family = tonumber(map_family) or 0
+    local background
+    if map_family == 1 then
+        background = 0x56150000 + map_index
+    else
+        background = 0x56050000 + map_index
+    end
+    map_host:beginMap(0, tostring(title or ""), background, 0, 0, 0, 0)
+    map_host:endMap(0)
+    return true
 end
 
 local original_call = G.call
 G.call = function(name, ...)
+    local args = {...}
+
+    -- These notifications used to be implemented by the desktop city-map UI.
+    -- Keep original p_citymap_system.lua in charge of high-level entry logic,
+    -- while this shim supplies the browser-side UI effect.
+    if name == "地图系统_进入地图UI" then
+        return __jy_enter_map(object_id(args[1]))
+    elseif name == "地图系统_离开地图UI" then
+        if map_host_ready() then map_host:clear() end
+        return true
+    elseif name == "地图_进入地图" or name == "地图_进入地图UI" then
+        return __jy_render_legacy_map(args[1], args[2], args[4])
+    end
+
     local result = original_call(name, ...)
-    if name == "turn_map" or name == "mapon" or name == "goto_map" then
+    if name == "turn_map" or name == "mapon" or name == "goto_map" or
+       name == "地图系统_进入地图" or name == "地图系统_刷新地图" then
         __jy_render_map()
     end
     return result
