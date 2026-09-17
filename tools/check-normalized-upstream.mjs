@@ -4,7 +4,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-// Reuse the exact browser normalizer instead of maintaining a second implementation.
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 
@@ -13,6 +12,19 @@ const targets = [
   '04_program/p_order.lua',
   '04_program/p_newgame.lua',
 ];
+
+function printContext(source, stderr) {
+  const match = String(stderr || '').match(/:(\d+):/);
+  if (!match) return;
+  const lineNo = Number(match[1]);
+  const lines = source.split(/\r?\n/);
+  const from = Math.max(1, lineNo - 4);
+  const to = Math.min(lines.length, lineNo + 4);
+  console.error(`context ${from}-${to}:`);
+  for (let i = from; i <= to; i += 1) {
+    console.error(`${String(i).padStart(5)} | ${lines[i - 1]}`);
+  }
+}
 
 for (const target of targets) {
   const response = await fetch(`${RAW_BASE}/${target}`);
@@ -26,6 +38,7 @@ for (const target of targets) {
   if (check.status !== 0) {
     console.error(`normalized Lua compile failed: ${target}`);
     console.error(check.stderr || check.stdout);
+    printContext(normalized, check.stderr || check.stdout);
     process.exit(check.status || 1);
   }
   console.log(`normalized Lua compile PASS: ${target}`);
