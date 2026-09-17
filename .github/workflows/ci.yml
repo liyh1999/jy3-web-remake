@@ -28,6 +28,7 @@ jobs:
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-niujia-events.mjs
+          node --check tools/smoke-save-state.mjs
           node --check tools/test-resource-resolver.mjs
 
       - name: Validate resource id resolver
@@ -44,6 +45,9 @@ jobs:
           luac5.3 -p lua/runtime_shims.lua
           luac5.3 -p lua/save_state.lua
           luac5.3 -p lua/jy3_demo.lua
+
+      - name: Save-state roundtrip
+        run: node tools/smoke-save-state.mjs
 
       - name: Compile normalized upstream Lua
         run: node tools/check-normalized-upstream.mjs
