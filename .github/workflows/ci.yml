@@ -23,6 +23,7 @@ jobs:
           node --check src/app.js
           node --check src/inventory.js
           node --check src/resources.js
+          node --check src/renderer.js
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
           node --check tools/build-offline.mjs
@@ -32,11 +33,15 @@ jobs:
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-niujia-events.mjs
           node --check tools/smoke-save-state.mjs
+          node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
           node --check tools/vendor-upstream.mjs
 
       - name: Validate resource id resolver
         run: node tools/test-resource-resolver.mjs
+
+      - name: Validate gcore scene graph
+        run: node tools/test-renderer.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -83,6 +88,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/save_state.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/inventory_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/renderer.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
@@ -96,6 +102,7 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
           test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
+          test -f dist/src/renderer.js
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
@@ -111,5 +118,6 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/renderer.js >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
