@@ -59,12 +59,21 @@ function directoryExists(prefix, set) {
   return false;
 }
 
+function isDynamicExpression(source, start, end) {
+  const before = source.slice(Math.max(0, start - 24), start).trimEnd();
+  const after = source.slice(end, Math.min(source.length, end + 48)).trimStart();
+  const startsWithOperator = /^(?:\+|-|\||&|<<|>>|\*|\/|%)/.test(after);
+  const endsWithOperator = /(?:\+|-|\||&|<<|>>|\*|\/|%)$/.test(before);
+  return startsWithOperator || endsWithOperator;
+}
+
 const references = new Map();
 const hexPattern = /0x[0-9a-fA-F]{7,8}\b/g;
 for (const file of scanFiles) {
   const source = fs.readFileSync(file, 'utf8');
   const sourceName = path.relative(root, file).replaceAll('\\', '/');
-  for (const token of source.match(hexPattern) || []) {
+  for (const match of source.matchAll(hexPattern)) {
+    const token = match[0];
     const id = Number.parseInt(token.slice(2), 16) >>> 0;
     const hit = Catalog.resolve(id);
     if (!hit) continue;
@@ -75,23 +84,30 @@ for (const file of scanFiles) {
       ref = {
         pathId: key,
         ids: new Set(),
-        sources: new Set(),
+        directSources: new Set(),
+        dynamicSources: new Set(),
         hit,
       };
       references.set(key, ref);
     }
     ref.ids.add(`0x${id.toString(16).padStart(8, '0')}`);
-    ref.sources.add(sourceName);
+    const start = match.index || 0;
+    const dynamic = isDynamicExpression(source, start, start + token.length);
+    (dynamic ? ref.dynamicSources : ref.directSources).add(sourceName);
   }
 }
 
 const resources = [...references.values()].map(ref => {
   const hit = ref.hit;
+  const dynamicOnly = ref.directSources.size === 0 && ref.dynamicSources.size > 0;
   let existsUpstream = false;
   let cached = false;
   let status = 'structured';
 
-  if (hit.isDirectory) {
+  if (dynamicOnly) {
+    status = 'dynamic-expression';
+    existsUpstream = null;
+  } else if (hit.isDirectory) {
     existsUpstream = directoryExists(hit.directory, upstreamFiles);
     cached = directoryExists(hit.directory, cachedFiles);
     status = existsUpstream ? (cached ? 'cached-directory' : 'uncached-directory') : 'missing-directory';
@@ -105,6 +121,7 @@ const resources = [...references.values()].map(ref => {
     status = existsUpstream ? 'structured-unresolved' : 'missing-structured-root';
   }
 
+  const sources = new Set([...ref.directSources, ...ref.dynamicSources]);
   return {
     pathId: `0x${hit.pathId.toString(16).padStart(8, '0')}`,
     ids: [...ref.ids].sort(),
@@ -114,13 +131,17 @@ const resources = [...references.values()].map(ref => {
     status,
     existsUpstream,
     cached,
-    sources: [...ref.sources].sort(),
+    dynamicOnly,
+    directSources: [...ref.directSources].sort(),
+    dynamicSources: [...ref.dynamicSources].sort(),
+    sources: [...sources].sort(),
   };
 }).sort((a, b) => a.pathId.localeCompare(b.pathId));
 
 const missing = resources.filter(item => item.status.startsWith('missing-'));
 const uncached = resources.filter(item => item.status === 'uncached' || item.status === 'uncached-directory');
 const structured = resources.filter(item => item.status === 'structured-unresolved');
+const dynamic = resources.filter(item => item.status === 'dynamic-expression');
 const cached = resources.filter(item => item.cached);
 const byKind = {};
 for (const resource of resources) byKind[resource.kind] = (byKind[resource.kind] || 0) + 1;
@@ -141,6 +162,7 @@ const report = {
     cachedCount: cached.length,
     uncachedCount: uncached.length,
     structuredUnresolvedCount: structured.length,
+    dynamicExpressionCount: dynamic.length,
     missingCount: missing.length,
     newMissingCount: newMissing.length,
     byKind,
@@ -150,6 +172,7 @@ const report = {
   missing,
   uncached,
   structured,
+  dynamic,
   resources,
 };
 
@@ -172,16 +195,18 @@ const markdown = `# 资源完整性扫描\n\n` +
   `- 唯一资源引用：${report.summary.uniqueResourceCount}\n` +
   `- 已缓存：${report.summary.cachedCount}\n` +
   `- 上游存在但尚未缓存：${report.summary.uncachedCount}\n` +
+  `- 动态 ID 表达式：${report.summary.dynamicExpressionCount}\n` +
   `- Spine/particle 等结构化资源：${report.summary.structuredUnresolvedCount}\n` +
   `- 上游缺失：${report.summary.missingCount}\n` +
   `- 相对基线新增缺失：${report.summary.newMissingCount}\n\n` +
   `## 缺失资源\n\n${mdRows(missing)}\n` +
+  `## 动态资源 ID（仅记录基址，不按固定文件校验）\n\n${mdRows(dynamic)}\n` +
   `## 结构化资源（等待对应解析器）\n\n${mdRows(structured)}\n` +
   `## 上游存在但当前离线包未缓存\n\n${mdRows(uncached)}\n`;
 fs.writeFileSync(path.join(reportDir, 'resource-integrity.md'), markdown);
 
 console.log(`resource scan: ${resources.length} refs from ${scanFiles.length} files`);
-console.log(`resource scan: cached=${cached.length} uncached=${uncached.length} structured=${structured.length} missing=${missing.length}`);
+console.log(`resource scan: cached=${cached.length} uncached=${uncached.length} dynamic=${dynamic.length} structured=${structured.length} missing=${missing.length}`);
 if (newMissing.length) {
   console.error('NEW missing upstream resources:');
   for (const item of newMissing) console.error(`  ${item}`);
