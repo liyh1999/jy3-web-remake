@@ -16,6 +16,7 @@
   let modalCallback = null;
   let battleCallback = null;
   let battleState = null;
+  let originalProgramLoaded = false;
 
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
@@ -40,17 +41,28 @@
     ui.cont.classList.add('hidden');
   }
 
+  function resetJsState() {
+    state.points = {};
+    state.money = 2000;
+    state.items = {};
+    state.team = [];
+    state.skills = [];
+    state.lastBattle = 0;
+    renderStats();
+  }
+
+  function resetLuaState() {
+    fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
+  }
+
   window.JYWeb = {
-    reset() {
-      state.points = {15:10,16:10,17:10,18:10,19:10,20:10,21:10,22:0,23:0,24:0,25:0,26:0,32:0,33:0,34:0,143:0};
-      state.money = 2000; state.items = {}; state.team = []; state.skills = []; state.lastBattle = 0;
-      renderStats();
-    },
+    reset: resetJsState,
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
     addMoney(delta) { state.money += Number(delta); renderStats(); return state.money; },
     getMoney() { return state.money; },
+    getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
     learnMagic(id) { if (!state.skills.includes(Number(id))) state.skills.push(Number(id)); },
     join(id) { if (!state.team.includes(Number(id))) state.team.push(Number(id)); },
@@ -73,7 +85,12 @@
       [...options].forEach((opt, idx) => {
         const b = document.createElement('button');
         b.textContent = String(opt).replace(/^\d+,/, '');
-        b.onclick = () => { const cb = modalCallback; modalCallback = null; closeDialogue(); cb(idx + 1); };
+        b.onclick = () => {
+          const cb = modalCallback;
+          modalCallback = null;
+          closeDialogue();
+          cb(idx + 1);
+        };
         ui.options.appendChild(b);
       });
     },
@@ -91,72 +108,145 @@
     enterVillage() { closeDialogue(); ui.battle.classList.add('hidden'); setScene('village'); },
     finishNewGame() { setScene('village'); },
     showStats(resume) {
-      const summary = Object.entries(labels).filter(([k]) => state.points[k] !== undefined).map(([k,v]) => `${v}：${state.points[k]}`).join('　');
+      const summary = Object.entries(labels)
+        .filter(([k]) => state.points[k] !== undefined)
+        .map(([k,v]) => `${v}：${state.points[k]}`).join('　');
       this.showTalk('人物属性', `${summary}\n银两：${state.money}　队友：${state.team.length ? state.team.join('、') : '无'}`, resume);
     }
   };
 
   function updateBattle() {
     const p = Math.max(0, battleState.player), e = Math.max(0, battleState.enemy);
-    ui.playerBar.style.width = `${p}%`; ui.enemyBar.style.width = `${Math.min(100,e/92*100)}%`;
-    ui.playerText.textContent = `${p} / 100`; ui.enemyText.textContent = `${e} / 92`;
+    ui.playerBar.style.width = `${p}%`;
+    ui.enemyBar.style.width = `${Math.min(100,e/92*100)}%`;
+    ui.playerText.textContent = `${p} / 100`;
+    ui.enemyText.textContent = `${e} / 92`;
   }
 
   ui.attack.onclick = () => {
     if (!battleState) return;
-    const dmg = 13 + Math.floor(Math.random() * 14); battleState.enemy -= dmg;
+    const dmg = 13 + Math.floor(Math.random() * 14);
+    battleState.enemy -= dmg;
     if (battleState.enemy <= 0) {
-      battleState.enemy = 0; updateBattle(); ui.battleLog.textContent = `你造成 ${dmg} 点伤害，取胜。`;
-      setTimeout(() => { ui.battle.classList.add('hidden'); const cb = battleCallback; battleCallback = null; battleState = null; cb(1); }, 280);
+      battleState.enemy = 0;
+      updateBattle();
+      ui.battleLog.textContent = `你造成 ${dmg} 点伤害，取胜。`;
+      setTimeout(() => {
+        ui.battle.classList.add('hidden');
+        const cb = battleCallback;
+        battleCallback = null;
+        battleState = null;
+        cb(1);
+      }, 280);
       return;
     }
-    const hurt = 7 + Math.floor(Math.random() * 12); battleState.player -= hurt; updateBattle();
+    const hurt = 7 + Math.floor(Math.random() * 12);
+    battleState.player -= hurt;
+    updateBattle();
     if (battleState.player <= 0) {
-      battleState.player = 0; updateBattle(); ui.battleLog.textContent = `你造成 ${dmg} 点伤害，但随后落败。`;
-      setTimeout(() => { ui.battle.classList.add('hidden'); const cb = battleCallback; battleCallback = null; battleState = null; cb(0); }, 280);
-    } else ui.battleLog.textContent = `你造成 ${dmg} 点伤害；${battleState.enemyName} 反击 ${hurt} 点。`;
+      battleState.player = 0;
+      updateBattle();
+      ui.battleLog.textContent = `你造成 ${dmg} 点伤害，但随后落败。`;
+      setTimeout(() => {
+        ui.battle.classList.add('hidden');
+        const cb = battleCallback;
+        battleCallback = null;
+        battleState = null;
+        cb(0);
+      }, 280);
+    } else {
+      ui.battleLog.textContent = `你造成 ${dmg} 点伤害；${battleState.enemyName} 反击 ${hurt} 点。`;
+    }
   };
 
-  ui.cont.onclick = () => { const cb = modalCallback; modalCallback = null; closeDialogue(); if (cb) cb(true); };
+  ui.cont.onclick = () => {
+    const cb = modalCallback;
+    modalCallback = null;
+    closeDialogue();
+    if (cb) cb(true);
+  };
 
   function runEvent(name) {
-    try { fengari.load(`return __jy_run(${JSON.stringify(name)})`, 'event-launcher')(); }
-    catch (e) { console.error(e); ui.status.textContent = 'Lua 事件错误'; window.alert(String(e)); }
+    try {
+      fengari.load(`return __jy_run(${JSON.stringify(name)})`, 'event-launcher')();
+    } catch (e) {
+      console.error(e);
+      ui.status.textContent = 'Lua 事件错误';
+      window.alert(String(e));
+    }
+  }
+
+  function freshRun(eventName) {
+    resetJsState();
+    resetLuaState();
+    runEvent(eventName);
   }
 
   async function boot() {
-    window.JYWeb.reset();
-    if (!window.fengari) { ui.status.textContent = 'Fengari 加载失败（需要网络）'; return; }
+    resetJsState();
+    if (!window.fengari) {
+      ui.status.textContent = 'Fengari 加载失败（需要网络）';
+      return;
+    }
+
     try {
       const [compat, demo] = await Promise.all([
-        fetch('./lua/gf_web.lua').then(r => { if(!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
-        fetch('./lua/jy3_demo.lua').then(r => { if(!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
+        fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
+        fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
       ]);
+
       fengari.load(compat, '@gf_web.lua')();
+
+      try {
+        await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
+        ui.status.textContent = '原始数据已载入';
+      } catch (dataError) {
+        console.warn('upstream data bootstrap failed', dataError);
+        ui.status.textContent = '原数据加载失败，进入兼容层降级模式';
+      }
+
       fengari.load(demo, '@jy3_demo.lua')();
       ui.status.textContent = 'Lua Runtime READY';
-      ui.start.disabled = false; ui.village.disabled = false;
-      if (ui.original) ui.original.disabled = false;
-      ui.start.onclick = () => { window.JYWeb.reset(); runEvent('回答问题'); };
-      ui.village.onclick = () => { window.JYWeb.reset(); window.JYWeb.enterVillage(); };
-      if (ui.original) ui.original.onclick = async () => {
-        const url = 'https://raw.githubusercontent.com/ssz66666/jy3-mirror/master/JY3/script/04_program/p_newgame.lua';
-        ui.original.disabled = true; ui.status.textContent = '拉取 GitHub 原 p_newgame.lua…';
-        try {
-          const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          const source = await r.text();
-          fengari.load(source, '@github/p_newgame.lua')();
-          ui.status.textContent = 'GitHub 原 p_newgame.lua 已载入（实验）';
-          window.JYWeb.reset(); runEvent('回答问题');
-        } catch (e) {
-          console.error(e); ui.status.textContent = '原脚本加载/执行失败，仍可运行内置 POC';
-          window.JYWeb.showTalk('兼容层', `原脚本目前遇到未实现 API 或网络限制：${e.message || e}`, () => {});
-        } finally { ui.original.disabled = false; }
+      ui.start.disabled = false;
+      ui.village.disabled = false;
+      ui.original.disabled = false;
+
+      ui.start.onclick = () => freshRun('回答问题');
+      ui.village.onclick = () => {
+        resetJsState();
+        resetLuaState();
+        window.JYWeb.enterVillage();
       };
+
+      ui.original.onclick = async () => {
+        ui.original.disabled = true;
+        ui.status.textContent = originalProgramLoaded ? '重置原版开局…' : '加载原 p_newgame.lua…';
+        try {
+          if (!originalProgramLoaded) {
+            await window.JYUpstream.loadProgram('04_program/p_newgame.lua');
+            originalProgramLoaded = true;
+          }
+          ui.status.textContent = '原 p_newgame.lua 已载入';
+          freshRun('回答问题');
+        } catch (e) {
+          console.error(e);
+          ui.status.textContent = '原脚本遇到尚未兼容的 API';
+          const missing = (() => {
+            try { return fengari.load('return __jy_missing_calls()', '@web/missing-calls')(); }
+            catch (_) { return ''; }
+          })();
+          window.JYWeb.showTalk('兼容层', `原脚本当前停止于：${e.message || e}${missing ? `\n缺失调用：${missing}` : ''}`, () => {});
+        } finally {
+          ui.original.disabled = false;
+        }
+      };
+
       $$('.village-actions button').forEach(b => b.onclick = () => runEvent(b.dataset.event));
     } catch (e) {
-      console.error(e); ui.status.textContent = '启动失败：请使用本地 HTTP 服务';
+      console.error(e);
+      ui.status.textContent = '启动失败：请使用本地 HTTP 服务';
     }
   }
+
   boot();
 })();
