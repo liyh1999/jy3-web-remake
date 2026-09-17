@@ -14,12 +14,12 @@ local missing_objects = {}
 package.preload["gf"] = function() return G end
 package.preload["gfbase"] = function() return G end
 
-local tracked_points = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,44,45,46,47,110,119,130,143,200,217,218,237,238}
+local tracked_points = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45,46,47,104,110,119,130,134,135,136,143,200,217,218,237,238}
 local mutation_calls = {
     set_point=true, add_point=true, set_newpoint=true,
     add_money=true, add_item=true, set_item=true,
     learnmagic=true, add_love=true, add_maxhpmp=true,
-    rest=true, set_note=true,
+    rest=true, set_note=true, join=true,
 }
 
 local function deep_copy(value, seen)
@@ -74,10 +74,24 @@ local function sync_item_to_web(code)
     web:setItem(code, tonumber(item["数量"]) or 0)
 end
 
+local function sync_team_to_web()
+    local team = G.QueryName(0x10110001)
+    local ids = {}
+    for i = 1, 12 do
+        local value = tonumber(team[tostring(i)])
+        if value then
+            if value >= 0x10040000 then value = value - 0x10040000 end
+            ids[#ids + 1] = value
+        end
+    end
+    web:setTeam(js_array(ids))
+end
+
 local function sync_web_snapshot()
     if not objects[0x10030001] then return end
     for _, id in ipairs(tracked_points) do sync_point_to_web(id) end
     web:setMoney(tonumber(body()["110"]) or 0)
+    if objects[0x10110001] then sync_team_to_web() end
 end
 
 function G.RegisterData(module)
@@ -132,6 +146,7 @@ function G.misc() return G.QueryName(0x100f0001) end
 
 -- Desktop runtime surfaces. They are intentionally thin/no-op until their Web systems land.
 function G.Play(...) return true end
+function G.Stop(...) return true end
 function G.wait_time(...) return true end
 function G.trig_event(...) return true end
 function G.wait1(...) return true end
@@ -140,6 +155,7 @@ function G.removeUI(...) return true end
 function G.getUI(...) return nil end
 function G.start_program(...) return true end
 function G.stop_program(...) return true end
+function G.remove_program(...) return true end
 
 local function call_lua_api(name, args)
     local fn = G.api[name]
@@ -169,6 +185,55 @@ local function fallback_add_point(id, delta)
     return body()[key]
 end
 
+local function open_web_shop(code)
+    code = tonumber(code) or 0
+    local shop = G.QueryName(0x10130000 + code)
+    local names, prices, item_ids = {}, {}, {}
+
+    for i = 1, 8 do
+        local item_id = tonumber(shop["物品" .. i])
+        local price = tonumber(shop["价格" .. i])
+        if item_id and price then
+            local item = G.QueryName(item_id)
+            names[#names + 1] = tostring(item["名称"] or ("物品 " .. item_id))
+            prices[#prices + 1] = price
+            item_ids[#item_ids + 1] = item_id
+        end
+    end
+
+    body()["232"] = code
+    body()["233"] = 0
+    if #names == 0 then return false end
+
+    web:showShop(js_array(names), js_array(prices), function(choice)
+        resume_after_ui(tonumber(choice) or 0)
+    end)
+    local choice = tonumber(coroutine.yield()) or 0
+    if choice < 1 or choice > #item_ids then return false end
+
+    local price = prices[choice]
+    local money = tonumber(body()["110"]) or 0
+    body()["233"] = price
+
+    -- The original village scripts use `price < money`, so keep that boundary
+    -- here. Successful Web purchases are settled immediately and reset 233 so
+    -- the original `buyresult` UI path is skipped.
+    if price < money then
+        body()["110"] = money - price
+        local item_id = item_ids[choice]
+        local item = G.QueryName(item_id)
+        item["数量"] = (tonumber(item["数量"]) or 0) + 1
+        body()["233"] = 0
+        local code_id = item_id - 0x100b0000 + 1
+        sync_item_to_web(code_id)
+        sync_web_snapshot()
+        return true
+    end
+
+    sync_web_snapshot()
+    return false
+end
+
 function G.call(name, ...)
     local args = {...}
 
@@ -192,6 +257,8 @@ function G.call(name, ...)
         local options = first_array_arg(args, 4)
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
         return coroutine.yield()
+    elseif name == "shop" then
+        return open_web_shop(args[1])
     elseif name == "call_battle" then
         local enemy = args[4] == 130 and "穆念慈" or "江湖对手"
         web:startBattle(enemy, function(result) resume_after_ui(tonumber(result)) end)
