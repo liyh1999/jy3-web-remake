@@ -20,6 +20,7 @@
     '01_data/o_love.lua',
     '01_data/o_teammate.lua',
     '01_data/o_shop.lua',
+    '01_data/o_headevent.lua',
     '01_data/o_citymap_system_map.lua',
     '01_data/o_citymap_system_city.lua'
   ];
@@ -178,28 +179,24 @@
   async function loadPrograms(paths, onProgress) {
     let loaded = 0;
     for (const path of paths) {
-      onProgress?.(`加载原程序 ${loaded + 1}/${paths.length}: ${path.split('/').pop()}`);
+      onProgress?.(`加载原程序 ${path}…`);
       await loadProgram(path);
       loaded += 1;
     }
     return loaded;
   }
 
-  async function bootstrapPrograms(onProgress) {
-    return loadPrograms(CORE_PROGRAMS, onProgress);
-  }
-
   async function bootstrapData(onProgress) {
-    let loaded = 0;
+    let loadedModules = 0;
     for (const path of CORE_DATA) {
-      onProgress?.(`加载原数据 ${loaded + 1}/${CORE_DATA.length}: ${path.split('/').pop()}`);
+      onProgress?.(`加载原数据 ${path}…`);
       const source = await fetchText(path);
       registerDataSource(source, path);
-      loaded += 1;
+      loadedModules += 1;
     }
-    fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
-    const loadedPrograms = await bootstrapPrograms(onProgress);
-    return { loadedModules: loaded, loadedPrograms };
+    fengari.load('return __jy_reset_runtime()', '@web/reset-after-data')();
+    const loadedPrograms = await loadPrograms(CORE_PROGRAMS, onProgress);
+    return { loadedModules, loadedPrograms };
   }
 
   window.JYUpstream = {
@@ -210,10 +207,10 @@
     CORE_DATA,
     CORE_PROGRAMS,
     normalizeLuaSource,
-    bootstrapData,
-    bootstrapPrograms,
+    fetchText,
+    registerDataSource,
     loadProgram,
     loadPrograms,
-    fetchText
+    bootstrapData,
   };
 })();
