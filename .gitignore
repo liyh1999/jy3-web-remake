@@ -1,0 +1,7 @@
+# Generated local/offline runtime cache
+/vendor/upstream/
+/vendor/fengari/
+/vendor/manifest.json
+
+# Local logs
+*.log
