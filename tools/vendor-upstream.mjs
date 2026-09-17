@@ -16,7 +16,9 @@ vm.runInThisContext(fs.readFileSync(path.join(root, 'src/upstream.js'), 'utf8'),
 const { UPSTREAM_REV, RAW_BASE, CORE_DATA, CORE_PROGRAMS } = globalThis.window.JYUpstream;
 const upstreamJY3Base = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
 const upstreamApiBase = 'https://api.github.com/repos/ssz66666/jy3-mirror';
-const files = [...new Set([...CORE_DATA, ...CORE_PROGRAMS])];
+const runtimeScripts = [...new Set([...CORE_DATA, ...CORE_PROGRAMS])];
+const scanSources = JSON.parse(fs.readFileSync(path.join(root, 'tools/resource-scan-sources.json'), 'utf8'));
+const files = [...new Set([...runtimeScripts, ...scanSources])];
 const assets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
 
 // Use the official pinned release asset, not a floating CDN URL.
@@ -110,7 +112,8 @@ for (let i = 0; i < files.length; i += 1) {
   const destination = path.join(vendorRoot, relativePath);
   const entry = await cache(`${RAW_BASE}/${remotePath}`, destination, relativePath);
   entries.push(entry);
-  console.log(`[script ${i + 1}/${files.length}] ${remotePath} (${entry.bytes} bytes)`);
+  const scanOnly = !runtimeScripts.includes(remotePath);
+  console.log(`[${scanOnly ? 'scan' : 'script'} ${i + 1}/${files.length}] ${remotePath} (${entry.bytes} bytes)`);
 }
 
 for (let i = 0; i < assets.length; i += 1) {
@@ -139,6 +142,8 @@ const manifest = {
   upstreamTreeSha: upstreamIndex.treeSha,
   upstreamFileCount: upstreamIndex.fileCount,
   fengariVersion: FENGARI_VERSION,
+  runtimeScripts,
+  scanSources,
   scripts: files,
   assets,
   entries,
