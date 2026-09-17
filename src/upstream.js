@@ -1,7 +1,8 @@
 (() => {
   const UPSTREAM_REV = 'c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8';
   const RAW_BASE = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3/script`;
-  const LOCAL_BASE = './vendor/upstream/JY3/script';
+  const LOCAL_BASE = window.JY_CONFIG?.upstreamScriptBase || './vendor/upstream/JY3/script';
+  const OFFLINE = window.JY_CONFIG?.offline === true;
 
   const CORE_DATA = [
     '01_data/o_body.lua',
@@ -148,7 +149,11 @@
     try {
       const local = await fetch(`${LOCAL_BASE}/${path}`);
       if (local.ok) return local.text();
-    } catch (_) {
+      if (OFFLINE) {
+        throw new Error(`${path}: missing from offline package (HTTP ${local.status})`);
+      }
+    } catch (error) {
+      if (OFFLINE) throw error;
       // Development fallback below.
     }
 
@@ -201,6 +206,7 @@
     UPSTREAM_REV,
     RAW_BASE,
     LOCAL_BASE,
+    OFFLINE,
     CORE_DATA,
     CORE_PROGRAMS,
     normalizeLuaSource,
