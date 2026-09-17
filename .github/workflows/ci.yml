@@ -24,6 +24,7 @@ jobs:
           node --check src/gcore-scene.js
           node --check src/input.js
           node --check src/inventory.js
+          node --check src/map-scene.js
           node --check src/resource-catalog.js
           node --check src/resources.js
           node --check src/renderer.js
@@ -39,6 +40,7 @@ jobs:
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/test-input.mjs
+          node --check tools/test-map-scene.mjs
           node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
           node --check tools/vendor-upstream.mjs
@@ -52,6 +54,9 @@ jobs:
 
       - name: Validate gcore input mapping
         run: node tools/test-input.mjs
+
+      - name: Validate original map hotspot projection
+        run: node tools/test-map-scene.mjs
 
       - name: Validate actual Canvas draw path
         run: node tools/smoke-renderer-canvas.mjs
@@ -106,6 +111,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/renderer.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/input.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/map-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/gcore-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
@@ -123,13 +129,17 @@ jobs:
         run: |
           npm run build:offline
           test -f dist/vendor/fengari/fengari-web.js
+          test -f dist/vendor/upstream/JY3/script/01_data/o_headevent.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
+          test -f dist/vendor/upstream/JY3/image/head/0082.png
+          test -f dist/vendor/upstream/JY3/image/dump/0001.png
           test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
           test -f dist/src/resource-catalog.js
           test -f dist/src/renderer.js
           test -f dist/src/input.js
+          test -f dist/src/map-scene.js
           test -f dist/src/gcore-scene.js
           test -f dist/lua/gcore_web.lua
           test -f dist/runtime-config.js
@@ -147,12 +157,15 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_headevent.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/head/0082.png >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/renderer.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/map-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
