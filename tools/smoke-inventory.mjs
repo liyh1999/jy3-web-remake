@@ -82,7 +82,7 @@ end
 G.api['指令_存储属性']=function() calls.derived=calls.derived+1; return true end
 G.api['can_use']=function() return can_use_result end
 G.api['learn_magic']=function(code)
-  assert(code==1,'wrong learn_magic code')
+  assert(code==2,'wrong learn_magic code')
   skill['等级']=1
   return true
 end
