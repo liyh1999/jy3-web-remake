@@ -86,16 +86,27 @@ fs.cpSync(path.join(vendor, 'upstream'), path.join(dist, 'vendor', 'upstream'), 
 fs.cpSync(path.join(vendor, 'fengari'), path.join(dist, 'vendor', 'fengari'), { recursive: true });
 
 let indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-indexHtml = indexHtml.replace(
+// Source/dev mode may use either an older local minified filename or a direct CDN URL.
+// Offline dist always points to the pinned official release cached above.
+indexHtml = indexHtml.replaceAll(
+  './vendor/fengari/fengari-web.min.js',
+  './vendor/fengari/fengari-web.js'
+);
+indexHtml = indexHtml.replaceAll(
   'https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js',
   './vendor/fengari/fengari-web.js'
+);
+// Remove the source-mode CDN fallback block completely from the offline package.
+indexHtml = indexHtml.replace(
+  /\s*<script>\s*if\s*\(!window\.fengari\)[\s\S]*?cdn\.jsdelivr\.net\/npm\/fengari-web@0\.1\.4[\s\S]*?<\/script>/i,
+  ''
 );
 indexHtml = indexHtml.replace(
   '<script src="./src/resources.js"></script>',
   '<script src="./runtime-config.js"></script>\n  <script src="./src/resources.js"></script>'
 );
 if (indexHtml.includes('cdn.jsdelivr.net/npm/fengari-web')) {
-  throw new Error('failed to rewrite Fengari CDN reference in index.html');
+  throw new Error('failed to remove Fengari CDN fallback from index.html');
 }
 writeFile(path.join(dist, 'index.html'), indexHtml);
 
