@@ -70,6 +70,21 @@ local function reg(file)
 end
 for _,name in ipairs({'o_body.lua','o_misc.lua','o_item.lua','o_shop.lua'}) do reg('${tempPath}/'..name) end
 assert(loadfile('${tempPath}/p_order.lua'))()
+
+-- buyresult/sellresult are the functions under test. Their generic inventory
+-- helpers normally refresh desktop v_item UI, which is outside this smoke.
+G.api['get_point']=function(id) return tonumber(G.QueryName(0x10030001)[tostring(id)]) or 0 end
+G.api['get_money']=function() return tonumber(G.QueryName(0x10030001)['110']) or 0 end
+G.api['add_money']=function(delta)
+  local body=G.QueryName(0x10030001)
+  body['110']=(tonumber(body['110']) or 0)+(tonumber(delta) or 0)
+  return body['110']
+end
+G.api['add_item']=function(code,delta)
+  local item=G.QueryName(0x100b0000+(tonumber(code) or 1)-1)
+  item['数量']=math.max(0,(tonumber(item['数量']) or 0)+(tonumber(delta) or 0))
+  return true
+end
 G.api['通用_取得我方装备特效']=function() return false end
 assert(loadfile('${shopAdapter}'))()
 
