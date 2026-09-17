@@ -26,6 +26,7 @@ jobs:
           node --check tools/check-normalized-upstream.mjs
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
+          node --check tools/smoke-niujia-events.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -49,6 +50,9 @@ jobs:
 
       - name: Drive questionnaire through Niujia Village intro
         run: node tools/smoke-original-opening-flow.mjs
+
+      - name: Execute original Niujia Village events
+        run: node tools/smoke-niujia-events.mjs
 
       - name: Smoke-test static server
         run: |
