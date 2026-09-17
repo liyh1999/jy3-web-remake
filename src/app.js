@@ -21,7 +21,7 @@
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
-      ui.scene.innerHTML = `<div class="mountains"></div><div class="ink ink-a"></div><div class="ink ink-b"></div><div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>当前画面仍是占位渲染层；Lua 事件通过同一套 <code>G.call</code> 兼容接口驱动。</p></div>`;
+      ui.scene.innerHTML = `<div class="mountains"></div><div class="ink ink-a"></div><div class="ink ink-b"></div><div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>当前按钮直接触发原版 <code>p_niujiacun.lua</code> 事件；画面资源仍是 Web 占位层。</p></div>`;
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
     } else {
@@ -67,6 +67,7 @@
     getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
     learnMagic(id) { if (!state.skills.includes(Number(id))) state.skills.push(Number(id)); },
+    setTeam(ids) { state.team = [...ids].map(Number).filter(Boolean); },
     join(id) { if (!state.team.includes(Number(id))) state.team.push(Number(id)); },
     teamFull() { return state.team.length >= 5; },
     story(text, resume) { this.showTalk('旁白', text, resume); },
@@ -94,6 +95,13 @@
           cb(idx + 1);
         };
         ui.options.appendChild(b);
+      });
+    },
+    showShop(names, prices, resume) {
+      const products = [...names].map((name, idx) => `${name}　${Number(prices[idx]) || 0} 两`);
+      products.push('离开商店');
+      this.showMenu('选择要购买的物品（当前 Web 商店一次购买 1 件）', products, (choice) => {
+        resume(choice > products.length - 1 ? 0 : choice);
       });
     },
     startBattle(enemy, resume) {
@@ -200,20 +208,25 @@
 
       fengari.load(compat, '@gf_web.lua')();
       fengari.load(shims, '@runtime_shims.lua')();
+      // Demo is deliberately loaded first. Original programs loaded below overwrite
+      // events with the same names; if upstream loading fails, the demo remains usable.
+      fengari.load(demo, '@jy3_demo.lua')();
 
       try {
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
-        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 通用程序 ${loaded.loadedPrograms} 个已载入`;
+        originalProgramLoaded = loaded.loadedPrograms === window.JYUpstream.CORE_PROGRAMS.length;
+        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 原程序 ${loaded.loadedPrograms} 个已载入`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
+        originalProgramLoaded = false;
         ui.status.textContent = '原数据加载失败，进入兼容层降级模式';
       }
 
-      fengari.load(demo, '@jy3_demo.lua')();
-      ui.status.textContent = 'Lua Runtime READY';
       ui.start.disabled = false;
       ui.village.disabled = false;
       ui.original.disabled = false;
+      ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
+      ui.village.textContent = originalProgramLoaded ? '进入原版牛家村事件测试' : '直接进入牛家村测试';
 
       ui.start.onclick = () => freshRun('回答问题');
       ui.village.onclick = () => {
@@ -228,7 +241,6 @@
         try {
           if (!originalProgramLoaded) {
             await window.JYUpstream.loadProgram('04_program/p_newgame.lua');
-            originalProgramLoaded = true;
           }
           ui.status.textContent = '原 p_newgame.lua 已载入';
           freshRun('回答问题');
