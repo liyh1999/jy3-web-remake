@@ -19,6 +19,7 @@ const cases = [
   [0x56160001, 'image/UI/0001.png'],
   [0x59010001, 'audio/01/0001.mp3'],
   [0x59020001, 'audio/02/0001.mp3'],
+  [0x49011003, 'audio/01/1003.mp3'],
 ];
 
 for (const [id, expected] of cases) {
@@ -41,4 +42,15 @@ if (R.imageWidth(0x56050001) !== 853 || R.imageHeight(0x56050001) !== 480) {
   throw new Error('synchronous image-size metadata lookup failed');
 }
 
-console.log(`resource resolver PASS: ${cases.length} ids + synchronous image metadata`);
+if (!R.play(0x49011003, 1, false, 100)) {
+  throw new Error('original G.Play resource id did not route to audio');
+}
+const active = R.activeAudio(1);
+if (!active || active.url !== './vendor/upstream/JY3/audio/01/1003.mp3' || active.volume !== 1) {
+  throw new Error('audio channel state/path/volume mismatch');
+}
+if (!R.stop(1) || R.activeAudio(1) !== null) {
+  throw new Error('audio channel stop failed');
+}
+
+console.log(`resource resolver PASS: ${cases.length} ids + image metadata + audio channel routing`);
