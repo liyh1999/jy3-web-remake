@@ -1,3 +1,4 @@
+.save-actions { grid-template-columns: repeat(4, 1fr); }
 .person-panel { position: absolute; inset: 0; z-index: 46; }
 .person-backdrop { position: absolute; inset: 0; width: 100%; border: 0; margin: 0; padding: 0; background: #0d0a07b8; cursor: default; }
 .person-window { position: absolute; left: 8%; right: 8%; top: 78px; bottom: 54px; display: grid; grid-template-rows: auto minmax(0,1fr); background: #e6d6af; border: 2px solid #57432c; box-shadow: 8px 10px 0 #1f160d99; color: #2d2116; }
@@ -31,6 +32,7 @@
 .person-slot span { font-size: 10px; color: #725f45; }
 .person-slot b { margin-top: 2px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 760px) {
+  .save-actions { grid-template-columns: repeat(2, 1fr); }
   .person-window { left: 3%; right: 3%; top: 70px; bottom: 48px; }
   .person-content { grid-template-columns: 130px minmax(0,1fr); }
   .person-portrait { width: 112px; height: 112px; }
