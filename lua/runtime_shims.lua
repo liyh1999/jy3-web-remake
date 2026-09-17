@@ -4,6 +4,7 @@ local js = require "js"
 local G = require "gf"
 local resources = js.global.JYResources
 local renderer = js.global.JYRenderer
+local map_host = js.global.JYMapHost
 
 package.preload["co"] = package.preload["co"] or function()
     return {
@@ -252,6 +253,82 @@ function __jy_input_event(kind, handle, x, y, info, slot)
     end
 
     return dispatch_listeners(kind, target, tonumber(x) or 0, tonumber(y) or 0, info, slot, hotkey)
+end
+
+local function map_host_ready()
+    return map_host and map_host ~= js.null and map_host ~= js.undefined
+end
+
+local function event_name(event_id)
+    event_id = tonumber(event_id)
+    if not event_id or event_id == 0 then return "" end
+    local event = G.QueryName(event_id)
+    if type(event) ~= "table" or event.__placeholder then return "" end
+    return tostring(event["名称"] or "")
+end
+
+function __jy_current_map()
+    local body = G.QueryName(0x10030001)
+    return tonumber(body[tostring(140)]) or 0
+end
+
+function __jy_render_map(map_id)
+    map_id = tonumber(map_id) or __jy_current_map()
+    if map_id == 0 or not map_host_ready() then return false end
+    local map = G.QueryName(map_id)
+    if type(map) ~= "table" or map.__placeholder then return false end
+
+    map_host:beginMap(
+        map_id,
+        tostring(map["名称"] or ""),
+        tonumber(map["地图背景"]) or 0,
+        tonumber(map["显示主菜单"]) or 0,
+        tonumber(map["显示休息"]) or 0,
+        tonumber(map["显示树林"]) or 0
+    )
+
+    local count = 0
+    for index, row in ipairs(map["城市列表"] or {}) do
+        local hidden = row["隐藏"] == true or tonumber(row["隐藏"]) == 1
+        if type(row) == "table" and not hidden then
+            local city_id = tonumber(row["城市"]) or 0
+            local city = G.QueryName(city_id)
+            local pos = row["位置"] or {}
+            local locked = city["锁定"] == true or tonumber(city["锁定"]) == 1
+            map_host:addHotspot(
+                index,
+                city_id,
+                tostring(city["名称"] or ""),
+                tonumber(city["图标"]) or 0,
+                tonumber(pos["x"]) or 0,
+                tonumber(pos["y"]) or 0,
+                event_name(city["关联事件"]),
+                tonumber(city["关联地图"]) or 0,
+                locked and 1 or 0,
+                tonumber(city["显示名称"]) or 0
+            )
+            count = count + 1
+        end
+    end
+    map_host:endMap(count)
+    return true
+end
+
+function __jy_enter_map(map_id)
+    map_id = tonumber(map_id) or 0
+    if map_id == 0 then return false end
+    G.QueryName(0x10030001)[tostring(140)] = map_id
+    G.misc()["当前地图"] = map_id
+    return __jy_render_map(map_id)
+end
+
+local original_call = G.call
+G.call = function(name, ...)
+    local result = original_call(name, ...)
+    if name == "turn_map" or name == "mapon" or name == "goto_map" then
+        __jy_render_map()
+    end
+    return result
 end
 
 -- `require 'gcore.c'` in original scripts resolves to the same surface as GF.
