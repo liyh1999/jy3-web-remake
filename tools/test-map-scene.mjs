@@ -68,9 +68,10 @@ globalThis.document = {
 vm.runInThisContext(fs.readFileSync('src/map-scene.js', 'utf8'), { filename: 'src/map-scene.js' });
 const host = window.JYMapHost;
 
-host.beginMap(0x10060003, '牛家村', 0x56050001, 1, 0, 0);
-const eventHandle = host.addHotspot(8, 0x10070061, '牛家村穆念慈', 0x56080082, 200, 280, '牛家村-穆念慈', 0, 0, 0);
-const mapHandle = host.addHotspot(1, 0x10070025, '大地图', 0x56070001, 32, 47, '', 0x10060001, 0, 0);
+host.beginMap(0x10060003, '牛家村', 0x56050001, 1, 0, 0, 0);
+const eventHandle = host.addHotspot(8, 0x10070061, '牛家村穆念慈', 0x56080082, 200, 280, '牛家村-穆念慈', 0, 0, 0, 0);
+const mapHandle = host.addHotspot(1, 0x10070025, '大地图', 0x56070001, 32, 47, '', 0x10060001, 0, 0, 0);
+const lockedHandle = host.addHotspot(25, 0x10070019, '神龙教', 0x56061010, 590, 32, '', 0x1006000a, 1, 1, 0);
 host.endMap();
 
 const event = host.hotspots().find(row => row.handle === eventHandle);
@@ -81,15 +82,17 @@ if (logical.x !== -226.5 || logical.y !== -40) throw new Error(`unexpected logic
 if (window.JYRenderer.background !== 0x56050001) throw new Error('map background was not routed through renderer');
 
 listeners.click({ handle: eventHandle });
-if (!luaCalls.at(-1)?.includes('牛家村-穆念慈')) throw new Error('event hotspot did not dispatch original event name');
+if (!luaCalls.at(-1)?.includes('__jy_activate_city(268894305)')) throw new Error('event hotspot did not dispatch original city id');
 listeners.click({ handle: mapHandle });
-if (!luaCalls.at(-1)?.includes('__jy_enter_map(268828673)')) throw new Error('linked-map hotspot did not dispatch original map id');
+if (!luaCalls.at(-1)?.includes('__jy_activate_city(268894245)')) throw new Error('linked-map hotspot did not dispatch original city id');
 
-listeners.rollOver({ handle: eventHandle });
-if (!status.textContent.includes('牛家村穆念慈')) throw new Error('hover did not expose hotspot name');
+listeners.rollOver({ handle: lockedHandle });
+if (!status.textContent.includes('神龙教') || !status.textContent.includes('未解锁')) throw new Error('locked hotspot hover status missing');
+listeners.click({ handle: lockedHandle });
+if (!luaCalls.at(-1)?.includes('__jy_activate_city(268894233)')) throw new Error('locked hotspot was not delegated to Lua rule handling');
 
 const html = fs.readFileSync('index.html', 'utf8');
 if (/data-event\s*=/.test(html)) throw new Error('temporary HTML event buttons returned; village must use map hotspots');
 if (!html.includes('id="villageActions"')) throw new Error('compatibility villageActions mount point missing');
 
-console.log('map scene PASS: original coordinates, event hotspot, linked map, no fixed NPC buttons');
+console.log('map scene PASS: original coordinates, city-id activation, locked hover, no fixed NPC buttons');
