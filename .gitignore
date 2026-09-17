@@ -2,10 +2,14 @@
 /vendor/upstream/
 /vendor/fengari/
 /vendor/manifest.json
+/vendor/upstream-file-index.json
 
 # Node/offline build outputs
 /node_modules/
 /dist/
+
+# Generated diagnostics
+/reports/
 
 # Local logs
 *.log
