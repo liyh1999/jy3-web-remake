@@ -26,6 +26,7 @@ jobs:
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
           node --check tools/check-normalized-upstream.mjs
+          node --check tools/smoke-inventory.mjs
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-niujia-events.mjs
@@ -47,6 +48,9 @@ jobs:
           luac5.3 -p lua/save_state.lua
           luac5.3 -p lua/inventory_web.lua
           luac5.3 -p lua/jy3_demo.lua
+
+      - name: Inventory adapter behavior
+        run: node tools/smoke-inventory.mjs
 
       - name: Save-state roundtrip
         run: node tools/smoke-save-state.mjs
