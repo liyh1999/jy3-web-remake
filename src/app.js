@@ -192,12 +192,14 @@
     }
 
     try {
-      const [compat, demo] = await Promise.all([
+      const [compat, shims, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
+        fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
         fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
       ]);
 
       fengari.load(compat, '@gf_web.lua')();
+      fengari.load(shims, '@runtime_shims.lua')();
 
       try {
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
