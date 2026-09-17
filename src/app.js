@@ -1,8 +1,10 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
+  const SAVE_KEY = 'jy3-web-remake:save:v1';
   const ui = {
     status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'),
+    save: $('#saveBtn'), load: $('#loadBtn'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
     options: $('#options'), cont: $('#continueBtn'), actions: $('#villageActions'),
@@ -17,6 +19,7 @@
   let battleCallback = null;
   let battleState = null;
   let originalProgramLoaded = false;
+  let pendingSavePayload = '';
 
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
@@ -64,8 +67,61 @@
     fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
   }
 
+  function refreshLoadButton() {
+    if (!ui.load) return;
+    ui.load.disabled = !localStorage.getItem(SAVE_KEY);
+  }
+
+  function saveGame() {
+    try {
+      const luaState = fengari.load('return __jy_export_state()', '@web/export-save')();
+      const tracked = fengari.load('return __jy_tracked_save_objects()', '@web/save-count')();
+      const payload = {
+        version: 1,
+        upstream: window.JYUpstream?.UPSTREAM_REV || '',
+        savedAt: new Date().toISOString(),
+        luaState
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      refreshLoadButton();
+      ui.status.textContent = `已存档 · ${tracked} 个原 Lua 对象`;
+    } catch (e) {
+      console.error(e);
+      ui.status.textContent = `存档失败：${e.message || e}`;
+    }
+  }
+
+  function loadGame() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        ui.status.textContent = '没有可读取的本地存档';
+        return;
+      }
+      const payload = JSON.parse(raw);
+      if (!payload?.luaState) throw new Error('存档内容不完整');
+
+      closeDialogue();
+      ui.battle.classList.add('hidden');
+      resetJsState();
+      resetLuaState();
+      pendingSavePayload = payload.luaState;
+      const ok = fengari.load('local js=require"js"; return __jy_import_state(js.global.JYWeb:getSavePayload())', '@web/import-save')();
+      pendingSavePayload = '';
+      if (!ok) throw new Error('Lua 状态导入失败');
+
+      window.JYWeb.enterVillage();
+      ui.status.textContent = `已读档 · ${payload.savedAt ? new Date(payload.savedAt).toLocaleString() : '本地存档'}`;
+    } catch (e) {
+      pendingSavePayload = '';
+      console.error(e);
+      ui.status.textContent = `读档失败：${e.message || e}`;
+    }
+  }
+
   window.JYWeb = {
     reset: resetJsState,
+    getSavePayload() { return pendingSavePayload; },
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
@@ -209,16 +265,16 @@
     }
 
     try {
-      const [compat, shims, demo] = await Promise.all([
+      const [compat, shims, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
+        fetch('./lua/save_state.lua').then(r => { if (!r.ok) throw new Error('save_state.lua'); return r.text(); }),
         fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
       ]);
 
       fengari.load(compat, '@gf_web.lua')();
       fengari.load(shims, '@runtime_shims.lua')();
-      // Demo is deliberately loaded first. Original programs loaded below overwrite
-      // events with the same names; if upstream loading fails, the demo remains usable.
+      fengari.load(saveState, '@save_state.lua')();
       fengari.load(demo, '@jy3_demo.lua')();
 
       try {
@@ -234,6 +290,8 @@
       ui.start.disabled = false;
       ui.village.disabled = false;
       ui.original.disabled = false;
+      if (ui.save) ui.save.disabled = false;
+      refreshLoadButton();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
       ui.village.textContent = originalProgramLoaded ? '进入原版牛家村事件测试' : '直接进入牛家村测试';
 
@@ -243,6 +301,8 @@
         resetLuaState();
         window.JYWeb.enterVillage();
       };
+      if (ui.save) ui.save.onclick = saveGame;
+      if (ui.load) ui.load.onclick = loadGame;
 
       ui.original.onclick = async () => {
         ui.original.disabled = true;
