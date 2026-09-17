@@ -40,6 +40,13 @@ local function js_array(t)
     return a
 end
 
+local function first_array_arg(args, start_index)
+    for i = start_index or 1, #args do
+        if type(args[i]) == "table" then return args[i] end
+    end
+    return {}
+end
+
 local function resume_after_ui(value)
     if not active or coroutine.status(active) == "dead" then return end
     local ok, err = coroutine.resume(active, value)
@@ -182,7 +189,9 @@ function G.call(name, ...)
         return coroutine.yield()
     elseif name == "menu" then
         local question = tostring(args[3] or "")
-        local options = args[6] or {}
+        -- Original scripts have several menu signatures. The options table is commonly
+        -- arg 7 in p_newgame, but appears at other positions elsewhere, so discover it.
+        local options = first_array_arg(args, 4)
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
         return coroutine.yield()
     elseif name == "call_battle" then
