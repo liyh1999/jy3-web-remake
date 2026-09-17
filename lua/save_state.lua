@@ -6,6 +6,7 @@ local G = require "gf"
 
 local raw_query = G.QueryName
 local raw_dbtable = G.DBTable
+local raw_reset_runtime = __jy_reset_runtime
 local tracked = {}
 
 local function track(id, value)
@@ -26,6 +27,11 @@ G.DBTable = function(type_name)
     return rows
 end
 
+function __jy_reset_runtime()
+    tracked = {}
+    return raw_reset_runtime()
+end
+
 local function sortable_key(k)
     return type(k) .. ":" .. tostring(k)
 end
@@ -38,11 +44,7 @@ local function serialize(value, seen)
     if t ~= "table" then return "nil" end
 
     seen = seen or {}
-    if seen[value] then
-        -- Original JY3 data objects are tree-shaped. Skip an unexpected cycle
-        -- rather than making a save impossible.
-        return "nil"
-    end
+    if seen[value] then return "nil" end
     seen[value] = true
 
     local keys = {}
@@ -90,7 +92,6 @@ local function sync_web()
 end
 
 function __jy_export_state()
-    -- Core player/team objects must always be present even before explicit access.
     track(0x10030001, raw_query(0x10030001))
     track(0x101b0001, raw_query(0x101b0001))
     track(0x10110001, raw_query(0x10110001))
