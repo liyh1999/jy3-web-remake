@@ -16,6 +16,7 @@ const DATA = [
   '01_data/o_role.lua',
   '01_data/o_achieve.lua',
   '01_data/o_item.lua',
+  '01_data/o_shop.lua',
   '01_data/o_teammate.lua',
   '01_data/o_citymap_system_map.lua',
 ];
@@ -44,6 +45,9 @@ const harness = `
 local G={api={}}
 local objects,tables={},{}
 local battle_result=1
+local shop_codes={}
+local buy_settlements=0
+local sell_settlements=0
 package.preload['gf']=function() return G end
 package.preload['gfbase']=function() return G end
 package.preload['co']=function()
@@ -82,12 +86,38 @@ function G.remove_program() return true end
 local function body() return G.QueryName(0x10030001) end
 local function newbody() return G.QueryName(0x101b0001) end
 
+local function simulate_shop(code)
+  code=tonumber(code) or 0
+  local shop=G.QueryName(0x10130000+code)
+  for i=1,8 do shop['数量'..i]=0 end
+  local item_id=tonumber(shop['物品1'])
+  local price=tonumber(shop['价格1']) or 0
+  local quantity=0
+  if item_id then
+    local item=G.QueryName(item_id)
+    local sell=(code==3 or code==7 or code==8)
+    if sell then
+      quantity=math.min(1,tonumber(item['数量']) or 0)
+    else
+      quantity=2
+    end
+    shop['数量1']=quantity
+  end
+  body()['232']=code
+  body()['233']=price*quantity
+  body()['234']=1
+  shop_codes[#shop_codes+1]=code
+  return true
+end
+
 function G.call(name,...)
   local args={...}
   if name=='talk' or name=='talk0' or name=='story' then
     return coroutine.yield({kind='talk',text=tostring(args[3] or args[2] or args[1] or '')})
   elseif name=='menu' then
     return coroutine.yield({kind='menu',question=tostring(args[3] or '')})
+  elseif name=='shop' then
+    return simulate_shop(args[1])
   elseif name=='call_battle' then
     battle_result=1; return true
   elseif name=='get_battle' then
@@ -111,26 +141,41 @@ function G.call(name,...)
     return tonumber(item['数量']) or 0
   elseif name=='add_item' then
     local item=G.QueryName(0x100b0000+(tonumber(args[1]) or 1)-1)
-    item['数量']=(tonumber(item['数量']) or 0)+(tonumber(args[2]) or 1); return true
+    item['数量']=math.max(0,(tonumber(item['数量']) or 0)+(tonumber(args[2]) or 1)); return true
+  elseif name=='通用_取得我方装备特效' then
+    return false
+  elseif name=='get_CH' then
+    return false
+  elseif name=='set_CH' then
+    return true
   elseif name=='all_over' or name=='dark' or name=='turn_map' or name=='notice1' or
          name=='add_time' or name=='set_story' or name=='地图系统_防修改监控' or
          name=='通用_存档' or name=='指令_存储属性' then
     return true
   end
   local fn=G.api[name]
-  if type(fn)=='function' then return fn(table.unpack(args)) end
+  if type(fn)=='function' then
+    if name=='buyresult' then buy_settlements=buy_settlements+1 end
+    if name=='sellresult' then sell_settlements=sell_settlements+1 end
+    return fn(table.unpack(args))
+  end
   return 0
 end
 
 for _,file in ipairs({...}) do reg(file) end
-body()['110']=2000
+body()['110']=100000
+body()['36']=0
 assert(loadfile('${tmp.replaceAll('\\','\\\\')}/p_order.lua'))()
 assert(loadfile('${tmp.replaceAll('\\','\\\\')}/p_niujiacun.lua'))()
+
+-- Seed one wild-game item so butcher shop 3 can exercise the sell branch.
+local sell_shop=G.QueryName(0x10130003)
+if sell_shop['物品1'] then G.QueryName(sell_shop['物品1'])['数量']=3 end
 
 local function drive(name,menu_answers)
   local c=coroutine.create(G.api[name]); local resume_value=nil; local menu_index=0; local guard=0
   while coroutine.status(c)~='dead' do
-    guard=guard+1; assert(guard<80,name..' exceeded UI guard')
+    guard=guard+1; assert(guard<120,name..' exceeded UI guard')
     local ok,event=coroutine.resume(c,resume_value); assert(ok,tostring(event))
     if coroutine.status(c)=='dead' then break end
     assert(type(event)=='table' and event.kind,name..' unexpected yield')
@@ -143,8 +188,17 @@ local function drive(name,menu_answers)
 end
 
 drive('牛家村-秀才',{2})
-drive('牛家村-茶博士',{2})
+drive('牛家村-茶博士',{1,2})
+drive('牛家村-肉贩',{1,4})
+drive('牛家村-肉贩',{2,4})
 drive('牛家村-穆念慈',{1})
+
+assert(#shop_codes==3,'expected tea + butcher buy/sell shop calls')
+assert(shop_codes[1]==4,'tea doctor did not open shop 4')
+assert(shop_codes[2]==2,'butcher buy did not open shop 2')
+assert(shop_codes[3]==3,'butcher sell did not open shop 3')
+assert(buy_settlements==2,'tea/butcher buyresult branch count mismatch')
+assert(sell_settlements==1,'butcher sellresult branch count mismatch')
 
 local team=G.QueryName(0x10110001)
 local expected=0x10040000+130
@@ -154,7 +208,7 @@ assert(joined,'穆念慈 win path did not add role 130 to original teammate tabl
 local map=G.QueryName(0x10060003)
 assert(type(map['城市列表'])=='table','牛家村 city list missing')
 assert(map['城市列表'][8]['隐藏']==1,'穆念慈 map node was not hidden after joining')
-print('original Niujia events PASS: scholar, tea doctor, Mu Nianci win/join')
+print('original Niujia events PASS: scholar, tea shop4, butcher shop2/shop3, Mu Nianci win/join')
 `;
 
 const dataFiles=DATA.map(p=>path.join(tmp,p.split('/').pop()));
