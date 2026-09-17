@@ -21,12 +21,17 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/resources.js
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
           node --check tools/check-normalized-upstream.mjs
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-niujia-events.mjs
+          node --check tools/test-resource-resolver.mjs
+
+      - name: Validate resource id resolver
+        run: node tools/test-resource-resolver.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -62,4 +67,5 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
