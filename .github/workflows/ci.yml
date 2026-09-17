@@ -25,6 +25,7 @@ jobs:
           node --check tools/audit-newgame.mjs
           node --check tools/check-normalized-upstream.mjs
           node --check tools/smoke-original-opening.mjs
+          node --check tools/smoke-original-opening-flow.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -34,6 +35,7 @@ jobs:
       - name: Check Lua syntax
         run: |
           luac5.3 -p lua/gf_web.lua
+          luac5.3 -p lua/runtime_shims.lua
           luac5.3 -p lua/jy3_demo.lua
 
       - name: Compile normalized upstream Lua
@@ -44,6 +46,9 @@ jobs:
 
       - name: Run original opening to first UI yield
         run: node tools/smoke-original-opening.mjs
+
+      - name: Drive questionnaire through Niujia Village intro
+        run: node tools/smoke-original-opening-flow.mjs
 
       - name: Smoke-test static server
         run: |
