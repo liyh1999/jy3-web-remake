@@ -85,12 +85,9 @@
         <button id="attackBtn" class="danger">普通攻击</button>
       </section>
 
-      <section id="villageActions" class="village-actions hidden">
-        <button data-event="牛家村-秀才">秀才</button>
-        <button data-event="牛家村-穆念慈">穆念慈</button>
-        <button data-event="牛家村-茶博士">茶博士</button>
-        <button data-event="查看属性">人物属性</button>
-      </section>
+      <!-- Compatibility mount point only. Village/NPC interaction is driven by
+           original o_citymap_system_* data projected onto the gcore canvas. -->
+      <section id="villageActions" class="village-actions hidden" aria-hidden="true"></section>
 
       <footer class="footer">
         <span>逻辑：Lua 5.3 / Fengari</span>
