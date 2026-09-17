@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check src/app.js
           node --check src/gcore-scene.js
+          node --check src/input.js
           node --check src/inventory.js
           node --check src/resource-catalog.js
           node --check src/resources.js
@@ -37,6 +38,7 @@ jobs:
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
+          node --check tools/test-input.mjs
           node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
           node --check tools/vendor-upstream.mjs
@@ -47,6 +49,9 @@ jobs:
 
       - name: Validate gcore scene graph
         run: node tools/test-renderer.mjs
+
+      - name: Validate gcore input mapping
+        run: node tools/test-input.mjs
 
       - name: Validate actual Canvas draw path
         run: node tools/smoke-renderer-canvas.mjs
@@ -100,6 +105,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/renderer.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/gcore-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
@@ -123,6 +129,7 @@ jobs:
           test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
           test -f dist/src/resource-catalog.js
           test -f dist/src/renderer.js
+          test -f dist/src/input.js
           test -f dist/src/gcore-scene.js
           test -f dist/lua/gcore_web.lua
           test -f dist/runtime-config.js
@@ -145,6 +152,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/renderer.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
