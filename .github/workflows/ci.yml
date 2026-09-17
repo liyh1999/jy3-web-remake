@@ -23,6 +23,7 @@ jobs:
           node --check src/app.js
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
+          node --check tools/check-normalized-upstream.mjs
 
       - name: Install Lua 5.3 compiler
         run: |
@@ -33,6 +34,9 @@ jobs:
         run: |
           luac5.3 -p lua/gf_web.lua
           luac5.3 -p lua/jy3_demo.lua
+
+      - name: Compile normalized upstream Lua
+        run: node tools/check-normalized-upstream.mjs
 
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
