@@ -1,5 +1,5 @@
 -- Host-runtime shims for modules expected by the original desktop Lua environment.
--- Keep these separate from gameplay G.call compatibility.
+-- Gameplay logic stays in original Lua; browser rendering/audio are delegated to JS.
 local js = require "js"
 local G = require "gf"
 local resources = js.global.JYResources
@@ -19,8 +19,87 @@ package.preload["co"] = package.preload["co"] or function()
     }
 end
 
-package.preload["gcore.c"] = package.preload["gcore.c"] or function()
-    return G
+local node_cache = setmetatable({}, { __mode = "v" })
+
+local function handle_of(value)
+    if type(value) == "table" then return tonumber(rawget(value, "__handle")) or 0 end
+    return tonumber(value) or 0
+end
+
+local function wrap_node(handle)
+    handle = tonumber(handle) or 0
+    if handle == 0 then return nil end
+    if node_cache[handle] then return node_cache[handle] end
+
+    local proxy = { __handle = handle }
+    local mt = {}
+
+    mt.__index = function(self, key)
+        local local_value = rawget(self, key)
+        if local_value ~= nil then return local_value end
+
+        if key == "addChild" then
+            return function(a, b)
+                local child = b or a
+                return wrap_node(renderer:nodeCall(handle, "addChild", handle_of(child)))
+            end
+        elseif key == "addChildAt" then
+            return function(a, b, d)
+                local child, index
+                if d ~= nil then child, index = b, d else child, index = a, b end
+                return wrap_node(renderer:nodeCall(handle, "addChildAt", handle_of(child), tonumber(index) or 0))
+            end
+        elseif key == "removeChild" then
+            return function(a, b)
+                local child = b or a
+                return wrap_node(renderer:nodeCall(handle, "removeChild", handle_of(child)))
+            end
+        elseif key == "removeAllChildren" then
+            return function() return renderer:nodeCall(handle, "removeAllChildren") end
+        elseif key == "removeFromParent" then
+            return function() return wrap_node(renderer:nodeCall(handle, "removeFromParent")) end
+        elseif key == "getChildAt" then
+            return function(a, b)
+                local index = b ~= nil and b or a
+                return wrap_node(renderer:nodeCall(handle, "getChildAt", tonumber(index) or 0))
+            end
+        elseif key == "getChildByName" then
+            return function(a, b)
+                local name = b ~= nil and b or a
+                return wrap_node(renderer:nodeCall(handle, "getChildByName", tostring(name or "")))
+            end
+        elseif key == "real_width" then
+            return function() return tonumber(renderer:nodeCall(handle, "real_width")) or 0 end
+        elseif key == "real_height" then
+            return function() return tonumber(renderer:nodeCall(handle, "real_height")) or 0 end
+        elseif key == "sendMsg" then
+            return function(message, ...)
+                for component_name, component in pairs(self) do
+                    if type(component_name) == "string" and string.sub(component_name, 1, 2) == "c_" and type(component) == "table" then
+                        local fn = component[message]
+                        if type(fn) == "function" then fn(component, ...) end
+                    end
+                end
+                return true
+            end
+        end
+
+        local value = renderer:getNodeProperty(handle, key)
+        if key == "parent" then return wrap_node(tonumber(value) or 0) end
+        return value
+    end
+
+    mt.__newindex = function(self, key, value)
+        if type(key) == "string" and (string.sub(key, 1, 2) == "c_" or string.sub(key, 1, 2) == "__") then
+            rawset(self, key, value)
+            return
+        end
+        renderer:setNodeProperty(handle, key, value)
+    end
+
+    setmetatable(proxy, mt)
+    node_cache[handle] = proxy
+    return proxy
 end
 
 function G.GetPath(resource_id)
@@ -37,6 +116,7 @@ end
 function G.imageSize(id)
     local width = tonumber(resources:imageWidth(id)) or 0
     local height = tonumber(resources:imageHeight(id)) or 0
+    if width <= 0 or height <= 0 then return nil, nil end
     return width, height
 end
 
@@ -54,13 +134,32 @@ end
 
 function G.SetResourceSize(...) return true end
 function G.SetSizeMode(...) return true end
-function G.Stage() return renderer:stage() end
-function G.Quad() return renderer:quad() end
-function G.TextQuad() return renderer:textQuad() end
-function G.SpineQuad() return renderer:spineQuad() end
-function G.ParticleSystem() return renderer:particleSystem() end
+function G.Stage() return wrap_node(renderer:stageHandle()) end
+function G.Entity() return wrap_node(renderer:createNodeHandle("container")) end
+function G.Quad() return wrap_node(renderer:createNodeHandle("quad")) end
+function G.TextQuad() return wrap_node(renderer:createNodeHandle("text")) end
+function G.SpineQuad() return wrap_node(renderer:createNodeHandle("spine")) end
+function G.ParticleSystem() return wrap_node(renderer:createNodeHandle("particle")) end
+function G.Shape() return wrap_node(renderer:createNodeHandle("quad")) end
 function G.FindNode(path, separator)
-    return renderer:findNode(path, separator or "|")
+    return wrap_node(renderer:findNodeHandle(path, separator or "|"))
 end
+function G.setImageGrid(id, left, top, right, bottom)
+    return renderer:setImageGrid(id, left, top, right, bottom)
+end
+function G.SetFontName(index, name, _ttf)
+    return renderer:setFontName(index, name)
+end
+function G.addFntStyle(color, outline_color, shadow_color, unused, outline_thick)
+    return renderer:addFontStyle(color, outline_color, shadow_color, unused, outline_thick)
+end
+function G.ToHexUINT(value)
+    if type(value) == "number" then return value end
+    local hex = string.match(tostring(value or ""), "^([0-9a-fA-F]+)")
+    return hex and (tonumber(hex, 16) or 0) or 0
+end
+
+-- `require 'gcore.c'` in original scripts resolves to the same surface as GF.
+package.preload["gcore.c"] = package.preload["gcore.c"] or function() return G end
 
 return true
