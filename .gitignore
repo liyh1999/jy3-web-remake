@@ -3,5 +3,9 @@
 /vendor/fengari/
 /vendor/manifest.json
 
+# Node/offline build outputs
+/node_modules/
+/dist/
+
 # Local logs
 *.log
