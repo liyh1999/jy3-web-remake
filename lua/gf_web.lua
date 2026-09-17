@@ -1,5 +1,5 @@
 -- JY3 Web compatibility layer
--- Keep original gameplay/data Lua intact; replace only the missing desktop runtime.
+-- Original Lua owns gameplay/data state; Web code owns platform/UI side effects.
 local js = require "js"
 local web = js.global.JYWeb
 local G = { api = {} }
@@ -8,11 +8,19 @@ local objects = {}
 local templates = {}
 local table_ids = {}
 local active = nil
-local newpoints = {}
 local missing_calls = {}
+local missing_objects = {}
 
 package.preload["gf"] = function() return G end
 package.preload["gfbase"] = function() return G end
+
+local tracked_points = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,44,45,46,47,110,119,130,143,200,217,218,237,238}
+local mutation_calls = {
+    set_point=true, add_point=true, set_newpoint=true,
+    add_money=true, add_item=true, set_item=true,
+    learnmagic=true, add_love=true, add_maxhpmp=true,
+    rest=true, set_note=true,
+}
 
 local function deep_copy(value, seen)
     if type(value) ~= "table" then return value end
@@ -20,7 +28,9 @@ local function deep_copy(value, seen)
     if seen[value] then return seen[value] end
     local copy = {}
     seen[value] = copy
-    for k, v in pairs(value) do copy[deep_copy(k, seen)] = deep_copy(v, seen) end
+    for k, v in pairs(value) do
+        copy[deep_copy(k, seen)] = deep_copy(v, seen)
+    end
     return copy
 end
 
@@ -40,10 +50,27 @@ local function body()
     return G.QueryName(0x10030001)
 end
 
+local function newbody()
+    return G.QueryName(0x101b0001)
+end
+
 local function sync_point_to_web(id)
     local value = tonumber(body()[tostring(id)]) or 0
     web:setPoint(id, value)
     return value
+end
+
+local function sync_item_to_web(code)
+    code = tonumber(code)
+    if not code then return end
+    local item = G.QueryName(0x100b0000 + code - 1)
+    web:setItem(code, tonumber(item.数量) or 0)
+end
+
+local function sync_web_snapshot()
+    if not objects[0x10030001] then return end
+    for _, id in ipairs(tracked_points) do sync_point_to_web(id) end
+    web:setMoney(tonumber(body()["110"]) or 0)
 end
 
 function G.RegisterData(module)
@@ -56,7 +83,9 @@ function G.RegisterData(module)
     for _, entry in ipairs(entries) do
         local object_id = tonumber(entry.name)
         if object_id then
-            if not templates[object_id] then table.insert(table_ids[type_name], object_id) end
+            if not templates[object_id] then
+                table.insert(table_ids[type_name], object_id)
+            end
             templates[object_id] = deep_copy(entry)
             objects[object_id] = deep_copy(entry)
         end
@@ -66,7 +95,10 @@ end
 
 function G.QueryName(id)
     id = tonumber(id) or 0
-    if not objects[id] then objects[id] = { name = id, __placeholder = true } end
+    if not objects[id] then
+        missing_objects[id] = (missing_objects[id] or 0) + 1
+        objects[id] = { name = id, __placeholder = true }
+    end
     return objects[id]
 end
 
@@ -80,18 +112,18 @@ end
 
 function G.ResetData()
     objects = {}
-    for id, template in pairs(templates) do objects[id] = deep_copy(template) end
-    newpoints = {}
-    missing_calls = {}
-    if objects[0x10030001] then
-        for _, id in ipairs({14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,44,45,46,47,110,119,130,143,200,217,218,237,238}) do
-            sync_point_to_web(id)
-        end
+    for id, template in pairs(templates) do
+        objects[id] = deep_copy(template)
     end
+    missing_calls = {}
+    missing_objects = {}
+    sync_web_snapshot()
 end
 
 function G.GetDeviceInfo(_) return "" end
 function G.misc() return G.QueryName(0x100f0001) end
+
+-- Desktop runtime surfaces. They are intentionally thin/no-op until their Web systems land.
 function G.Play(...) return true end
 function G.wait_time(...) return true end
 function G.trig_event(...) return true end
@@ -99,15 +131,42 @@ function G.wait1(...) return true end
 function G.addUI(...) return true end
 function G.removeUI(...) return true end
 function G.getUI(...) return nil end
+function G.start_program(...) return true end
+function G.stop_program(...) return true end
 
 local function call_lua_api(name, args)
     local fn = G.api[name]
-    if type(fn) == "function" then return fn(table.unpack(args)) end
-    return nil, false
+    if type(fn) ~= "function" then return false, nil end
+    local result = fn(table.unpack(args))
+    if mutation_calls[name] then
+        sync_web_snapshot()
+        if name == "add_item" or name == "set_item" then sync_item_to_web(args[1]) end
+    end
+    return true, result
+end
+
+local function fallback_get_point(id)
+    return tonumber(body()[tostring(id)]) or 0
+end
+
+local function fallback_set_point(id, value)
+    body()[tostring(id)] = tonumber(value) or value
+    sync_web_snapshot()
+    return body()[tostring(id)]
+end
+
+local function fallback_add_point(id, delta)
+    local key = tostring(id)
+    body()[key] = (tonumber(body()[key]) or 0) + (tonumber(delta) or 0)
+    sync_web_snapshot()
+    return body()[key]
 end
 
 function G.call(name, ...)
     local args = {...}
+
+    -- Async UI bridge: these must stay on the Web side so the original synchronous
+    -- Lua story code can pause/resume around browser interaction.
     if name == "story" then
         web:story(tostring(args[1] or ""), function(v) resume_after_ui(v) end)
         return coroutine.yield()
@@ -126,37 +185,65 @@ function G.call(name, ...)
         local options = args[6] or {}
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
         return coroutine.yield()
-    elseif name == "get_point" then
-        local value = tonumber(body()[tostring(args[1])])
-        if value == nil then return web:getPoint(args[1]) end
-        return value
+    elseif name == "call_battle" then
+        local enemy = args[4] == 130 and "穆念慈" or "江湖对手"
+        web:startBattle(enemy, function(result) resume_after_ui(tonumber(result)) end)
+        local result = coroutine.yield()
+        web:setLastBattle(result)
+        return result
+    elseif name == "get_battle" then
+        return web:getLastBattle()
+    end
+
+    -- Platform/UI side effects that are deliberately replaced by Web-native systems.
+    if name == "goto_map" then
+        local map = tonumber(args[1]) or 0
+        body()["140"] = 0x10060000 + map
+        if map == 2 then web:enterVillage() end
+        sync_web_snapshot()
+        return true
+    elseif name == "photo0" or name == "photo0_off" or name == "mapon" or
+           name == "all_over" or name == "dark" or name == "turn_map" or
+           name == "notice1" or name == "list" then
+        return true
+    elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "指令_存储属性" then
+        -- Temporary compatibility boundary. These will be replaced separately by
+        -- diagnostics, IndexedDB saves and a verified derived-stat implementation.
+        return true
+    end
+
+    -- Most G.call targets are already implemented by the original Lua program layer
+    -- (not by gcore). Prefer those implementations whenever p_order/p_init/etc loaded.
+    local found, result = call_lua_api(name, args)
+    if found then return result end
+
+    -- Degraded fallbacks keep the small bundled demo functional if upstream files
+    -- cannot be fetched. They are not used when the original p_order implementation exists.
+    if name == "get_point" then
+        return fallback_get_point(args[1])
     elseif name == "set_point" then
-        body()[tostring(args[1])] = tonumber(args[2]) or args[2]
-        return sync_point_to_web(args[1])
+        return fallback_set_point(args[1], args[2])
     elseif name == "add_point" then
-        local key = tostring(args[1])
-        body()[key] = (tonumber(body()[key]) or 0) + (tonumber(args[2]) or 0)
-        return sync_point_to_web(args[1])
+        return fallback_add_point(args[1], args[2])
     elseif name == "set_newpoint" then
-        newpoints[tonumber(args[1])] = tonumber(args[2]) or 0
+        newbody()[tostring(args[1])] = tonumber(args[2]) or 0
         return args[2]
     elseif name == "get_newpoint" then
-        return newpoints[tonumber(args[1])] or 0
+        return tonumber(newbody()[tostring(args[1])]) or 0
     elseif name == "get_money" then
-        return web:getMoney()
+        return tonumber(body()["110"]) or 0
     elseif name == "add_money" then
-        return web:addMoney(args[1])
+        body()["110"] = math.max(0, (tonumber(body()["110"]) or 0) + (tonumber(args[1]) or 0))
+        sync_web_snapshot()
+        return body()["110"]
     elseif name == "get_item" then
-        local item_id = 0x100b0000 + (tonumber(args[1]) or 1) - 1
-        local value = tonumber(G.QueryName(item_id).数量)
-        if value == nil then return web:getItem(args[1]) or 0 end
-        return value
+        local item = G.QueryName(0x100b0000 + (tonumber(args[1]) or 1) - 1)
+        return tonumber(item.数量) or 0
     elseif name == "add_item" then
         local code = tonumber(args[1]) or 1
-        local count = tonumber(args[2]) or 1
         local item = G.QueryName(0x100b0000 + code - 1)
-        item.数量 = (tonumber(item.数量) or 0) + count
-        web:addItem(code, count)
+        item.数量 = math.max(0, (tonumber(item.数量) or 0) + (tonumber(args[2]) or 1))
+        sync_item_to_web(code)
         return true
     elseif name == "learnmagic" then
         web:learnMagic(args[1])
@@ -166,31 +253,11 @@ function G.call(name, ...)
     elseif name == "join" then
         web:join(args[1])
         return true
-    elseif name == "call_battle" then
-        local enemy = args[4] == 130 and "穆念慈" or "江湖对手"
-        web:startBattle(enemy, function(result) resume_after_ui(tonumber(result)) end)
-        local result = coroutine.yield()
-        web:setLastBattle(result)
-        return result
-    elseif name == "get_battle" then
-        return web:getLastBattle()
     elseif name == "count_day" then
         return tonumber(body()["70"]) or 1
-    elseif name == "goto_map" then
-        if tonumber(args[1]) == 2 then web:enterVillage() end
-        return true
-    elseif name == "photo0" or name == "photo0_off" or name == "mapon" or name == "set_note" then
-        return true
-    elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "list" or name == "指令_存储属性" then
-        -- These are intentionally replaced by Web-native systems later. The questionnaire/prologue
-        -- can already continue without the old desktop persistence / anti-tamper / derived-stat pass.
-        return true
-    elseif name == "all_over" or name == "dark" or name == "turn_map" or name == "notice1" then
+    elseif name == "set_note" then
         return true
     end
-
-    local result, found = call_lua_api(name, args)
-    if found ~= false then return result end
 
     missing_calls[name] = (missing_calls[name] or 0) + 1
     print("[jy3-web] unimplemented G.call:", name)
@@ -219,7 +286,18 @@ end
 
 function __jy_missing_calls()
     local rows = {}
-    for name, count in pairs(missing_calls) do rows[#rows + 1] = name .. ":" .. count end
+    for name, count in pairs(missing_calls) do
+        rows[#rows + 1] = name .. ":" .. count
+    end
+    table.sort(rows)
+    return table.concat(rows, ", ")
+end
+
+function __jy_missing_objects()
+    local rows = {}
+    for id, count in pairs(missing_objects) do
+        rows[#rows + 1] = string.format("0x%08x:%d", id, count)
+    end
     table.sort(rows)
     return table.concat(rows, ", ")
 end
@@ -227,7 +305,9 @@ end
 function __jy_run(event_name)
     if active and coroutine.status(active) ~= "dead" then return false end
     local fn = G.api[event_name]
-    if type(fn) ~= "function" then error("unknown JY3 event: " .. tostring(event_name)) end
+    if type(fn) ~= "function" then
+        error("unknown JY3 event: " .. tostring(event_name))
+    end
     active = coroutine.create(function() fn() end)
     local ok, err = coroutine.resume(active)
     if not ok then error(err) end
