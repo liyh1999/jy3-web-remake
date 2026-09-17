@@ -36,6 +36,7 @@
         <div class="stat-grid" id="statGrid"></div>
         <div class="money">银两 <strong id="money">0</strong></div>
         <div class="save-actions">
+          <button id="inventoryBtn" disabled>背包</button>
           <button id="saveBtn" disabled>存档</button>
           <button id="loadBtn" disabled>读档</button>
         </div>
@@ -46,6 +47,22 @@
         <div class="dialogue-text" id="dialogueText"></div>
         <div id="options" class="options"></div>
         <button id="continueBtn" class="primary hidden">继续</button>
+      </section>
+
+      <section id="inventoryPanel" class="inventory-panel hidden" aria-label="人物背包">
+        <button id="inventoryBackdrop" class="inventory-backdrop" aria-label="关闭背包"></button>
+        <div class="inventory-window">
+          <header class="inventory-header">
+            <div>
+              <strong>人物背包</strong>
+              <span>银两 <b id="inventoryMoney">0</b></span>
+            </div>
+            <button id="inventoryClose" class="inventory-close">关闭</button>
+          </header>
+          <div id="inventorySlots" class="inventory-slots"></div>
+          <div id="inventoryStatus" class="inventory-status"></div>
+          <div id="inventoryList" class="inventory-list"></div>
+        </div>
       </section>
 
       <section id="battle" class="battle hidden">
@@ -86,5 +103,6 @@
   <script src="./src/resources.js"></script>
   <script src="./src/upstream.js"></script>
   <script src="./src/app.js"></script>
+  <script src="./src/inventory.js"></script>
 </body>
 </html>
