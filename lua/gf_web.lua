@@ -12,8 +12,6 @@ local newpoints = {}
 local missing_calls = {}
 
 package.preload["gf"] = function() return G end
--- Many original program files only use gfbase as a shared runtime namespace.
--- For the Web port we expose the same compatibility object there as well.
 package.preload["gfbase"] = function() return G end
 
 local function deep_copy(value, seen)
@@ -179,20 +177,18 @@ function G.call(name, ...)
     elseif name == "count_day" then
         return tonumber(body()["70"]) or 1
     elseif name == "goto_map" then
-        -- Scene rendering is still simplified. Keep the logical map transition alive.
         if tonumber(args[1]) == 2 then web:enterVillage() end
         return true
     elseif name == "photo0" or name == "photo0_off" or name == "mapon" or name == "set_note" then
         return true
-    elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "list" then
-        -- Desktop anti-tamper/save/UI side effects are intentionally replaced later by Web systems.
+    elseif name == "地图系统_防修改监控" or name == "通用_存档" or name == "list" or name == "指令_存储属性" then
+        -- These are intentionally replaced by Web-native systems later. The questionnaire/prologue
+        -- can already continue without the old desktop persistence / anti-tamper / derived-stat pass.
         return true
     elseif name == "all_over" or name == "dark" or name == "turn_map" or name == "notice1" then
         return true
     end
 
-    -- Critical compatibility behavior: most G.call targets are not engine APIs at all;
-    -- they are original Lua functions registered in G.api by p_order/p_init/etc.
     local result, found = call_lua_api(name, args)
     if found ~= false then return result end
 
