@@ -4,10 +4,11 @@
   "private": true,
   "description": "JY3 browser runtime and compatibility layer",
   "scripts": {
-    "build": "node tools/build-offline.mjs",
+    "cache:offline": "node tools/vendor-upstream.mjs",
+    "build:offline": "node tools/build-offline.mjs",
+    "build": "npm run build:offline",
+    "package": "npm run cache:offline && npm run build:offline",
+    "verify:offline": "node tools/verify-offline-dist.mjs",
     "serve:dist": "python3 -m http.server 8080 --directory dist --bind 0.0.0.0"
-  },
-  "dependencies": {
-    "fengari-web": "0.1.4"
   }
 }
