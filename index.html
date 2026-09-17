@@ -6,6 +6,7 @@
   <title>金庸群侠传3 Web Runtime</title>
   <link rel="stylesheet" href="./src/style.css" />
   <link rel="stylesheet" href="./src/inventory.css" />
+  <link rel="stylesheet" href="./src/person.css" />
 </head>
 <body>
   <main id="shell">
@@ -37,6 +38,7 @@
         <div class="stat-grid" id="statGrid"></div>
         <div class="money">银两 <strong id="money">0</strong></div>
         <div class="save-actions">
+          <button id="personBtn" disabled>人物</button>
           <button id="inventoryBtn" disabled>背包</button>
           <button id="saveBtn" disabled>存档</button>
           <button id="loadBtn" disabled>读档</button>
@@ -48,6 +50,42 @@
         <div class="dialogue-text" id="dialogueText"></div>
         <div id="options" class="options"></div>
         <button id="continueBtn" class="primary hidden">继续</button>
+      </section>
+
+      <section id="personPanel" class="person-panel hidden" aria-label="人物属性">
+        <button id="personBackdrop" class="person-backdrop" aria-label="关闭人物属性"></button>
+        <div class="person-window">
+          <header class="person-header">
+            <strong>人物属性</strong>
+            <button id="personClose" class="person-close">关闭</button>
+          </header>
+          <div class="person-content">
+            <aside class="person-identity">
+              <div id="personPortrait" class="person-portrait">侠</div>
+              <div class="person-id-card">
+                <h2 id="personName">无名侠客</h2>
+                <span id="personNickname">无绰号</span>
+                <div class="person-id-row"><span>门派</span><b id="personSchool">无门派</b></div>
+                <div class="person-id-row"><span>位阶</span><b id="personRank">—</b></div>
+                <div class="person-id-row"><span>师承</span><b id="personMaster">—</b></div>
+              </div>
+            </aside>
+            <div class="person-main">
+              <section class="person-section">
+                <h3>状态</h3>
+                <div id="personVitals" class="person-stats"></div>
+              </section>
+              <section class="person-section">
+                <h3>基础资质</h3>
+                <div id="personQualities" class="person-qualities"></div>
+              </section>
+              <section class="person-section">
+                <h3>装备</h3>
+                <div id="personSlots" class="person-slots"></div>
+              </section>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="inventoryPanel" class="inventory-panel hidden" aria-label="人物背包">
@@ -112,5 +150,6 @@
   <script src="./src/app.js"></script>
   <script src="./src/gcore-scene.js"></script>
   <script src="./src/inventory.js"></script>
+  <script src="./src/person.js"></script>
 </body>
 </html>
