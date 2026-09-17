@@ -21,6 +21,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/inventory.js
           node --check src/resources.js
           node --check src/upstream.js
           node --check tools/audit-newgame.mjs
@@ -44,6 +45,7 @@ jobs:
           luac5.3 -p lua/gf_web.lua
           luac5.3 -p lua/runtime_shims.lua
           luac5.3 -p lua/save_state.lua
+          luac5.3 -p lua/inventory_web.lua
           luac5.3 -p lua/jy3_demo.lua
 
       - name: Save-state roundtrip
@@ -73,5 +75,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/save_state.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/lua/inventory_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
