@@ -3,10 +3,8 @@
 local js = require "js"
 local G = require "gf"
 local resources = js.global.JYResources
+local renderer = js.global.JYRenderer
 
--- The original `co` module wraps Lua coroutines with additional engine scheduling.
--- Web scheduling is owned by gf_web.lua / JS, while p_order only needs the module
--- to exist during load for the opening vertical slice.
 package.preload["co"] = package.preload["co"] or function()
     return {
         create = coroutine.create,
@@ -21,9 +19,6 @@ package.preload["co"] = package.preload["co"] or function()
     }
 end
 
--- Original game/runtime modules often import gcore.c directly. In the Web port,
--- expose the same compatibility object used by `gf`, with host-specific methods
--- implemented below.
 package.preload["gcore.c"] = package.preload["gcore.c"] or function()
     return G
 end
@@ -55,6 +50,17 @@ end
 function G.Stop(channel)
     channel = tonumber(channel) or 1
     return resources:stop(channel) and true or false
+end
+
+function G.SetResourceSize(...) return true end
+function G.SetSizeMode(...) return true end
+function G.Stage() return renderer:stage() end
+function G.Quad() return renderer:quad() end
+function G.TextQuad() return renderer:textQuad() end
+function G.SpineQuad() return renderer:spineQuad() end
+function G.ParticleSystem() return renderer:particleSystem() end
+function G.FindNode(path, separator)
+    return renderer:findNode(path, separator or "|")
 end
 
 return true
