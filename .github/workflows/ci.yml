@@ -21,6 +21,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/gcore-scene.js
           node --check src/inventory.js
           node --check src/resource-catalog.js
           node --check src/resources.js
@@ -31,9 +32,10 @@ jobs:
           node --check tools/check-normalized-upstream.mjs
           node --check tools/scan-resources.mjs
           node --check tools/smoke-inventory.mjs
+          node --check tools/smoke-niujia-events.mjs
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
-          node --check tools/smoke-niujia-events.mjs
+          node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
@@ -46,6 +48,9 @@ jobs:
       - name: Validate gcore scene graph
         run: node tools/test-renderer.mjs
 
+      - name: Validate actual Canvas draw path
+        run: node tools/smoke-renderer-canvas.mjs
+
       - name: Install Lua 5.3 compiler
         run: |
           sudo apt-get update -qq
@@ -54,6 +59,7 @@ jobs:
       - name: Check Lua syntax
         run: |
           luac5.3 -p lua/gf_web.lua
+          luac5.3 -p lua/gcore_web.lua
           luac5.3 -p lua/runtime_shims.lua
           luac5.3 -p lua/save_state.lua
           luac5.3 -p lua/inventory_web.lua
@@ -88,11 +94,13 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/lua/gcore_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/save_state.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/inventory_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/renderer.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/gcore-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/inventory.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
@@ -115,6 +123,8 @@ jobs:
           test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
           test -f dist/src/resource-catalog.js
           test -f dist/src/renderer.js
+          test -f dist/src/gcore-scene.js
+          test -f dist/lua/gcore_web.lua
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
@@ -135,5 +145,6 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/renderer.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
