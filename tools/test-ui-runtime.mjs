@@ -37,7 +37,14 @@ function renderer:nodeCall(h,m,...)
   if m=='addChildAt' then local c=nodes[a[1]]; table.insert(n.children,(tonumber(a[2]) or 0)+1,a[1]); c.parent=h; return a[1] end
   if m=='getChildAt' then return n.children[(tonumber(a[1]) or 0)+1] or 0 end
   if m=='getChildByName' then for _,ch in ipairs(n.children) do if nodes[ch].name==tostring(a[1]) then return ch end end; return 0 end
-  if m=='removeFromParent' then return h end
+  if m=='removeFromParent' then
+    if n.parent~=0 and nodes[n.parent] then
+      local p=nodes[n.parent]
+      for i=#p.children,1,-1 do if p.children[i]==h then table.remove(p.children,i) end end
+    end
+    n.parent=0
+    return h
+  end
   if m=='removeAllChildren' then n.children={}; return true end
   if m=='real_width' or m=='real_height' then return 0 end
   return 0
