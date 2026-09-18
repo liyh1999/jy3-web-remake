@@ -31,17 +31,24 @@ function sha256(bytes) {
 
 async function fetchWithRetry(url, attempts = 6) {
   let lastStatus = 0;
+  const apiToken = process.env.GITHUB_TOKEN || '';
   for (let i = 0; i < attempts; i += 1) {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'jy3-web-remake-offline-cache',
-        'Accept': 'application/vnd.github+json',
-      }
-    });
+    const target = new URL(url);
+    const headers = {
+      'User-Agent': 'jy3-web-remake-offline-cache',
+      'Accept': 'application/vnd.github+json',
+    };
+    if (apiToken && target.hostname === 'api.github.com') {
+      headers.Authorization = `Bearer ${apiToken}`;
+    }
+    const response = await fetch(url, { headers });
     if (response.ok) return Buffer.from(await response.arrayBuffer());
     lastStatus = response.status;
-    if (response.status !== 429 && response.status < 500) break;
-    await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+    const retryable = response.status === 403 || response.status === 429 || response.status >= 500;
+    if (!retryable) break;
+    const retryAfter = Number(response.headers.get('retry-after')) || 0;
+    const delay = retryAfter > 0 ? retryAfter * 1000 : 500 * (i + 1);
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
   throw new Error(`HTTP ${lastStatus}: ${url}`);
 }
