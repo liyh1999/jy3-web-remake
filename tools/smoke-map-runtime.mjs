@@ -32,8 +32,8 @@ package.preload['gf']=function() return G end
 package.preload['gfbase']=function() return G end
 
 local host={maps={},hotspots={}}
-function host:beginMap(id,name,bg,menu,rest,woods,river)
-  self.maps[#self.maps+1]={id=id,name=name,bg=bg,menu=menu,rest=rest,woods=woods,river=river}
+function host:beginMap(id,name,bg,menu,rest,woods,river,portrait)
+  self.maps[#self.maps+1]={id=id,name=name,bg=bg,menu=menu,rest=rest,woods=woods,river=river,portrait=portrait}
   self.hotspots={}
 end
 function host:addHotspot(index,city,name,icon,x,y,event,linked,locked,show,event_record)
@@ -82,6 +82,7 @@ end
 -- Niujia regression remains intact.
 G.QueryName(0x10030001)['140']=0x10060003
 assert(__jy_render_map()==true,'Niujia map render failed')
+assert(host.maps[#host.maps].portrait==G.QueryName(0x10030001)['119'],'map HUD portrait did not come from original o_body[119]')
 assert(host.count==8,'expected 8 visible Niujia hotspots, got '..tostring(host.count))
 local mu=hotspot(0x10070061)
 assert(mu,'Mu Nianci hotspot missing')
