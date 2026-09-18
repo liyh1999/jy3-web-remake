@@ -133,6 +133,8 @@ package.preload['js'] = function()
 end
 
 local reward_points, reward_items = {}, {}
+local logging_achievement = { name = 0x10170007, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local newbody = { name = 0x101b0001, ['80'] = 0 }
 local body = {
     name = 0x10030001,
     ['1'] = '令狐',
@@ -143,7 +145,10 @@ local G = { api = {} }
 package.preload['gf'] = function() return G end
 package.preload['gfbase'] = function() return G end
 function G.QueryName(id)
-    if tonumber(id) == 0x10030001 then return body end
+    id = tonumber(id)
+    if id == 0x10030001 then return body end
+    if id == 0x10170007 then return logging_achievement end
+    if id == 0x101b0001 then return newbody end
     return { name = id, __placeholder = true }
 end
 function G.DBTable() return {} end
