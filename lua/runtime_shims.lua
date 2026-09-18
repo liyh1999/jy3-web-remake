@@ -201,6 +201,22 @@ function G.getUI(name)
     return active_ui[tostring(name or "")]
 end
 
+function G.__setActiveUI(name, ui)
+    name = tostring(name or "")
+    if name == "" or not ui then return false end
+    active_ui[name] = ui
+    return true
+end
+
+function G.__clearActiveUI(name, expected)
+    name = tostring(name or "")
+    local ui = active_ui[name]
+    if not ui then return false end
+    if expected and ui ~= expected then return false end
+    active_ui[name] = nil
+    return true
+end
+
 function G.removeUI(name)
     name = tostring(name or "")
     local ui = active_ui[name]
