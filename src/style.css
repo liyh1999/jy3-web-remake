@@ -131,3 +131,11 @@ button:disabled { opacity: .45; cursor: wait; }
 .battle-target-hint { color: #8d8068; font-size: 9px; margin-left: 4px; }
 .battle-slot.targetable { cursor: crosshair; border-color: #ddb45b; box-shadow: 0 0 0 1px #ddb45b66 inset, 0 0 12px #d39c3b33; }
 .battle-slot.targetable:hover { transform: translateY(-2px); background: #493026; }
+
+.battle-items { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+.battle-item { min-width: 0; display: grid; grid-template-columns: 18px 1fr auto; gap: 4px; align-items: center; padding: 3px 5px; border: 1px solid #504737; background: #1d1a15; color: #b9ad94; font-size: 8px; text-align: left; }
+.battle-item kbd { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid #615745; color: #c9b88f; font: 8px ui-monospace, Consolas, monospace; }
+.battle-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.battle-item small { color: #7f745f; font-size: 8px; }
+.battle-item:disabled { opacity: .35; cursor: default; }
+.battle-item:not(:disabled):hover { border-color: #9e8355; background: #2b251c; }
