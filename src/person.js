@@ -46,7 +46,7 @@
       const label = document.createElement('span');
       label.textContent = row.label;
       const value = document.createElement('b');
-      value.textContent = row.max > 0 ? `${row.value} / ${row.max}` : String(row.value);
+      value.textContent = row.max === -1 ? '-- / --' : (row.max > 0 ? `${row.value} / ${row.max}` : String(row.value));
       item.append(label, value);
       root.appendChild(item);
     }
@@ -204,7 +204,8 @@
 
       const status = document.createElement('div');
       status.className = 'person-team-status';
-      status.textContent = `生命 ${member.hp}/${member.maxHp} · 内力 ${member.mp}/${member.maxMp} · 经验 ${member.exp}`;
+      const expText = member.growthFull ? '--/--' : `${member.exp}/10000`;
+      status.textContent = `生命 ${member.hp}/${member.maxHp} · 内力 ${member.mp}/${member.maxMp} · 经验 ${expText}`;
 
       const skills = document.createElement('div');
       skills.className = 'person-team-skills';
@@ -286,7 +287,7 @@
         trainable: Boolean(trainable)
       });
     },
-    teamBegin(slot, roleNo, roleId, name, portrait, hp, maxHp, mp, maxMp, affection, exp) {
+    teamBegin(slot, roleNo, roleId, name, portrait, hp, maxHp, mp, maxMp, affection, exp, growthFull) {
       activeTeamMember = {
         slot: Number(slot) || 0,
         roleNo: Number(roleNo) || 0,
@@ -299,6 +300,7 @@
         maxMp: Number(maxMp) || 0,
         affection: Number(affection) || 0,
         exp: Number(exp) || 0,
+        growthFull: Boolean(growthFull),
         skills: []
       };
       model.team.push(activeTeamMember);
@@ -373,6 +375,7 @@
   };
   window.addEventListener('jy3:team-changed', refreshIfOpen);
   window.addEventListener('jy3:skill-changed', refreshIfOpen);
+  window.addEventListener('jy3:growth-changed', refreshIfOpen);
 
   const timer = setInterval(async () => {
     if (await install()) clearInterval(timer);
