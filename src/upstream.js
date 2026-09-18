@@ -202,6 +202,32 @@
     return loaded;
   }
 
+  async function loadData(paths, onProgress) {
+    let loaded = 0;
+    for (const path of paths) {
+      onProgress?.(`加载原数据 ${path}…`);
+      const source = await fetchText(path);
+      registerDataSource(source, path);
+      loaded += 1;
+    }
+    return loaded;
+  }
+
+  let battleRuntimePromise = null;
+  async function prepareBattleRuntime(onProgress) {
+    if (!battleRuntimePromise) {
+      battleRuntimePromise = (async () => {
+        const loadedData = await loadData(ON_DEMAND_DATA, onProgress);
+        const loadedPrograms = await loadPrograms(ON_DEMAND_PROGRAMS, onProgress);
+        return { loadedData, loadedPrograms };
+      })().catch((error) => {
+        battleRuntimePromise = null;
+        throw error;
+      });
+    }
+    return battleRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -231,6 +257,8 @@
     registerDataSource,
     loadProgram,
     loadPrograms,
+    loadData,
+    prepareBattleRuntime,
     bootstrapData,
   };
 })();
