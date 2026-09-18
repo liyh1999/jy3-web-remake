@@ -68,7 +68,9 @@
         image.dataset.cycle = String(meta.cycle);
       },
       onFrameEnd() {
-        window.JYWeb?.originalBattleFrameEnd?.(position, id, kind);
+        if (kind === 'actor' && !actorLoop) {
+          window.JYWeb?.originalBattleFrameEnd?.(position, id, kind);
+        }
       },
       onComplete() {
         image.classList.remove('active');
