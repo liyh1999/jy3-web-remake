@@ -3,7 +3,7 @@
   const $$ = (s) => [...document.querySelectorAll(s)];
   const SAVE_KEY = 'jy3-web-remake:save:v1';
   const ui = {
-    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'),
+    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
@@ -145,13 +145,17 @@
     getSavePayload() { return pendingSavePayload; },
     async startOriginalLogging(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      closeDialogue();
+      ui.battle.classList.add('hidden');
+      setScene('village');
+      fengari.load("return __jy_minigame_reset()", '@web/reset-minigame-before-logging')();
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
       const ok = fengari.load(
         "return __jy_minigame_start('logging')",
         '@web/start-original-logging'
       )();
       if (!ok) throw new Error('原 logging 程序启动失败');
-      ui.status.textContent = '原版伐木程序运行中';
+      ui.status.textContent = '原版伐木程序运行中 · 点击画面中的开始';
       return loaded;
     },
     async showLoggingUi(onProgress) {
@@ -254,6 +258,7 @@
     },
     minigameFinished(name) {
       ui.status.textContent = `原版小游戏结束：${String(name || '')}`;
+      if (ui.logging) ui.logging.disabled = false;
       setTimeout(() => {
         try {
           fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
@@ -550,6 +555,7 @@
       ui.start.disabled = false;
       ui.village.disabled = false;
       ui.original.disabled = false;
+      if (ui.logging) ui.logging.disabled = false;
       if (ui.save) ui.save.disabled = false;
       refreshLoadButton();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
@@ -560,6 +566,18 @@
         resetJsState();
         resetLuaState();
         window.JYWeb.enterVillage();
+      };
+      if (ui.logging) ui.logging.onclick = async () => {
+        ui.logging.disabled = true;
+        try {
+          resetJsState();
+          resetLuaState();
+          await window.JYWeb.startOriginalLogging((message) => { ui.status.textContent = message; });
+        } catch (error) {
+          console.error('logging mini-game start failed', error);
+          ui.status.textContent = `伐木小游戏启动失败：${error?.message || error}`;
+          ui.logging.disabled = false;
+        }
       };
       if (ui.save) ui.save.onclick = saveGame;
       if (ui.load) ui.load.onclick = loadGame;
