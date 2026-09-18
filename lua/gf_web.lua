@@ -18,7 +18,10 @@ local tracked_points = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45
 local mutation_calls = {
     set_point=true, add_point=true, set_newpoint=true,
     add_money=true, add_item=true, set_item=true,
-    learnmagic=true, add_love=true, add_maxhpmp=true,
+    learn_magic=true, set_magic=true, learnmagic=true,
+    add_magicexp=true, set_magicexp=true, set_magic_lv=true,
+    ["逻辑读取-武功等级"]=true, ["逻辑整理-武功等级"]=true,
+    add_love=true, add_maxhpmp=true,
     rest=true, set_note=true, join=true, leave=true,
 }
 
@@ -164,6 +167,11 @@ local function call_lua_api(name, args)
     if mutation_calls[name] then
         sync_web_snapshot()
         if name == "add_item" or name == "set_item" then sync_item_to_web(args[1]) end
+        if name == "learn_magic" or name == "set_magic" or name == "learnmagic"
+            or name == "add_magicexp" or name == "set_magicexp" or name == "set_magic_lv"
+            or name == "逻辑读取-武功等级" or name == "逻辑整理-武功等级" then
+            pcall(function() web:skillChanged() end)
+        end
     end
     return true, result
 end
