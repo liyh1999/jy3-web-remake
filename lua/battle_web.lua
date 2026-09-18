@@ -217,6 +217,10 @@ local function start_browser_actor_idles(root)
     end
 end
 
+function _G.__jy_battle_appearance_probe(role_id)
+    return battle_role_appearance(role_id)
+end
+
 local function first_living_enemy()
     local battle = G.QueryName(0x10150001)
     for i = 6, 11 do
