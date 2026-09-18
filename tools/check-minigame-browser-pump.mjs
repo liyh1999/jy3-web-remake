@@ -4,6 +4,9 @@ const app = fs.readFileSync('src/app.js', 'utf8');
 const lua = fs.readFileSync('lua/minigame_web.lua', 'utf8');
 
 for (const needle of [
+  'function replaceSceneMarkup(markup)',
+  "const existingCanvas = ui.scene.querySelector('#gcoreCanvas')",
+  'if (existingCanvas) ui.scene.prepend(existingCanvas)',
   'scheduleProgramPump(delay, token)',
   'cancelProgramPump(token)',
   'minigameFinished(name)',
@@ -30,3 +33,6 @@ for (const needle of [
   if (!lua.includes(needle)) throw new Error('missing Lua mini-game bridge: ' + needle);
 }
 console.log('browser mini-game pump bridge PASS');
+
+const directSceneWrites = app.match(/ui\.scene\.innerHTML\s*=/g) || [];
+if (directSceneWrites.length !== 1) throw new Error('scene markup must only be replaced inside replaceSceneMarkup');
