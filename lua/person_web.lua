@@ -1,5 +1,5 @@
--- Read-only Web adapter for the original JY3 player profile, team and martial arts.
--- Original Lua data remains authoritative; JS only renders snapshots.
+-- Web adapter for the original JY3 player profile, team and martial arts.
+-- Original Lua data remains authoritative; JS renders snapshots and routes explicit original-rule actions.
 local js = require "js"
 local bridge = js.global.JYPersonBridge
 local G = require "gf"
@@ -116,7 +116,8 @@ local function push_player_skills()
                 number(skill["修为等级"]),
                 exp,
                 number(skill["满级熟练度"]),
-                number(skill["图像"])
+                number(skill["图像"]),
+                category ~= 8 and category ~= 9
             )
         end
     end
@@ -196,6 +197,63 @@ function __jy_person_leave(role_no)
     if type(fn) ~= "function" then return false end
     G.call("leave", role_no)
     return not team_contains(role_no)
+end
+
+local function person_status(message)
+    if bridge and bridge.status then bridge:status(tostring(message or "")) end
+end
+
+function __jy_person_train_skill(skill_id)
+    skill_id = tonumber(skill_id) or 0
+    if skill_id < 0x10050000 or skill_id >= 0x10060000 then
+        person_status("武功编号无效")
+        return false
+    end
+
+    local skill = G.QueryName(skill_id)
+    local exp = number(skill["当前熟练度"])
+    local level = number(skill["等级"])
+    if exp <= 0 and level <= 0 then
+        person_status("尚未习得该武功")
+        return false
+    end
+
+    local category = number(skill["类别"])
+    if category == 9 then
+        person_status("阵法已经登峰造极")
+        return false
+    elseif category == 8 then
+        person_status("绝招无需升级")
+        return false
+    end
+
+    local cultivation = number(skill["修为等级"])
+    if cultivation >= 5 then
+        person_status("已经登峰造极")
+        return false
+    end
+    if number(body()["5"]) < 1 then
+        person_status("修为点不够")
+        return false
+    end
+
+    if cultivation < 1 then
+        body()["191"] = skill_id
+        local can_equip = G.api and G.api["can_equip"]
+        if type(can_equip) ~= "function" or G.call("can_equip") ~= true then
+            person_status("条件不够")
+            return false
+        end
+    end
+
+    skill["修为等级"] = cultivation + 1
+    G.Play(0x4901000f, 1, false, 100)
+    G.call("add_point", 5, -1)
+    if type(G.api["指令_存储属性"]) == "function" then
+        G.call("指令_存储属性")
+    end
+    person_status("修为提升")
+    return true
 end
 
 function __jy_person_refresh()
