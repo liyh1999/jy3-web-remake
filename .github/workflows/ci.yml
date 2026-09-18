@@ -48,6 +48,7 @@ jobs:
           node --check tools/smoke-save-state.mjs
           node --check tools/smoke-shop-runtime.mjs
           node --check tools/smoke-team-management.mjs
+          node --check tools/smoke-teammate-interactions.mjs
           node --check tools/test-input.mjs
           node --check tools/test-map-scene.mjs
           node --check tools/test-renderer.mjs
@@ -111,6 +112,9 @@ jobs:
       - name: Original character growth
         run: node tools/smoke-character-growth.mjs
 
+      - name: Original teammate relationship interactions
+        run: node tools/smoke-teammate-interactions.mjs
+
       - name: Original shop settlement behavior
         run: node tools/smoke-shop-runtime.mjs
 
@@ -172,6 +176,7 @@ jobs:
           npm run build:offline
           test -f dist/vendor/fengari/fengari-web.js
           test -f dist/vendor/upstream/JY3/script/01_data/o_headevent.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_init.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_citymap_system.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
@@ -211,6 +216,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_headevent.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_init.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_citymap_system.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
