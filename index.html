@@ -163,9 +163,16 @@
         </div>
 
         <div class="battle-log" id="battleLog">等待原战斗状态机。</div>
+        <div class="battle-input">
+          <div id="battleSkills" class="battle-skills" aria-label="武功快捷栏"></div>
+          <div class="battle-command-row">
+            <button id="battleAutoBtn" class="battle-command">自动：开</button>
+            <button id="battleEscapeBtn" class="battle-command">逃跑</button>
+            <span id="battleTargetHint" class="battle-target-hint">自动战斗中</span>
+          </div>
+        </div>
         <div class="battle-controls">
           <button id="attackBtn" class="danger">旧兼容攻击</button>
-          <span>C3-1：当前由原版自动战斗驱动；手动武功/目标输入将在 C3-2 接入。</span>
         </div>
       </section>
 
