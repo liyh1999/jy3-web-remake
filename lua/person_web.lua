@@ -123,6 +123,25 @@ local function push_player_skills()
     end
 end
 
+local function role_growth_full(role_no)
+    local fn = G.api and G.api["通用_是否满属性"]
+    if type(fn) ~= "function" then return false end
+    local ok, value = pcall(fn, role_no)
+    return ok and value == true
+end
+
+local function player_growth_info(o_body)
+    local level = math.max(0, number(o_body["4"]))
+    local week = math.max(1, number(o_body["237"]))
+    local level_cap = 100 + 5 * math.floor((week - 1) / 5)
+    local save_slot = math.max(1, number(o_body["143"]))
+    local difficulty_obj = G.QueryName(0x10160000 + save_slot)
+    local difficulty = number(difficulty_obj and difficulty_obj["难度"])
+    if difficulty <= 0 then difficulty = 1 end
+    local required = math.floor(15 * level * (level + 1) * (difficulty + 1) / 2)
+    return level_cap, required
+end
+
 local function push_team()
     local team = G.QueryName(0x10110001)
     for slot = 1, 12 do
@@ -141,7 +160,8 @@ local function push_team()
                 number(role["内力"]),
                 number(role["2"]),
                 number(role["9"]),
-                number(role["经验值"])
+                number(role["经验值"]),
+                role_growth_full(role_no)
             )
             for skill_slot = 1, 4 do
                 local skill_id = tonumber(role["技能" .. tostring(skill_slot)])
@@ -267,8 +287,13 @@ function __jy_person_refresh()
         number(o_body["119"])
     )
 
+    local level_cap, required_exp = player_growth_info(o_body)
     bridge:vital("等级", number(o_body["4"]), 0)
-    bridge:vital("经验", number(o_body["3"]), 0)
+    if number(o_body["4"]) >= level_cap then
+        bridge:vital("经验", number(o_body["3"]), -1)
+    else
+        bridge:vital("经验", number(o_body["3"]), required_exp)
+    end
     bridge:vital("修为点", number(o_body["5"]), 0)
     bridge:vital("生命", number(o_body["44"]), number(o_body["217"]))
     bridge:vital("内力", number(o_body["46"]), number(o_body["218"]))
