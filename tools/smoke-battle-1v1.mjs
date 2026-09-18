@@ -733,7 +733,11 @@ assert(tonumber(battle['enemy1'])==130 and tonumber(battle['enemy2'])==131,'2v2 
 
 local warm=0
 local function acted(position)
-    return (web.actionCounts[tostring(position)] or 0)>0
+    local wanted=tostring(position)
+    for _,event in ipairs(web.skillEvents or {}) do
+        if tostring(event[2] or '')==wanted then return true end
+    end
+    return false
 end
 while web.browserResult==nil and not (acted('team2') and acted('enemy1') and acted('enemy2')) and warm<1800 do
     warm=warm+1
