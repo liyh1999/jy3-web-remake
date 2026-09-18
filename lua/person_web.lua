@@ -9,7 +9,7 @@ local G = require "gf"
 -- original interaction code touches and delegate real rendering back to JS.
 local original_get_ui = G.getUI
 local teammate_component = { ["副按钮"] = { visible = true } }
-function teammate_component:显示更新(_slot)
+teammate_component["显示更新"] = function(self, _slot)
     if type(__jy_person_refresh) == "function" then pcall(__jy_person_refresh) end
 end
 local teammate_ui = { c_teammate = teammate_component }
