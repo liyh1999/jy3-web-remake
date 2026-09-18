@@ -14,7 +14,7 @@
   };
 
   const labels = {15:'侠义',16:'臂力',17:'根骨',18:'悟性',19:'福缘',20:'灵敏',21:'定力',22:'拳掌',23:'指法',24:'剑术',25:'刀法',26:'奇门',32:'用毒',33:'医疗',34:'暗器'};
-  const state = { points:{}, money:0, items:{}, team:[], skills:[], lastBattle:0 };
+  const state = { points:{}, money:0, items:{}, team:[], lastBattle:0 };
   let modalCallback = null;
   let battleCallback = null;
   let battleState = null;
@@ -75,7 +75,6 @@
     state.money = 0;
     state.items = {};
     state.team = [];
-    state.skills = [];
     state.lastBattle = 0;
     renderStats();
   }
@@ -148,9 +147,8 @@
     setItem(id, count) { state.items[String(id)] = Number(count) || 0; },
     getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
-    learnMagic(id) {
-      id = Number(id);
-      if (!state.skills.includes(id)) state.skills.push(id);
+    learnMagic(_id) {
+      // Compatibility notification only. Learned-skill ownership lives in original Lua o_skill objects.
       emitSkillChanged();
     },
     skillChanged() { emitSkillChanged(); },
@@ -205,7 +203,8 @@
     },
     startBattle(enemy, resume) {
       battleCallback = resume;
-      battleState = { player:100, enemy:92, enemyName: enemy || '对手' };
+      // Display-only shell state. Character HP/MP/EXP/skills remain authoritative in original Lua objects.
+      battleState = { displayPlayerHp:100, displayEnemyHp:92, enemyName: enemy || '对手' };
       ui.enemyName.textContent = battleState.enemyName;
       ui.battleTitle.textContent = '切磋';
       ui.battleLog.textContent = `${battleState.enemyName} 摆开架势。`;
@@ -225,7 +224,7 @@
   };
 
   function updateBattle() {
-    const p = Math.max(0, battleState.player), e = Math.max(0, battleState.enemy);
+    const p = Math.max(0, battleState.displayPlayerHp), e = Math.max(0, battleState.displayEnemyHp);
     ui.playerBar.style.width = `${p}%`;
     ui.enemyBar.style.width = `${Math.min(100,e/92*100)}%`;
     ui.playerText.textContent = `${p} / 100`;
@@ -235,9 +234,9 @@
   ui.attack.onclick = () => {
     if (!battleState) return;
     const dmg = 13 + Math.floor(Math.random() * 14);
-    battleState.enemy -= dmg;
-    if (battleState.enemy <= 0) {
-      battleState.enemy = 0;
+    battleState.displayEnemyHp -= dmg;
+    if (battleState.displayEnemyHp <= 0) {
+      battleState.displayEnemyHp = 0;
       updateBattle();
       ui.battleLog.textContent = `你造成 ${dmg} 点伤害，取胜。`;
       setTimeout(() => {
@@ -250,10 +249,10 @@
       return;
     }
     const hurt = 7 + Math.floor(Math.random() * 12);
-    battleState.player -= hurt;
+    battleState.displayPlayerHp -= hurt;
     updateBattle();
-    if (battleState.player <= 0) {
-      battleState.player = 0;
+    if (battleState.displayPlayerHp <= 0) {
+      battleState.displayPlayerHp = 0;
       updateBattle();
       ui.battleLog.textContent = `你造成 ${dmg} 点伤害，但随后落败。`;
       setTimeout(() => {
