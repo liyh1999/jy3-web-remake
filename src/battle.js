@@ -113,8 +113,8 @@
       if ($('enemyName')) $('enemyName').textContent = data.name || '敌人';
       if ($('enemyHpBar')) $('enemyHpBar').style.width = `${pct(data.hp, data.maxHp)}%`;
       if ($('enemyHpText')) $('enemyHpText').textContent = `${Math.max(0, Math.floor(data.hp))} / ${Math.floor(data.maxHp)}`;
-      node.classList.toggle('targetable', controlsState.targetPending && data.enemy && data.visible && data.hp > 0);
-  }
+    }
+    node.classList.toggle('targetable', controlsState.targetPending && data.enemy && data.visible && data.hp > 0);
   }
 
   function status(time, rage, maxRage, skillName, abnormal, result) {
