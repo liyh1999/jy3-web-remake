@@ -12,6 +12,75 @@
     return Math.max(0, Math.min(100, n / m * 100));
   };
 
+  const battleAnimationPositions = [...positions, 'all1', 'all2', 'all3', 'all'];
+  const animationKey = (kind, position) => `battle:${kind}:${position}`;
+
+  function stopBattleAnimations() {
+    for (const position of battleAnimationPositions) {
+      window.JYFramePlayer?.stop?.(animationKey('actor', position), 'battle-reset');
+      window.JYFramePlayer?.stop?.(animationKey('skill', position), 'battle-reset');
+      window.JYFramePlayer?.stop?.(animationKey('overlay', position), 'battle-reset');
+    }
+  }
+
+  function sequenceImage(position, kind) {
+    if (kind === 'actor') {
+      return $(`battleSlot-${position}`)?.querySelector('.battle-slot-sprite') || null;
+    }
+    const layer = $('battleEffectLayer');
+    if (!layer) return null;
+    const key = animationKey(kind, position);
+    let image = layer.querySelector(`img[data-animation-key="${key}"]`);
+    if (!image) {
+      image = document.createElement('img');
+      image.className = `battle-sequence battle-sequence-${kind}`;
+      image.dataset.animationKey = key;
+      image.dataset.position = String(position || '');
+      image.alt = '';
+      layer.appendChild(image);
+    }
+    return image;
+  }
+
+  function playSequence(position, actionId, kind, baseResourceId) {
+    const player = window.JYFramePlayer;
+    const base = Number(baseResourceId) >>> 0;
+    if (!player?.play || !base) return false;
+    const image = sequenceImage(position, kind);
+    if (!image) return false;
+
+    const id = Number(actionId) || 0;
+    const actorLoop = kind === 'actor' && id < 1000;
+    const key = animationKey(kind, position);
+    image.dataset.actionId = String(id);
+    image.dataset.baseResourceId = `0x${base.toString(16).padStart(8, '0')}`;
+    image.classList.add('active');
+
+    player.play(key, {
+      baseResourceId: base,
+      actionId: id,
+      loop: actorLoop,
+      onFrame(frame, meta) {
+        const url = frame.url || window.JYResources?.url?.(frame.id);
+        if (url) image.src = url;
+        image.dataset.frameId = `0x${(Number(frame.id) >>> 0).toString(16).padStart(8, '0')}`;
+        image.dataset.frameIndex = String(meta.index);
+        image.dataset.cycle = String(meta.cycle);
+      },
+      onFrameEnd() {
+        window.JYWeb?.originalBattleFrameEnd?.(position, id, kind);
+      },
+      onComplete() {
+        image.classList.remove('active');
+      },
+      onError(error) {
+        image.dataset.animationError = String(error?.message || error || 'load failed');
+        image.classList.remove('active');
+      },
+    });
+    return true;
+  }
+
   function ensureSlots() {
     const allies = $('battleAllies');
     const enemies = $('battleEnemies');
@@ -22,6 +91,7 @@
       node.className = `battle-slot ${index >= 5 ? 'enemy' : 'ally'} hidden`;
       node.dataset.position = position;
       node.innerHTML = `
+        <img class="battle-slot-sprite" alt="">
         <div class="battle-slot-head">
           <strong class="battle-slot-name">${position}</strong>
           <span class="battle-slot-id"></span>
@@ -83,6 +153,7 @@
     ensureSkills();
     ensureItems();
     bindControls();
+    stopBattleAnimations();
     slotState.clear();
     skillState.clear();
     itemState.clear();
@@ -101,6 +172,13 @@
     positions.forEach(position => {
       const node = $(`battleSlot-${position}`);
       node?.classList.remove('acting','skill-flash','down');
+      const sprite = node?.querySelector('.battle-slot-sprite');
+      if (sprite) {
+        sprite.removeAttribute('src');
+        sprite.classList.remove('active');
+        sprite.dataset.actionId = '';
+        sprite.dataset.frameId = '';
+      }
       const statusNode = node?.querySelector('.battle-slot-status');
       if (statusNode) statusNode.textContent = '';
       const talkNode = node?.querySelector('.battle-slot-talk');
@@ -203,23 +281,26 @@
     statusNode.classList.toggle('active', Boolean(clean) || Number(iconMask) > 0);
   }
 
-  function action(position, actionId, kind) {
+  function action(position, actionId, kind, baseResourceId) {
     const node = $(`battleSlot-${position}`);
     const id = Number(actionId) || 0;
-    if (!node) return;
-    if (id === 9002 || id === 9001) node.classList.add('down');
-    if (kind === 'actor') {
-      node.classList.remove('acting');
-      void node.offsetWidth;
-      node.classList.add('acting');
-      setTimeout(() => node.classList.remove('acting'), 360);
-    } else if (kind === 'skill') {
-      node.classList.remove('skill-flash');
-      void node.offsetWidth;
-      node.classList.add('skill-flash');
-      setTimeout(() => node.classList.remove('skill-flash'), 420);
+    const type = String(kind || 'actor');
+    if (node) {
+      if (id === 9002 || id === 9001) node.classList.add('down');
+      if (type === 'actor') {
+        node.classList.remove('acting');
+        void node.offsetWidth;
+        node.classList.add('acting');
+        setTimeout(() => node.classList.remove('acting'), 360);
+      } else if (type === 'skill') {
+        node.classList.remove('skill-flash');
+        void node.offsetWidth;
+        node.classList.add('skill-flash');
+        setTimeout(() => node.classList.remove('skill-flash'), 420);
+      }
+      node.dataset.actionId = String(id);
     }
-    node.dataset.actionId = String(id);
+    playSequence(position, id, type, baseResourceId);
   }
 
   function skillEffect(name, actorPosition, target, skillCode) {
@@ -343,6 +424,8 @@
   }
 
   function hide() {
+    stopBattleAnimations();
+    $('battleEffectLayer')?.querySelectorAll?.('.battle-sequence')?.forEach?.(node => node.remove());
     $('battle')?.classList.add('hidden');
   }
 
