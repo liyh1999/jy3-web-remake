@@ -3,6 +3,8 @@
 -- headless v_battle surface for deterministic 1v1 regression tests.
 -- Persistent character state stays in the original QueryName objects.
 local G = require "gf"
+local js = require "js"
+local web = js.global.JYWeb
 
 local raw = {
     wait_time = G.wait_time,
@@ -17,6 +19,8 @@ local raw = {
 }
 
 local headless = false
+local browser = false
+local browser_pump_scheduled = false
 local ui_by_name = {}
 local programs = {}
 local co_meta = setmetatable({}, { __mode = "k" })
@@ -25,6 +29,8 @@ local signals = {}
 local pumping = false
 local step_count = 0
 local max_steps = 4000
+local sync_browser_view = function() end
+local schedule_browser_pump = function() end
 local config = {
     skill = 13, -- 0x1005000d / 基本刀法 by default
     max_attacks = 32,
