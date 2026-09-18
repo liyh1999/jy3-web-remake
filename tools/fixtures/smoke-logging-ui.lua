@@ -1,5 +1,17 @@
 local temp = assert(os.getenv('JY3_LOGGING_TMP'), 'JY3_LOGGING_TMP missing')
 local nodes, next_handle = {}, 1
+local scheduled, cancelled, finished = {}, {}, nil
+local web_host = {}
+function web_host:scheduleProgramPump(delay, token)
+    scheduled[#scheduled + 1] = { delay = tonumber(delay) or 0, token = tonumber(token) or 0 }
+end
+function web_host:cancelProgramPump(token)
+    cancelled[tonumber(token) or 0] = true
+    return true
+end
+function web_host:minigameFinished(name)
+    finished = tostring(name or '')
+end
 
 local function new_node(kind)
     local h = next_handle
@@ -114,7 +126,7 @@ function resources:stop() return true end
 
 package.preload['js'] = function()
     return {
-        global = { JYResources = resources, JYRenderer = renderer, JYMapHost = nil, Array = {} },
+        global = { JYResources = resources, JYRenderer = renderer, JYMapHost = nil, JYWeb = web_host, Array = {} },
         null = {},
         undefined = {},
     }
@@ -134,14 +146,23 @@ function G.QueryName(id)
 end
 function G.DBTable() return {} end
 function G.misc() return {} end
-
-local triggered = nil
-function G.trig_event(name)
-    triggered = tostring(name)
-    return true
+function G.call(name, ...)
+    local fn = G.api[tostring(name or '')]
+    if type(fn) == 'function' then return fn(...) end
+    return 0
 end
+function G.wait_time() return true end
+function G.wait1() return true end
+function G.trig_event() return true end
+function G.start_program() return true end
+function G.stop_program() return true end
+function G.remove_program() return true end
 
 assert(loadfile('lua/runtime_shims.lua'))()
+package.preload['program_runtime'] = function()
+    return assert(loadfile('lua/program_runtime.lua'))()
+end
+assert(loadfile('lua/minigame_web.lua'))()
 
 package.preload['c_button'] = function()
     return assert(loadfile(temp .. '/c_button.lua'))()
@@ -152,8 +173,16 @@ end
 
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
+assert(loadfile(temp .. '/p_order.lua'))()
 
-local ui = G.addUI('v_logging')
+assert(__jy_minigame_start('logging'), 'original logging program failed to start')
+local wait_kind, wait_name = __jy_minigame_status('logging')
+assert(wait_kind == 'event' and wait_name == '伐木结束', 'logging did not stop at wait1(伐木结束)')
+assert(__jy_minigame_has('伐木条'), 'original 伐木条 child program did not start')
+assert(__jy_minigame_has('伐木提示'), 'original 伐木提示 child program did not start')
+assert(__jy_minigame_pending_timers() == 2, 'logging child timers were not scheduled independently')
+
+local ui = G.getUI('v_logging')
 assert(ui, 'original v_logging failed to mount')
 assert(G.getUI('v_logging') == ui, 'v_logging active UI registration failed')
 assert(ui.parent == G.Stage(), 'v_logging was not attached to stage')
@@ -165,15 +194,25 @@ assert(knife and knife.c_button and knife.c_button.obj == knife, 'nested origina
 
 local start = ui.getChildByName('开始')
 assert(start and start.mouseEnabled == true, 'original 开始 hit target missing')
-assert(triggered == nil, 'unexpected event before click')
+assert(__jy_minigame_signal_count('伐木') == 0, 'unexpected 伐木 signal before click')
 __jy_input_event('click', start.__handle, 0, 0, '', 0)
-assert(triggered == '伐木', 'click chain did not trigger G.trig_event(伐木)')
+assert(__jy_minigame_signal_count('伐木') == 1, 'click chain did not enter shared scheduler as 伐木')
 
-assert(G.removeUI('v_logging') == true, 'v_logging cleanup failed')
-assert(G.getUI('v_logging') == nil, 'v_logging remained active after cleanup')
-assert(ui.parent == nil, 'v_logging remained attached after cleanup')
+G.trig_event('伐木结束')
+__jy_program_browser_pump(0)
+assert(not __jy_minigame_has('logging'), 'logging program remained after 伐木结束')
+assert(not __jy_minigame_has('伐木条') and not __jy_minigame_has('伐木提示'), 'logging child programs leaked')
+assert(__jy_minigame_pending_timers() == 0, 'logging timers leaked after cleanup')
+assert(G.getUI('v_logging') == nil, 'v_logging remained active after program cleanup')
+assert(ui.parent == nil, 'v_logging remained attached after program cleanup')
+assert(finished == 'logging', 'browser host was not notified of logging completion')
+assert(next(cancelled) ~= nil, 'child timer cancellation was not sent to browser host')
 
-print('original logging UI PASS')
+__jy_minigame_reset()
+assert(__jy_minigame_signal_count('伐木') == 0, 'queued mini-game signals leaked after reset')
+
+print('original logging scheduler PASS')
 print('  v_button + c_button: cloned and initialized')
 print('  v_logging + c_logging: mounted and started')
-print('  renderer/input click -> c_logging:click -> G.trig_event(伐木)')
+print('  renderer/input click -> c_logging:click -> shared G.trig_event(伐木)')
+print('  logging wait1(伐木结束) -> resume -> child timer/UI cleanup')

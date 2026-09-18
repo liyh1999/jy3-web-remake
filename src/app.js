@@ -23,6 +23,8 @@
   let originalBattleCallback = null;
   let originalBattleStarting = false;
   let battlePumpTimer = null;
+  const programPumpTimers = new Map();
+  let programReadyTimer = null;
 
   function emitTeamChanged() {
     const detail = { team: [...state.team] };
@@ -141,6 +143,17 @@
   window.JYWeb = {
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
+    async startOriginalLogging(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareLoggingUI(progress);
+      const ok = fengari.load(
+        "return __jy_minigame_start('logging')",
+        '@web/start-original-logging'
+      )();
+      if (!ok) throw new Error('原 logging 程序启动失败');
+      ui.status.textContent = '原版伐木程序运行中';
+      return loaded;
+    },
     async showLoggingUi(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
@@ -200,6 +213,54 @@
           window.JYBattleView?.hide();
           if (cb) setTimeout(() => cb(0), 0);
         });
+    },
+    scheduleProgramPump(delay, token) {
+      const id = Number(token) || 0;
+      const ms = Math.max(0, Number(delay) || 0);
+      const run = () => {
+        try {
+          fengari.load(
+            `return __jy_program_browser_pump(${id})`,
+            '@web/minigame-program-pump'
+          )();
+        } catch (error) {
+          console.error('minigame scheduler failed', error);
+          ui.status.textContent = `小游戏调度错误：${error?.message || error}`;
+        }
+      };
+      if (id > 0) {
+        if (programPumpTimers.has(id)) return;
+        const timer = setTimeout(() => {
+          programPumpTimers.delete(id);
+          run();
+        }, ms);
+        programPumpTimers.set(id, timer);
+        return;
+      }
+      if (programReadyTimer !== null) return;
+      programReadyTimer = setTimeout(() => {
+        programReadyTimer = null;
+        run();
+      }, ms);
+    },
+    cancelProgramPump(token) {
+      const id = Number(token) || 0;
+      if (id <= 0) return false;
+      const timer = programPumpTimers.get(id);
+      if (timer === undefined) return false;
+      clearTimeout(timer);
+      programPumpTimers.delete(id);
+      return true;
+    },
+    minigameFinished(name) {
+      ui.status.textContent = `原版小游戏结束：${String(name || '')}`;
+      setTimeout(() => {
+        try {
+          fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
+        } catch (error) {
+          console.error('minigame cleanup failed', error);
+        }
+      }, 0);
     },
     scheduleBattlePump(delay) {
       if (battlePumpTimer !== null) return;
@@ -455,9 +516,11 @@
     }
 
     try {
-      const [compat, shims, battleCompat, saveState, demo] = await Promise.all([
+      const [compat, shims, programRuntime, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
+        fetch('./lua/program_runtime.lua').then(r => { if (!r.ok) throw new Error('program_runtime.lua'); return r.text(); }),
+        fetch('./lua/minigame_web.lua').then(r => { if (!r.ok) throw new Error('minigame_web.lua'); return r.text(); }),
         fetch('./lua/battle_web.lua').then(r => { if (!r.ok) throw new Error('battle_web.lua'); return r.text(); }),
         fetch('./lua/save_state.lua').then(r => { if (!r.ok) throw new Error('save_state.lua'); return r.text(); }),
         fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
@@ -465,6 +528,11 @@
 
       fengari.load(compat, '@gf_web.lua')();
       fengari.load(shims, '@runtime_shims.lua')();
+      fengari.load(
+        'package.preload["program_runtime"] = function(...)\n' + programRuntime + '\nend',
+        '@program_runtime.preload.lua'
+      )();
+      fengari.load(minigameCompat, '@minigame_web.lua')();
       fengari.load(battleCompat, '@battle_web.lua')();
       fengari.load(saveState, '@save_state.lua')();
       fengari.load(demo, '@jy3_demo.lua')();

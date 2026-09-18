@@ -13,6 +13,7 @@ function M.new(options)
         step_count = 0,
         max_steps = tonumber(options.max_steps) or 10000,
         schedule = options.schedule or function() end,
+        cancel = options.cancel or function() end,
         on_step = options.on_step or function() end,
         label = tostring(options.label or "program"),
     }
@@ -179,6 +180,7 @@ function M.new(options)
         meta.queued = false
         if meta.timer_token then
             self.timers[meta.timer_token] = nil
+            self.cancel(meta.timer_token)
             meta.timer_token = nil
         end
         self.programs[name] = nil
@@ -223,6 +225,7 @@ function M.new(options)
     end
 
     function self:reset()
+        for token in pairs(self.timers) do self.cancel(token) end
         for _, meta in pairs(self.programs) do meta.removed = true end
         self.programs = {}
         self.co_meta = setmetatable({}, { __mode = "k" })

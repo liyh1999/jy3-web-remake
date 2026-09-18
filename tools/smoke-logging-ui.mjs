@@ -15,6 +15,7 @@ const targets = {
   c_logging: '03_ui_component/c_logging.lua',
   v_button: '02_ui_view/v_button.lua',
   v_logging: '02_ui_view/v_logging.lua',
+  p_order: '04_program/p_order.lua',
 };
 
 for (const [name, relative] of Object.entries(targets)) {
