@@ -2,9 +2,10 @@
   const $ = (selector) => document.querySelector(selector);
   const model = {
     name: '', nickname: '', school: '', rank: '', master: '', portrait: 0,
-    vitals: [], qualities: [], slots: []
+    vitals: [], qualities: [], slots: [], skills: [], team: []
   };
   let installed = false;
+  let activeTeamMember = null;
 
   function runLua(source, name = '@web/person') {
     return fengari.load(source, name)();
@@ -80,11 +81,115 @@
     }
   }
 
+  function progressText(exp, full) {
+    if (full > 0) return `${exp} / ${full}`;
+    return String(exp);
+  }
+
+  function renderSkills() {
+    const root = $('#personSkills');
+    if (!root) return;
+    root.innerHTML = '';
+    if (!model.skills.length) {
+      root.innerHTML = '<div class="person-empty">尚未习得武功</div>';
+      return;
+    }
+    for (const skill of model.skills) {
+      const row = document.createElement('div');
+      row.className = 'person-skill';
+      const icon = document.createElement('div');
+      icon.className = 'person-skill-icon';
+      const url = resourceUrl(skill.icon);
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '';
+        icon.appendChild(img);
+      } else {
+        icon.textContent = '武';
+      }
+      const main = document.createElement('div');
+      main.className = 'person-skill-main';
+      const title = document.createElement('b');
+      title.textContent = skill.name;
+      const meta = document.createElement('span');
+      const cultivation = skill.cultivation > 0 ? ` · 修为 ${skill.cultivation}` : '';
+      meta.textContent = `${skill.categoryName} · ${skill.level}级${cultivation}`;
+      const exp = document.createElement('small');
+      exp.textContent = `熟练度 ${progressText(skill.exp, skill.full)}`;
+      main.append(title, meta, exp);
+      row.append(icon, main);
+      root.appendChild(row);
+    }
+  }
+
+  function renderTeam() {
+    const root = $('#personTeam');
+    const count = $('#personTeamCount');
+    if (!root) return;
+    root.innerHTML = '';
+    if (count) count.textContent = `${model.team.length} / 12`;
+    if (!model.team.length) {
+      root.innerHTML = '<div class="person-empty">当前没有队友</div>';
+      return;
+    }
+    for (const member of model.team) {
+      const card = document.createElement('article');
+      card.className = 'person-team-card';
+
+      const portrait = document.createElement('div');
+      portrait.className = 'person-team-portrait';
+      const url = resourceUrl(member.portrait);
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = member.name;
+        portrait.appendChild(img);
+      } else {
+        portrait.textContent = String(member.slot);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'person-team-body';
+      const head = document.createElement('div');
+      head.className = 'person-team-head';
+      const name = document.createElement('b');
+      name.textContent = `${member.slot}. ${member.name}`;
+      const affection = document.createElement('span');
+      affection.textContent = `好感 ${member.affection}`;
+      head.append(name, affection);
+
+      const status = document.createElement('div');
+      status.className = 'person-team-status';
+      status.textContent = `生命 ${member.hp}/${member.maxHp} · 内力 ${member.mp}/${member.maxMp} · 经验 ${member.exp}`;
+
+      const skills = document.createElement('div');
+      skills.className = 'person-team-skills';
+      if (!member.skills.length) {
+        skills.textContent = '无武功';
+      } else {
+        for (const skill of member.skills) {
+          const chip = document.createElement('span');
+          chip.className = 'person-team-skill';
+          chip.title = `熟练度 ${progressText(skill.exp, skill.full)}`;
+          chip.textContent = `${skill.name} ${skill.level}级`;
+          skills.appendChild(chip);
+        }
+      }
+
+      body.append(head, status, skills);
+      card.append(portrait, body);
+      root.appendChild(card);
+    }
+  }
+
   function render() {
     renderHeader();
     renderRows('#personVitals', model.vitals, 'person-stat');
     renderRows('#personQualities', model.qualities, 'person-stat compact');
     renderSlots();
+    renderSkills();
+    renderTeam();
   }
 
   window.JYPersonBridge = {
@@ -98,6 +203,9 @@
       model.vitals = [];
       model.qualities = [];
       model.slots = [];
+      model.skills = [];
+      model.team = [];
+      activeTeamMember = null;
     },
     vital(label, value, max) {
       model.vitals.push({ label: String(label || ''), value: Number(value) || 0, max: Number(max) || 0 });
@@ -111,6 +219,50 @@
         icon: Number(icon) || 0, point: String(point || '')
       });
     },
+    skill(id, name, category, categoryName, level, cultivation, exp, full, icon) {
+      model.skills.push({
+        id: Number(id) || 0,
+        name: String(name || ''),
+        category: Number(category) || 0,
+        categoryName: String(categoryName || ''),
+        level: Number(level) || 0,
+        cultivation: Number(cultivation) || 0,
+        exp: Number(exp) || 0,
+        full: Number(full) || 0,
+        icon: Number(icon) || 0
+      });
+    },
+    teamBegin(slot, roleNo, roleId, name, portrait, hp, maxHp, mp, maxMp, affection, exp) {
+      activeTeamMember = {
+        slot: Number(slot) || 0,
+        roleNo: Number(roleNo) || 0,
+        roleId: Number(roleId) || 0,
+        name: String(name || ''),
+        portrait: Number(portrait) || 0,
+        hp: Number(hp) || 0,
+        maxHp: Number(maxHp) || 0,
+        mp: Number(mp) || 0,
+        maxMp: Number(maxMp) || 0,
+        affection: Number(affection) || 0,
+        exp: Number(exp) || 0,
+        skills: []
+      };
+      model.team.push(activeTeamMember);
+    },
+    teamSkill(slot, id, name, category, categoryName, level, exp, full) {
+      if (!activeTeamMember) return;
+      activeTeamMember.skills.push({
+        slot: Number(slot) || 0,
+        id: Number(id) || 0,
+        name: String(name || ''),
+        category: Number(category) || 0,
+        categoryName: String(categoryName || ''),
+        level: Number(level) || 0,
+        exp: Number(exp) || 0,
+        full: Number(full) || 0
+      });
+    },
+    teamEnd() { activeTeamMember = null; },
     finish() { render(); }
   };
 
