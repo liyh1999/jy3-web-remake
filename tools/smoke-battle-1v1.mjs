@@ -65,6 +65,13 @@ function web:showTalk(_,_,resume) if resume then resume(true) end return true en
 function web:showMenu(_,_,resume) if resume then resume(1) end return true end
 function web:showShop(_,_,resume) if resume then resume(0) end return true end
 function web:story(_,resume) if resume then resume(true) end return true end
+function web:scheduleBattlePump(_) self.pumpRequested=true; return true end
+function web:battleBegin(background,mode) self.browserBegin=(self.browserBegin or 0)+1; self.browserBackground=background; self.browserMode=mode end
+function web:battleSlot(...) self.browserSlots=(self.browserSlots or 0)+1; self.lastBrowserSlot={...} end
+function web:battleStatus(...) self.browserStatuses=(self.browserStatuses or 0)+1; self.lastBrowserStatus={...} end
+function web:battleEffect(...) self.browserEffects=(self.browserEffects or 0)+1; self.lastBrowserEffect={...} end
+function web:battleEnd(result) self.browserEnd=(self.browserEnd or 0)+1; self.browserEndResult=tonumber(result) or 0 end
+function web:originalBattleFinished(result) self.browserResult=tonumber(result) or 0 end
 
 local bridge={vitals={},skills={},team={}}
 local active_team=nil
@@ -320,8 +327,44 @@ for _,row in ipairs(bridge.skills) do
 end
 assert(skill_row and tonumber(skill_row[7])==prof_after,'person panel did not read post-battle o_skill proficiency')
 
+-- Run the same fixed original battle through the asynchronous browser scheduler.
+-- The fake JS bridge records DOM projection calls while Lua remains authoritative.
+assert(__jy_battle_headless_end())
+body['3']=0
+body['44']=5000
+body['46']=5000
+body['235']=0
+skill['当前熟练度']=100
+enemy['生命']=80
+enemy['内力']=1000
+for i=81,115 do enemy[tostring(i)]=0 end
+G.misc()['战斗结果']=0
+web.browserResult=nil
+web.browserBegin=0
+web.browserEnd=0
+web.browserSlots=0
+web.browserStatuses=0
+web.browserEffects=0
+math.randomseed(20260918)
+
+assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+local browser_pumps=0
+while web.browserResult == nil and browser_pumps < 3000 do
+    browser_pumps=browser_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==1,'browser scheduler did not finish original battle with victory')
+assert(web.browserBegin==1,'browser v_battle was not opened exactly once')
+assert(web.browserEnd>=1 and web.browserEndResult==1,'browser v_battle did not receive victory end state')
+assert(web.browserSlots>0 and web.browserStatuses>0,'browser battle state was not projected to Web')
+assert(web.browserEffects>0,'browser battle effect bridge never fired')
+assert(browser_pumps<3000,'browser battle scheduler exceeded pump budget')
+assert((tonumber(body['3']) or 0)>0,'browser original victory monitor did not award EXP')
+assert((tonumber(body['46']) or 0)<5000,'browser original battle did not spend MP')
+assert((tonumber(skill['当前熟练度']) or 0)>100,'browser original battle did not grow proficiency')
+
 print(string.format(
-    'original battle 1v1 full-flow PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
+    'original battle 1v1 + browser scheduler PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
     attacks,damage,exp_before,exp_after,mp_before,mp_after,prof_before,prof_after,steps
 ))
 `;
