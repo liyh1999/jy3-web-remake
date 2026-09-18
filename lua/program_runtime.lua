@@ -7,6 +7,8 @@ function M.new(options)
         co_meta = setmetatable({}, { __mode = "k" }),
         ready = {},
         signals = {},
+        timers = {},
+        next_timer_token = 1,
         pumping = false,
         step_count = 0,
         max_steps = tonumber(options.max_steps) or 10000,
@@ -68,9 +70,12 @@ function M.new(options)
 
         if marker == "__jy_wait_time" then
             local delay = math.max(0, tonumber(a) or 0)
-            meta.wait = { kind = "time", value = delay }
-            enqueue(meta, true)
-            self.schedule(delay)
+            local token = self.next_timer_token
+            self.next_timer_token = self.next_timer_token + 1
+            meta.timer_token = token
+            meta.wait = { kind = "time", value = delay, token = token }
+            self.timers[token] = meta
+            self.schedule(delay, token)
         elseif marker == "__jy_wait_event" then
             meta.wait = { kind = "event", name = tostring(a) }
         elseif marker == "__jy_wait_case" then
@@ -118,6 +123,20 @@ function M.new(options)
         return coroutine.yield("__jy_wait_event", event)
     end
 
+    function self:wake_timer(token)
+        token = tonumber(token)
+        if not token then return false end
+        local meta = self.timers[token]
+        if not meta or meta.removed or meta.timer_token ~= token then
+            self.timers[token] = nil
+            return false
+        end
+        self.timers[token] = nil
+        meta.timer_token = nil
+        meta.wait = nil
+        return enqueue(meta, true)
+    end
+
     function self:trig_event(event_name)
         local event = tostring(event_name)
         local woke = 0
@@ -158,6 +177,10 @@ function M.new(options)
         if not meta then return false end
         meta.removed = true
         meta.queued = false
+        if meta.timer_token then
+            self.timers[meta.timer_token] = nil
+            meta.timer_token = nil
+        end
         self.programs[name] = nil
         self.co_meta[meta.co] = nil
         for i = #self.ready, 1, -1 do
@@ -180,12 +203,18 @@ function M.new(options)
             run_one()
         end
         self.pumping = false
-        if #self.ready > 0 then self.schedule(0) end
+        if #self.ready > 0 then self.schedule(0, 0) end
         return count
     end
 
     function self:pending()
         return #self.ready
+    end
+
+    function self:pending_timers()
+        local count = 0
+        for _ in pairs(self.timers) do count = count + 1 end
+        return count
     end
 
     function self:has_program(name)
@@ -199,6 +228,8 @@ function M.new(options)
         self.co_meta = setmetatable({}, { __mode = "k" })
         self.ready = {}
         self.signals = {}
+        self.timers = {}
+        self.next_timer_token = 1
         self.pumping = false
         self.step_count = 0
         return true
