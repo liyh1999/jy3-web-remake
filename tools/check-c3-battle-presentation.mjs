@@ -5,6 +5,7 @@ const runtime = read('lua/battle_web.lua');
 const app = read('src/app.js');
 const view = read('src/battle.js');
 const resources = read('src/resources.js');
+const audio = read('src/audio.js');
 
 function must(source, pattern, message) {
   const ok = pattern instanceof RegExp ? pattern.test(source) : source.includes(pattern);
@@ -39,8 +40,9 @@ must(runtime, 'Stop = G.Stop', 'battle runtime does not preserve original audio 
 must(runtime, 'raw.Play(resource_id, channel, loop, volume)', 'battle G.Play does not delegate to resource audio');
 must(runtime, 'raw.Stop(channel)', 'battle G.Stop does not delegate to resource audio');
 must(runtime, '"battleAudio"', 'battle audio telemetry/presentation bridge missing');
-must(resources, "source.kind !== 'audio'", 'resource layer audio-kind routing missing');
-must(resources, 'promise.catch', 'autoplay rejection must remain non-blocking');
+must(resources, 'window.JYAudio?.play', 'resource layer does not delegate audio to JYAudio');
+must(audio, "source.kind !== 'audio'", 'JYAudio audio-kind routing missing');
+must(audio, 'promise.catch', 'autoplay rejection must remain non-blocking');
 
 for (const fn of ['dialogue','slotStatus','action','skillEffect','audio','audioStop']) {
   must(view, `function ${fn}(`, `battle view presentation function missing: ${fn}`);
