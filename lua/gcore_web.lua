@@ -66,6 +66,15 @@ local function wrap_node(handle)
             return function() return tonumber(renderer:nodeCall(handle, "real_width")) or 0 end
         elseif key == "real_height" then
             return function() return tonumber(renderer:nodeCall(handle, "real_height")) or 0 end
+        elseif key == "frameActionID" then
+            return function(a, b)
+                local action_id = b ~= nil and b or a
+                return renderer:nodeCall(handle, "frameActionID", tonumber(action_id) or 0) and true or false
+            end
+        elseif key == "stopFrameAction" then
+            return function() return renderer:nodeCall(handle, "stopFrameAction") and true or false end
+        elseif key == "popFrameEnd" then
+            return function() return tonumber(renderer:nodeCall(handle, "popFrameEnd")) or -1 end
         elseif key == "sendMsg" then
             return function(message, ...)
                 for component_name, component in pairs(self) do
