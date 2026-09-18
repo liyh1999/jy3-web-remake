@@ -23,6 +23,7 @@ const SOURCES = [
   '01_data/o_notebook.lua',
   '04_program/p_order.lua',
   '04_program/p_battle.lua',
+  '04_program/p_niujiacun.lua',
 ];
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -131,7 +132,18 @@ function bridge:teamEnd() active_team=nil end
 function bridge:status(v) self.statusText=tostring(v or '') end
 function bridge:finish() self.finished=true end
 
-local js={global={JYWeb=web,JYPersonBridge=bridge,Array={}}}
+local inventory_bridge={items={},slots={}}
+function inventory_bridge:begin(money) self.items={}; self.slots={}; self.money=money end
+function inventory_bridge:push(id,name,count,category,label,description,image,equipped,action)
+    self.items[tonumber(id) or 0]={name=name,count=tonumber(count) or 0,category=category,label=label}
+end
+function inventory_bridge:slot(label,id,name,image,field)
+    self.slots[tostring(field or label)]={id=tonumber(id) or 0,name=name}
+end
+function inventory_bridge:status(v) self.statusText=tostring(v or '') end
+function inventory_bridge:finish() self.finished=true end
+
+local js={global={JYWeb=web,JYPersonBridge=bridge,JYInventoryBridge=inventory_bridge,Array={}}}
 function js.new()
     local a={}
     function a:push(v) self[#self+1]=v end
