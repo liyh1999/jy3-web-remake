@@ -95,14 +95,21 @@ function web:battleDialogue(position,text,visible)
 end
 function web:battleSlotStatus(position,text,mask)
     self.browserSlotStatuses=(self.browserSlotStatuses or 0)+1
+    self.statusTexts=self.statusTexts or {}
+    self.statusTexts[tostring(position)]=tostring(text or '')
     if tostring(text or '') ~= '' then self.lastNonEmptyStatus={position,text,mask} end
 end
 function web:battleAction(position,action,kind)
     self.browserActions=(self.browserActions or 0)+1
+    self.actionCounts=self.actionCounts or {}
+    local key=tostring(position)
+    self.actionCounts[key]=(self.actionCounts[key] or 0)+1
     self.lastAction={position,action,kind}
 end
 function web:battleSkillEffect(name,position,target,code)
     self.browserSkillEffects=(self.browserSkillEffects or 0)+1
+    self.skillEvents=self.skillEvents or {}
+    self.skillEvents[#self.skillEvents+1]={name,position,target,code}
     self.lastSkillEffect={name,position,target,code}
 end
 function web:battleAudio(id,channel,loop,volume,routed)
@@ -160,6 +167,8 @@ assert(loadfile('${temp}/p_battle.lua'))()
 assert(type(G.api['call_battle'])=='function','original call_battle missing')
 assert(type(G.api['战斗系统_胜负监控'])=='function','original victory monitor missing')
 assert(type(G.api['magic_power1'])=='function','original magic_power1 missing')
+local original_get_drop=G.api['get_drop']
+local original_select=G.api['select']
 
 -- Keep peripheral systems outside the C2 headless boundary deterministic.
 G.api['通用_检测装备']=function() return true end
