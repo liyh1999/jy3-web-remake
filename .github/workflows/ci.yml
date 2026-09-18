@@ -21,6 +21,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/audio.js
           node --check src/animation-resources.js
           node --check src/animation-player.js
           node --check src/battle.js
@@ -44,6 +45,7 @@ jobs:
           node --check tools/check-c3-battle-presentation.mjs
           node --check tools/audit-battle.mjs
           node --check tools/audit-animation-resources.mjs
+          node --check tools/test-audio-manager.mjs
           node --check tools/audit-audio.mjs
           node --check tools/audit-character-appearance.mjs
           node --check tools/smoke-battle-1v1.mjs
@@ -77,6 +79,9 @@ jobs:
 
       - name: Validate resource id resolver
         run: node tools/test-resource-resolver.mjs
+
+      - name: Validate JYAudio group lifecycle
+        run: node tools/test-audio-manager.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
@@ -278,6 +283,7 @@ jobs:
           test -f dist/vendor/upstream/JY3/image/body/0499.png
           test -f dist/vendor/upstream/JY3/fonts/role/1/1/0001.png
           test -f dist/vendor/upstream/JY3/spine/skill/97/0001.png
+          test -f dist/src/audio.js
           test -f dist/src/resource-catalog.js
           test -f dist/src/animation-resources.js
           test -f dist/src/animation-player.js
@@ -325,6 +331,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/0038.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/02/000a.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/audio.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/animation-resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/animation-player.js >/dev/null

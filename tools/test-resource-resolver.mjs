@@ -11,6 +11,7 @@ globalThis.window = {
 };
 vm.runInThisContext(fs.readFileSync('src/resource-catalog.js', 'utf8'), { filename: 'src/resource-catalog.js' });
 vm.runInThisContext(fs.readFileSync('src/resources.js', 'utf8'), { filename: 'src/resources.js' });
+vm.runInThisContext(fs.readFileSync('src/audio.js', 'utf8'), { filename: 'src/audio.js' });
 const R = globalThis.window.JYResources;
 
 const cases = [
