@@ -468,7 +468,6 @@ assert(web.browserSlotStatuses>0,'browser battle slot-status projection never ra
 assert(web.lastNonEmptyStatus and tostring(web.lastNonEmptyStatus[2]):find('中毒',1,true),'authoritative player abnormal status was not projected')
 assert(web.browserActions>0,'browser battle action presentation never fired')
 local saw_actor_family=false
-local saw_skill_family=false
 for _,event in ipairs(web.actionEvents or {}) do
     local kind=tostring(event[3] or '')
     local base=tonumber(event[4]) or 0
@@ -476,12 +475,9 @@ for _,event in ipairs(web.actionEvents or {}) do
         base==0x33039997 or base==0x33039998 or base==0x33069998 or base==0x33079999
     ) then
         saw_actor_family=true
-    elseif kind=='skill' and base==0x33049999 then
-        saw_skill_family=true
     end
 end
 assert(saw_actor_family,'browser actor frameActionID did not expose original framelist family')
-assert(saw_skill_family,'browser skill frameActionID did not expose original skill framelist family')
 assert(web.browserSkillEffects>0,'browser battle skill-effect presentation never fired')
 assert(web.browserAudio>0,'original battle G.Play was not routed through browser audio')
 assert(web.browserAudioStops>0,'original battle G.Stop was not observed by browser audio bridge')
@@ -511,6 +507,12 @@ math.randomseed(20260918)
 
 assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
 assert(__jy_battle_browser_set_auto(false))
+local browser_ui=G.getUI('v_battle')
+assert(browser_ui,'browser battle UI missing for controlled frameActionID check')
+web.lastAction=nil
+browser_ui.getChildByName('flash').getChildByName('enemy1').frameActionID(0x61)
+assert(web.lastAction and tostring(web.lastAction[3])=='skill','controlled flash frameActionID did not reach Web')
+assert(tonumber(web.lastAction[4])==0x33049999,'controlled skill frameActionID used wrong master framelist family')
 web.lastAction=nil
 assert(__jy_battle_browser_frame_end('enemy1',1001,'actor'))
 assert(web.lastAction and tostring(web.lastAction[1])=='enemy1' and tonumber(web.lastAction[2])==1,'enemy frame-end did not restore role idle action')
