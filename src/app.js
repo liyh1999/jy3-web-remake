@@ -26,6 +26,10 @@
     setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:team-changed', { detail })), 0);
   }
 
+  function emitSkillChanged() {
+    setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:skill-changed')), 0);
+  }
+
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -136,7 +140,12 @@
     setItem(id, count) { state.items[String(id)] = Number(count) || 0; },
     getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
-    learnMagic(id) { if (!state.skills.includes(Number(id))) state.skills.push(Number(id)); },
+    learnMagic(id) {
+      id = Number(id);
+      if (!state.skills.includes(id)) state.skills.push(id);
+      emitSkillChanged();
+    },
+    skillChanged() { emitSkillChanged(); },
     setTeam(ids) {
       const next = [...ids].map(Number).filter(Boolean);
       const changed = next.length !== state.team.length || next.some((id, i) => state.team[i] !== id);
