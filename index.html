@@ -185,6 +185,15 @@
         <span>逻辑：Lua 5.3 / Fengari</span>
         <span>运行时：HTML5 / JS</span>
         <span>原设计：853 × 480</span>
+        <div class="audio-settings">
+          <button id="audioSettingsBtn" class="audio-settings-toggle" type="button" aria-expanded="false" aria-controls="audioSettingsPanel">音频 100%</button>
+          <div id="audioSettingsPanel" class="audio-settings-panel hidden" aria-label="音频设置">
+            <label><span>总音量</span><input id="audioMaster" type="range" min="0" max="100" step="1"><output id="audioMasterValue">100%</output></label>
+            <label><span>长音频</span><input id="audioLongLived" type="range" min="0" max="100" step="1"><output id="audioLongLivedValue">100%</output></label>
+            <label><span>瞬时音效</span><input id="audioOneShot" type="range" min="0" max="100" step="1"><output id="audioOneShotValue">100%</output></label>
+            <button id="audioResetBtn" class="audio-reset" type="button">恢复默认</button>
+          </div>
+        </div>
       </footer>
     </section>
   </main>
@@ -198,6 +207,7 @@
   <script src="./src/resource-catalog.js"></script>
   <script src="./src/resources.js"></script>
   <script src="./src/audio.js"></script>
+  <script src="./src/audio-controls.js"></script>
   <script src="./src/animation-resources.js"></script>
   <script src="./src/renderer.js"></script>
   <script src="./src/animation-player.js"></script>

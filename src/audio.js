@@ -2,8 +2,10 @@
   const Resources = window.JYResources;
   if (!Resources) throw new Error('JYResources must be loaded before audio.js');
 
+  const STORAGE_KEY = 'jy3.audio.settings.v1';
   const groups = new Map();
   let nextVoiceId = 1;
+  let pageSuspended = typeof document !== 'undefined' && !!document.hidden;
 
   function groupKey(value) {
     const number = Number(value);
@@ -15,25 +17,26 @@
     return Number.isFinite(number) ? number : 1;
   }
 
+  function unit(value, fallback = 1) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.max(0, Math.min(1, number));
+  }
+
   // The native gcore gain curve is not present in the fixed upstream mirror.
   // D2-2 therefore keeps the raw Lua value and applies an explicit Web
-  // compatibility curve. The two observed endpoints stay configurable so this
-  // can be calibrated later without touching original scripts.
+  // compatibility curve. The endpoints can be calibrated without changing Lua.
   const gainConfig = window.JY_CONFIG?.audioGain || {};
-  const raw1Gain = Number.isFinite(Number(gainConfig.raw1))
-    ? Math.max(0, Math.min(1, Number(gainConfig.raw1)))
-    : 0.55;
-  const raw100Gain = Number.isFinite(Number(gainConfig.raw100))
-    ? Math.max(0, Math.min(1, Number(gainConfig.raw100)))
-    : 1;
+  const raw1Gain = unit(gainConfig.raw1, 0.55);
+  const raw100Gain = unit(gainConfig.raw100, 1);
 
   function browserGain(value) {
     const number = rawValue(value);
     if (number <= 0) return 0;
-    if (number <= 1) return Math.max(0, Math.min(1, number * raw1Gain));
+    if (number <= 1) return unit(number * raw1Gain, 0);
     if (number >= 100) return raw100Gain;
     const t = (number - 1) / 99;
-    return Math.max(0, Math.min(1, raw1Gain + (raw100Gain - raw1Gain) * t));
+    return unit(raw1Gain + (raw100Gain - raw1Gain) * t, 0);
   }
 
   function gainPolicy() {
@@ -43,6 +46,55 @@
       raw100: raw100Gain,
       source: 'web-compat-not-native-gcore',
     };
+  }
+
+  function storage() {
+    try {
+      return window.localStorage || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function loadMixSettings() {
+    const defaults = { master: 1, longLived: 1, oneShot: 1 };
+    try {
+      const raw = storage()?.getItem?.(STORAGE_KEY);
+      if (!raw) return defaults;
+      const parsed = JSON.parse(raw);
+      return {
+        master: unit(parsed?.master, defaults.master),
+        longLived: unit(parsed?.longLived, defaults.longLived),
+        oneShot: unit(parsed?.oneShot, defaults.oneShot),
+      };
+    } catch (_) {
+      return defaults;
+    }
+  }
+
+  let mixSettings = loadMixSettings();
+
+  function saveMixSettings() {
+    try {
+      storage()?.setItem?.(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        master: mixSettings.master,
+        longLived: mixSettings.longLived,
+        oneShot: mixSettings.oneShot,
+      }));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function settings() {
+    return { ...mixSettings };
+  }
+
+  function effectiveGain(rawGain, longLived) {
+    const lane = longLived ? mixSettings.longLived : mixSettings.oneShot;
+    return unit(rawGain * mixSettings.master * lane, 0);
   }
 
   function stateFor(group, create = true) {
@@ -55,6 +107,40 @@
     return state || null;
   }
 
+  function applyVoiceGain(voice) {
+    if (!voice) return 0;
+    voice.gain = effectiveGain(voice.rawGain, voice.longLived);
+    try {
+      if (voice.media) voice.media.volume = voice.gain;
+    } catch (_) {}
+    return voice.gain;
+  }
+
+  function updateAllVoiceGains() {
+    for (const state of groups.values()) {
+      if (state.longLived) applyVoiceGain(state.longLived);
+      for (const voice of state.oneShots) applyVoiceGain(voice);
+    }
+  }
+
+  function setVolumes(next = {}, persist = true) {
+    mixSettings = {
+      master: unit(next.master, mixSettings.master),
+      longLived: unit(next.longLived, mixSettings.longLived),
+      oneShot: unit(next.oneShot, mixSettings.oneShot),
+    };
+    updateAllVoiceGains();
+    if (persist) saveMixSettings();
+    return settings();
+  }
+
+  function resetVolumes(persist = true) {
+    mixSettings = { master: 1, longLived: 1, oneShot: 1 };
+    updateAllVoiceGains();
+    if (persist) saveMixSettings();
+    return settings();
+  }
+
   function publicVoice(voice) {
     if (!voice) return null;
     return {
@@ -65,9 +151,11 @@
       loop: voice.loop,
       longLived: voice.longLived,
       rawVolume: voice.rawVolume,
+      rawGain: voice.rawGain,
       volume: voice.gain,
       gain: voice.gain,
       pending: voice.pending,
+      suspended: voice.suspended,
       stopped: voice.stopped,
     };
   }
@@ -84,6 +172,7 @@
     if (!voice || voice.stopped) return false;
     voice.stopped = true;
     voice.pending = false;
+    voice.suspended = false;
     try {
       voice.media?.pause?.();
       if (voice.media && 'currentTime' in voice.media) voice.media.currentTime = 0;
@@ -92,15 +181,39 @@
     return true;
   }
 
+  function markPlayRejected(voice, error) {
+    if (voice.stopped) return;
+    if (voice.longLived) {
+      voice.pending = true;
+    } else {
+      stopVoice(voice);
+    }
+    console.debug?.('[jy3-web] audio play deferred/blocked', voice.url, error?.message || error);
+  }
+
+  function startVoice(voice) {
+    if (!voice || voice.stopped || !voice.media?.play || pageSuspended) return false;
+    voice.pending = false;
+    voice.suspended = false;
+    try {
+      const promise = voice.media.play();
+      if (promise?.catch) promise.catch(error => markPlayRejected(voice, error));
+      return true;
+    } catch (error) {
+      markPlayRejected(voice, error);
+      return false;
+    }
+  }
+
   function attachMedia(voice) {
     const AudioCtor = window.Audio || globalThis.Audio;
     if (typeof AudioCtor !== 'function') return null;
 
     const media = new AudioCtor(voice.url);
     media.loop = voice.loop;
-    media.volume = voice.gain;
     media.preload = 'auto';
     voice.media = media;
+    applyVoiceGain(voice);
 
     if (typeof media.addEventListener === 'function') {
       media.addEventListener('ended', () => {
@@ -108,23 +221,16 @@
       }, { once: true });
     }
 
-    try {
-      const promise = media.play?.();
-      if (promise?.catch) {
-        promise.catch((error) => {
-          if (voice.stopped) return;
-          voice.pending = voice.longLived;
-          console.debug?.(
-            '[jy3-web] audio play deferred/blocked',
-            voice.url,
-            error?.message || error
-          );
-        });
+    if (pageSuspended) {
+      if (voice.longLived) {
+        voice.suspended = true;
+      } else {
+        stopVoice(voice);
       }
-    } catch (error) {
-      voice.pending = voice.longLived;
-      console.debug?.('[jy3-web] audio play deferred/blocked', voice.url, error?.message || error);
+      return media;
     }
+
+    startVoice(voice);
     return media;
   }
 
@@ -135,8 +241,6 @@
     const state = stateFor(group, true);
     const longLived = !!loop;
 
-    // Original scripts use the same group value for BGM and SFX. Replacing a
-    // long-lived voice must not tear down transient one-shots in that group.
     if (longLived && state.longLived) {
       const previous = state.longLived;
       state.longLived = null;
@@ -151,11 +255,14 @@
       loop: !!loop,
       longLived,
       rawVolume: rawValue(rawVolume),
-      gain: browserGain(rawVolume),
+      rawGain: browserGain(rawVolume),
+      gain: 0,
       pending: false,
+      suspended: false,
       stopped: false,
       media: null,
     };
+    applyVoiceGain(voice);
 
     if (longLived) state.longLived = voice;
     else state.oneShots.add(voice);
@@ -194,39 +301,77 @@
   }
 
   function retryBlocked() {
+    if (pageSuspended) return 0;
     let retried = 0;
     for (const state of groups.values()) {
       const voice = state.longLived;
       if (!voice?.pending || voice.stopped || !voice.media?.play) continue;
-      voice.pending = false;
       retried += 1;
-      try {
-        const promise = voice.media.play();
-        if (promise?.catch) {
-          promise.catch(() => {
-            if (!voice.stopped) voice.pending = true;
-          });
-        }
-      } catch (_) {
-        if (!voice.stopped) voice.pending = true;
-      }
+      startVoice(voice);
     }
     return retried;
   }
 
+  function suspendForPageHide() {
+    if (pageSuspended) return 0;
+    pageSuspended = true;
+    let affected = 0;
+    for (const state of [...groups.values()]) {
+      const longVoice = state.longLived;
+      if (longVoice && !longVoice.stopped) {
+        longVoice.pending = false;
+        longVoice.suspended = true;
+        try { longVoice.media?.pause?.(); } catch (_) {}
+        affected += 1;
+      }
+      for (const voice of [...state.oneShots]) {
+        if (stopVoice(voice)) affected += 1;
+      }
+    }
+    return affected;
+  }
+
+  function resumeFromPageHide() {
+    if (!pageSuspended) return 0;
+    pageSuspended = false;
+    let resumed = 0;
+    for (const state of groups.values()) {
+      const voice = state.longLived;
+      if (!voice?.suspended || voice.stopped) continue;
+      voice.suspended = false;
+      if (startVoice(voice)) resumed += 1;
+    }
+    return resumed;
+  }
+
+  function isPageSuspended() {
+    return pageSuspended;
+  }
+
   if (typeof document !== 'undefined' && document?.addEventListener) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) suspendForPageHide();
+      else resumeFromPageHide();
+    });
     const resume = () => retryBlocked();
     document.addEventListener('pointerdown', resume, { passive: true });
     document.addEventListener('keydown', resume);
   }
 
   window.JYAudio = Object.freeze({
+    STORAGE_KEY,
     play,
     stop,
     activeAudio,
     snapshot,
     retryBlocked,
+    suspendForPageHide,
+    resumeFromPageHide,
+    isPageSuspended,
     browserGain,
     gainPolicy,
+    settings,
+    setVolumes,
+    resetVolumes,
   });
 })();
