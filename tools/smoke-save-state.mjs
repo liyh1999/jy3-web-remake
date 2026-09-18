@@ -11,7 +11,7 @@ const harness = `
 local templates = {
   [0x10030001] = {name=0x10030001, ['15']=10, ['110']=2000, ['140']=0x10060003},
   [0x101b0001] = {name=0x101b0001, ['80']=5},
-  [0x10110001] = {name=0x10110001, ['1']=0x1004000c},
+  [0x10110001] = {name=0x10110001, ['1']=0x1004000c, ['13']=-22},
   [0x10060003] = {name=0x10060003, ['城市列表']={{},{},{},{},{},{},{},{['隐藏']=0}}},
   [0x10060001] = {name=0x10060001, ['城市列表']={{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{['隐藏']=1}}},
   [0x10070019] = {name=0x10070019, ['名称']='神龙教', ['锁定']=true},
@@ -50,6 +50,10 @@ G.QueryName(0x10030001)['140']=0x10060001
 G.QueryName(0x10030001)['193']=0x100b0002
 G.QueryName(0x10030001)['头戴']=0x10180002
 G.QueryName(0x101b0001)['80']=-9
+G.QueryName(0x10110001)['1']=0x10040082
+G.QueryName(0x10110001)['2']=0x1004000c
+G.QueryName(0x10110001)['13']=-140
+G.QueryName(0x10110001)['14']=-22
 G.QueryName(0x10060003)['城市列表'][8]['隐藏']=1
 G.QueryName(0x10060001)['城市列表'][41]['隐藏']=0
 G.QueryName(0x10070019)['锁定']=false
@@ -64,6 +68,8 @@ __jy_reset_runtime()
 assert(G.QueryName(0x10030001)['15']==10,'reset did not restore template')
 assert(G.QueryName(0x10030001)['140']==0x10060003,'current map reset failed')
 assert(G.QueryName(0x10030001)['193']==nil and G.QueryName(0x10030001)['头戴']==nil,'equipment reset failed')
+assert(G.QueryName(0x10110001)['1']==0x1004000c and G.QueryName(0x10110001)['2']==nil,'team reset failed')
+assert(G.QueryName(0x10110001)['13']==-22 and G.QueryName(0x10110001)['14']==nil,'team mirror reset failed')
 assert(G.QueryName(0x10060003)['城市列表'][8]['隐藏']==0,'nested reset failed')
 assert(G.QueryName(0x10060001)['城市列表'][41]['隐藏']==1,'world-map hidden state reset failed')
 assert(G.QueryName(0x10070019)['锁定']==true,'city lock reset failed')
@@ -78,13 +84,16 @@ assert(G.QueryName(0x10030001)['140']==0x10060001,'current map id not restored')
 assert(G.QueryName(0x10030001)['193']==0x100b0002,'ordinary equipment slot not restored')
 assert(G.QueryName(0x10030001)['头戴']==0x10180002,'special equipment slot not restored')
 assert(G.QueryName(0x101b0001)['80']==-9,'newbody state not restored')
+assert(G.QueryName(0x10110001)['1']==0x10040082 and G.QueryName(0x10110001)['2']==0x1004000c,'team order not restored')
+assert(G.QueryName(0x10110001)['13']==-140 and G.QueryName(0x10110001)['14']==-22,'team mirror fields not restored')
 assert(G.QueryName(0x10060003)['城市列表'][8]['隐藏']==1,'nested map state not restored')
 assert(G.QueryName(0x10060001)['城市列表'][41]['隐藏']==0,'world-map hidden state not restored')
 assert(G.QueryName(0x10070019)['锁定']==false,'dynamic city unlock not restored')
 assert(G.QueryName(0x100b0002)['数量']==4,'item quantity not restored')
 assert(G.QueryName(0x10190001)['装备'][1]['数量']==0,'special equipment inventory not restored')
 assert(web.points[15]==77 and web.money==1234,'web snapshot not synchronized')
-print('save-state roundtrip PASS: player, map, inventory and equipment state')
+assert(#web.team==2 and web.team[1]==130 and web.team[2]==12,'web team snapshot not synchronized')
+print('save-state roundtrip PASS: player, map, inventory, equipment and team state')
 `;
 
 fs.writeFileSync(harnessPath, harness, 'utf8');
