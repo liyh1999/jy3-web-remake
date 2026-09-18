@@ -134,6 +134,10 @@ end
 
 local reward_points, reward_items = {}, {}
 local logging_achievement = { name = 0x10170007, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local mining_progress = {}
+for i = 1, 8 do mining_progress[i] = { ['当前进度'] = 0, ['完成'] = 0 } end
+local mining_achievement = { name = 0x10170006, ['完成'] = 0, ['进度列表'] = mining_progress }
+local misc_state = {}
 local newbody = { name = 0x101b0001, ['80'] = 0 }
 local body = {
     name = 0x10030001,
@@ -148,11 +152,12 @@ function G.QueryName(id)
     id = tonumber(id)
     if id == 0x10030001 then return body end
     if id == 0x10170007 then return logging_achievement end
+    if id == 0x10170006 then return mining_achievement end
     if id == 0x101b0001 then return newbody end
     return { name = id, __placeholder = true }
 end
 function G.DBTable() return {} end
-function G.misc() return {} end
+function G.misc() return misc_state end
 function G.call(name, ...)
     name = tostring(name or '')
     local args = {...}
@@ -194,10 +199,15 @@ end
 package.preload['c_movie'] = function()
     return assert(loadfile(temp .. '/c_movie.lua'))()
 end
+package.preload['c_dig'] = function()
+    return assert(loadfile(temp .. '/c_dig.lua'))()
+end
 
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
 assert(loadfile(temp .. '/v_movie.lua'))()
+assert(loadfile(temp .. '/v_empty.lua'))()
+assert(loadfile(temp .. '/v_dig.lua'))()
 assert(loadfile(temp .. '/p_order.lua'))()
 assert(loadfile(temp .. '/p_init.lua'))()
 
@@ -292,6 +302,76 @@ assert(next(cancelled) ~= nil, 'child timer cancellation was not sent to browser
 __jy_minigame_reset()
 assert(__jy_minigame_signal_count('伐木') == 0, 'queued mini-game signals leaked after reset')
 
+scheduled, cancelled, finished = {}, {}, nil
+misc_state = {}
+assert(__jy_minigame_start('dig'), 'original dig program failed to start')
+wait_kind, wait_name = __jy_minigame_status('dig')
+assert(wait_kind == 'event' and wait_name == '挖矿结束', 'dig did not stop at wait1(挖矿结束)')
+assert(__jy_minigame_has('挖矿条'), 'original 挖矿条 child program did not start')
+assert(__jy_minigame_has('挖矿提示'), 'original 挖矿提示 child program did not start')
+assert(__jy_minigame_has('挖矿时间条'), 'original 挖矿时间条 child program did not start')
+assert(__jy_minigame_pending_timers() == 3, 'dig child timers were not scheduled independently')
+
+local dig_ui = G.getUI('v_dig')
+assert(dig_ui and dig_ui.c_dig and dig_ui.c_dig.obj == dig_ui, 'original v_dig/c_dig failed to mount')
+assert(dig_ui.getChildByName('显示').getChildByName('姓名').text == '令狐冲', 'c_dig:start did not initialize player name')
+assert(__jy_minigame_has('地图系统_小游戏'), 'mining dispatcher did not start')
+
+local time_before = tonumber(dig_ui.getChildByName('时间').width)
+local time_timer = latest_live_timer(100)
+assert(time_timer, '挖矿时间条 did not schedule 100ms tick')
+__jy_program_browser_pump(time_timer)
+assert(tonumber(dig_ui.getChildByName('时间').width) == time_before - 0.5, '挖矿时间条 did not advance')
+
+dig_ui.getChildByName('力').text = '50'
+dig_ui.getChildByName('气').text = '50'
+dig_ui.getChildByName('耐久').text = '1'
+dig_ui.getChildByName('时间').width = 100
+local dig_start = dig_ui.getChildByName('开始')
+assert(dig_start and dig_start.mouseEnabled == true, 'original mining 开始 hit target missing')
+__jy_input_event('click', dig_start.__handle, 0, 0, '', 0)
+assert(__jy_minigame_signal_count('挖矿') == 0, '挖矿 event was queued instead of consumed by dispatcher')
+__jy_program_browser_pump(0)
+
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '1000', 'mining dispatcher did not enter original 1000ms strike wait')
+assert(dig_ui.getChildByName('人物').visible == false and dig_ui.getChildByName('动画').visible == true, 'mining strike presentation did not start')
+local strike_timer = latest_live_timer(1000)
+assert(strike_timer, 'mining strike timer missing')
+__jy_program_browser_pump(strike_timer)
+assert(tonumber(dig_ui.getChildByName('耐久').text) == 0, 'successful mining strike did not reduce durability to zero')
+assert((reward_points[102] or 0) == 10, 'original mining strike did not award palm progress')
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '300', 'mining dispatcher did not enter 300ms recovery wait')
+
+local recover_timer = latest_live_timer(300)
+assert(recover_timer, 'mining recovery timer missing')
+__jy_program_browser_pump(recover_timer)
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '500', 'mining success did not enter 500ms reward wait')
+local ore_total = 0
+local progress_total = 0
+for id = 310, 317 do ore_total = ore_total + (reward_items[id] or 0) end
+for i = 1, 8 do progress_total = progress_total + (mining_progress[i]['当前进度'] or 0) end
+assert(ore_total >= 1, 'original mining success did not award ore')
+assert(progress_total == ore_total, 'mining achievement progress did not match ore rewards')
+
+local reward_timer = latest_live_timer(500)
+assert(reward_timer, 'mining reward display timer missing')
+__jy_program_browser_pump(reward_timer)
+assert(not __jy_minigame_has('dig'), 'dig program remained after original 挖矿结束')
+assert(not __jy_minigame_has('挖矿条') and not __jy_minigame_has('挖矿提示') and not __jy_minigame_has('挖矿时间条'), 'mining child programs leaked')
+assert(__jy_minigame_pending_timers() == 0, 'mining timers leaked after cleanup')
+assert(G.getUI('v_dig') == nil, 'v_dig remained active after program cleanup')
+assert(finished == 'dig', 'browser host was not notified of mining completion')
+
+__jy_minigame_reset()
+assert(__jy_minigame_signal_count('挖矿') == 0, 'queued mining signals leaked after reset')
+
+print('original mining scheduler PASS')
+print('  v_empty + v_button + v_dig/c_dig mounted and initialized')
+print('  100ms oxygen timer -> click -> dispatcher -> 1000ms strike -> 300ms recovery')
+print('  ore reward/achievement -> 500ms display -> 挖矿结束 cleanup')
 print('original logging scheduler PASS')
 print('  v_button + c_button: cloned and initialized')
 print('  v_logging + c_logging: mounted and started')
