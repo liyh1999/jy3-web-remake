@@ -35,6 +35,7 @@ jobs:
           node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
           node --check tools/check-b4-battle-boundary.mjs
+          node --check tools/audit-battle.mjs
           node --check tools/scan-resources.mjs
           node --check tools/smoke-inventory.mjs
           node --check tools/smoke-map-runtime.mjs
@@ -128,6 +129,9 @@ jobs:
       - name: Compile normalized upstream Lua
         run: node tools/check-normalized-upstream.mjs
 
+      - name: Audit original battle API coverage
+        run: node tools/audit-battle.mjs
+
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
 
@@ -180,7 +184,10 @@ jobs:
           npm run build:offline
           test -f dist/vendor/fengari/fengari-web.js
           test -f dist/vendor/upstream/JY3/script/01_data/o_headevent.lua
+          test -f dist/vendor/upstream/JY3/script/01_data/o_battle.lua
+          test -f dist/vendor/upstream/JY3/script/01_data/o_notebook.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_init.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_battle.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_citymap_system.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
@@ -220,7 +227,10 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_headevent.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_battle.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_notebook.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_init.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_battle.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_citymap_system.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/04_program/p_newgame.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/image/bjmap/0001.png >/dev/null
