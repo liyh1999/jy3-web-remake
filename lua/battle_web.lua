@@ -431,6 +431,37 @@ sync_browser_view = function()
         abnormal,
         tonumber(G.misc()["战斗结果"]) or 0
     )
+    local hotkey = G.QueryName(0x100c0001)
+    local battle_state = tonumber(G.misc()["战斗状态"]) or 0
+    local auto = tonumber(G.misc()["自动战斗"]) or 0
+    local can_input = auto == 0 and battle_state == 0
+        and (tonumber(body["44"]) or 0) > 0
+        and (tonumber(G.call("get_point", 87)) or 0) == 0
+        and ((tonumber(battle["模式"]) or 0) < 4 or tonumber(battle["模式"]) == 99)
+
+    for slot = 1, 8 do
+        local skill_id = tonumber(hotkey[tostring(slot)]) or 0
+        local skill = skill_id > 0 and G.QueryName(skill_id) or nil
+        local enabled = can_input and skill ~= nil and not skill.__placeholder
+        if enabled and tonumber(skill["类别"]) == 5 and G.call("get_point", 198) == nil then enabled = false end
+        if enabled and slot == 8 and (tonumber(G.call("get_point", 48)) or 0) < 100 then enabled = false end
+        safe_web(
+            "battleSkillOption",
+            slot,
+            skill_id,
+            skill and tostring(skill["名称"] or ("武功" .. tostring(slot))) or "",
+            skill and (tonumber(skill["范围"]) or 0) or 0,
+            enabled == true,
+            tostring(slot)
+        )
+    end
+    safe_web(
+        "battleControls",
+        auto == 1,
+        can_input == true,
+        config.pending_target == true,
+        tonumber(battle["逃跑"]) == 1
+    )
 end
 
 schedule_browser_pump = function(delay)
@@ -689,6 +720,9 @@ function __jy_battle_browser_start(...)
         last_enemy = 0,
         skipped = {},
         full_flow = true,
+        pending_target = false,
+        pending_range = 0,
+        pending_skill = 0,
     }
 
     local misc = G.misc()
@@ -744,6 +778,149 @@ function __jy_battle_browser_active()
     return browser == true
 end
 
+local function browser_battle_ui()
+    if not browser then return nil end
+    return ui_by_name["v_battle"]
+end
+
+local function living_enemy_index(position)
+    local index = nil
+    for i = 6, 11 do
+        if positions[i] == tostring(position) then index = i break end
+    end
+    if not index then return nil end
+    local battle = G.QueryName(0x10150001)
+    local role_id = tonumber(battle[positions[index]]) or 0
+    if role_id <= 0 then return nil end
+    local role = G.QueryName(0x10040000 + role_id)
+    if (tonumber(role["生命"]) or 0) <= 0 then return nil end
+    return index, role_id, role
+end
+
+function __jy_battle_browser_set_auto(enabled)
+    if not browser then return false end
+    G.misc()["自动战斗"] = enabled and 1 or 0
+    if enabled then
+        config.pending_target = false
+        config.pending_range = 0
+        config.pending_skill = 0
+        G.misc()["自动选择"] = 1
+    end
+    sync_browser_view()
+    schedule_browser_pump(0)
+    return true
+end
+
+function __jy_battle_browser_select_skill(slot)
+    local ui = browser_battle_ui()
+    if not ui then return false end
+    slot = tonumber(slot) or 0
+    if slot < 1 or slot > 8 then return false end
+    if tonumber(G.misc()["自动战斗"]) ~= 0 or tonumber(G.misc()["战斗状态"]) ~= 0 then return false end
+
+    local battle = G.QueryName(0x10150001)
+    if not ((tonumber(battle["模式"]) or 0) < 4 or tonumber(battle["模式"]) == 99) then return false end
+    if (tonumber(G.call("get_point", 44)) or 0) <= 0 or (tonumber(G.call("get_point", 87)) or 0) > 0 then return false end
+
+    local hotkey = G.QueryName(0x100c0001)
+    local skill_id = tonumber(hotkey[tostring(slot)]) or 0
+    if skill_id < 0x10050000 then return false end
+    local skill = G.QueryName(skill_id)
+    if not skill or skill.__placeholder then return false end
+    if tonumber(skill["类别"]) == 5 and G.call("get_point", 198) == nil then return false end
+    if slot == 8 and (tonumber(G.call("get_point", 48)) or 0) < 100 then return false end
+    if (tonumber(G.call("get_point", 84)) or 0) > 0 then return false end
+
+    G.trig_event("监控")
+    G.misc()["战斗状态"] = 1
+    local code = skill_id - 0x10050000
+    local range = tonumber(skill["范围"]) or 0
+    ui.getChildByName("代码").getChildByName("team1").text = tostring(code)
+    ui.getChildByName("状态").text = tostring(1)
+    config.pending_skill = code
+
+    if slot == 8 then
+        G.call("set_point", 48, 0)
+        G.call("set_newpoint", 48, -10)
+    end
+
+    if range == 0 or range == 1 then
+        if (tonumber(G.call("get_point", 46)) or 0) <= 0 then
+            G.misc()["战斗状态"] = 0
+            ui.getChildByName("状态").text = "0"
+            config.pending_skill = 0
+            sync_browser_view()
+            return false
+        end
+        config.pending_target = false
+        G.trig_event("主角准备")
+    elseif range == 5 then
+        config.pending_target = false
+        G.trig_event("主角准备")
+    else
+        config.pending_target = true
+        config.pending_range = range
+        G.misc()["自动选择"] = 0
+        safe_web("battleTargetPrompt", range)
+    end
+    sync_browser_view()
+    schedule_browser_pump(0)
+    return true
+end
+
+function __jy_battle_browser_select_target(position)
+    local ui = browser_battle_ui()
+    if not ui or not config.pending_target then return false end
+    local index, role_id, role = living_enemy_index(position)
+    if not index then return false end
+
+    local code = ui.getChildByName("代码").getChildByName("team1")
+    code.getChildByName("id").text = tostring(index)
+    code.getChildByName("min").text = tostring(tonumber(role["生命"]) or 0)
+    local range = tonumber(config.pending_range) or 0
+
+    if range == 2 then
+        ui.getChildByName("单目标").text = tostring(index)
+    elseif range == 3 then
+        if index == 6 or index == 9 or index == 10 then
+            ui.getChildByName("横目标").text = "1"
+        else
+            ui.getChildByName("横目标").text = "2"
+        end
+    elseif range == 4 then
+        if index == 6 or index == 11 then
+            ui.getChildByName("纵目标").text = "2"
+        elseif index == 7 or index == 9 then
+            ui.getChildByName("纵目标").text = "1"
+        elseif index == 8 or index == 10 then
+            ui.getChildByName("纵目标").text = "3"
+        end
+    else
+        return false
+    end
+
+    config.pending_target = false
+    config.pending_range = 0
+    G.misc()["战斗状态"] = 1
+    G.trig_event("选择攻击目标")
+    -- Range 2 waits for this event; range 3/4 simply consume the target fields
+    -- already written above before the monitor re-enters 主角准备.
+    G.trig_event("选择目标")
+    safe_web("battleTargetPrompt", 0)
+    sync_browser_view()
+    schedule_browser_pump(0)
+    return true
+end
+
+function __jy_battle_browser_escape()
+    if not browser then return false end
+    config.pending_target = false
+    config.pending_range = 0
+    G.trig_event("逃跑")
+    schedule_browser_pump(0)
+    return true
+end
+
 _G.__jy_battle_enable_original = __jy_battle_enable_original
 _G.__jy_battle_headless_begin = __jy_battle_headless_begin
 _G.__jy_battle_headless_end = __jy_battle_headless_end
@@ -751,3 +928,7 @@ _G.__jy_battle_headless_stats = __jy_battle_headless_stats
 _G.__jy_battle_browser_start = __jy_battle_browser_start
 _G.__jy_battle_browser_pump = __jy_battle_browser_pump
 _G.__jy_battle_browser_active = __jy_battle_browser_active
+_G.__jy_battle_browser_set_auto = __jy_battle_browser_set_auto
+_G.__jy_battle_browser_select_skill = __jy_battle_browser_select_skill
+_G.__jy_battle_browser_select_target = __jy_battle_browser_select_target
+_G.__jy_battle_browser_escape = __jy_battle_browser_escape
