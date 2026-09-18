@@ -50,10 +50,12 @@
   const LOGGING_UI_MODULES = [
     { module: 'c_button', path: '03_ui_component/c_button.lua' },
     { module: 'c_logging', path: '03_ui_component/c_logging.lua' },
+    { module: 'c_movie', path: '03_ui_component/c_movie.lua' },
   ];
   const LOGGING_UI_VIEWS = [
     '02_ui_view/v_button.lua',
     '02_ui_view/v_logging.lua',
+    '02_ui_view/v_movie.lua',
   ];
 
   const IDENT_START = /[A-Za-z_\p{L}]/u;
