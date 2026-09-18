@@ -138,6 +138,14 @@
   window.JYWeb = {
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
+    async prepareOriginalBattle(onProgress) {
+      const loaded = await window.JYUpstream.prepareBattleRuntime(onProgress);
+      fengari.load('return __jy_battle_enable_original(true)', '@web/enable-original-battle')();
+      return loaded;
+    },
+    disableOriginalBattle() {
+      return fengari.load('return __jy_battle_enable_original(false)', '@web/disable-original-battle')();
+    },
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
@@ -291,15 +299,17 @@
     }
 
     try {
-      const [compat, shims, saveState, demo] = await Promise.all([
+      const [compat, shims, battleCompat, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
+        fetch('./lua/battle_web.lua').then(r => { if (!r.ok) throw new Error('battle_web.lua'); return r.text(); }),
         fetch('./lua/save_state.lua').then(r => { if (!r.ok) throw new Error('save_state.lua'); return r.text(); }),
         fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
       ]);
 
       fengari.load(compat, '@gf_web.lua')();
       fengari.load(shims, '@runtime_shims.lua')();
+      fengari.load(battleCompat, '@battle_web.lua')();
       fengari.load(saveState, '@save_state.lua')();
       fengari.load(demo, '@jy3_demo.lua')();
 
