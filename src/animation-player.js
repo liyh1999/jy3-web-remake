@@ -28,11 +28,18 @@
   }
 
   function normalizeFrame(frame) {
-    if (typeof frame === 'number') return { id: u32(frame), url: null, relativePath: null };
+    if (typeof frame === 'number') {
+      return { id: u32(frame), url: null, relativePath: null, x: 0, y: 0, flag: 1, end: false };
+    }
     return {
+      ...frame,
       id: u32(frame?.id),
       url: frame?.url || null,
       relativePath: frame?.relativePath || null,
+      x: Number(frame?.x) || 0,
+      y: Number(frame?.y) || 0,
+      flag: Number.isFinite(Number(frame?.flag)) ? Number(frame.flag) : 1,
+      end: Boolean(frame?.end),
     };
   }
 
@@ -77,7 +84,12 @@
 
   class FramePlayer {
     constructor(options = {}) {
-      this.loader = options.loader || ((resourceId) => AnimationResources.loadFrameList(resourceId));
+      this.loader = options.loader || ((resourceId, request) => {
+        if (request?.baseResourceId) {
+          return AnimationResources.loadFrameAction(request.baseResourceId, request.actionId);
+        }
+        return AnimationResources.loadFrameList(resourceId);
+      });
       this.schedule = options.schedule || defaultSchedule;
       this.cancelSchedule = options.cancelSchedule || defaultCancel;
       this.now = options.now || defaultNow;
@@ -115,7 +127,7 @@
       this.channels.set(channelKey, state);
 
       state.ready = Promise.resolve()
-        .then(() => this.loader(state.resourceId))
+        .then(() => this.loader(state.resourceId, request))
         .then(async parsed => {
           if (!this.isCurrent(state)) return state;
           const frames = (parsed?.frames || []).map(normalizeFrame).filter(frame => frame.id);
