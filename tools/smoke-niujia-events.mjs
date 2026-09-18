@@ -188,6 +188,7 @@ local function drive(name,menu_answers)
 end
 
 drive('牛家村-秀才',{2})
+drive('牛家村-黄蓉',{})
 drive('牛家村-茶博士',{1,2})
 drive('牛家村-肉贩',{1,4})
 drive('牛家村-肉贩',{2,4})
@@ -201,14 +202,20 @@ assert(buy_settlements==2,'tea/butcher buyresult branch count mismatch')
 assert(sell_settlements==1,'butcher sellresult branch count mismatch')
 
 local team=G.QueryName(0x10110001)
-local expected=0x10040000+130
-local joined=false
-for i=1,12 do if tonumber(team[tostring(i)])==expected then joined=true end end
-assert(joined,'穆念慈 win path did not add role 130 to original teammate table')
+local huangrong=0x10040000+12
+local munianci=0x10040000+130
+local joined_huang=false
+local joined_mu=false
+for i=1,12 do
+  if tonumber(team[tostring(i)])==huangrong then joined_huang=true end
+  if tonumber(team[tostring(i)])==munianci then joined_mu=true end
+end
+assert(joined_huang,'黄蓉 path did not add role 12 to original teammate table')
+assert(joined_mu,'穆念慈 win path did not add role 130 to original teammate table')
 local map=G.QueryName(0x10060003)
 assert(type(map['城市列表'])=='table','牛家村 city list missing')
 assert(map['城市列表'][8]['隐藏']==1,'穆念慈 map node was not hidden after joining')
-print('original Niujia events PASS: scholar, tea shop4, butcher shop2/shop3, Mu Nianci win/join')
+print('original Niujia events PASS: scholar, Huang Rong join, tea shop4, butcher shop2/shop3, Mu Nianci win/join')
 `;
 
 const dataFiles=DATA.map(p=>path.join(tmp,p.split('/').pop()));
