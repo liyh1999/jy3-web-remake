@@ -100,12 +100,15 @@ function web:battleSlotStatus(position,text,mask)
     self.statusTexts[tostring(position)]=tostring(text or '')
     if tostring(text or '') ~= '' then self.lastNonEmptyStatus={position,text,mask} end
 end
-function web:battleAction(position,action,kind)
+function web:battleAction(position,action,kind,base)
     self.browserActions=(self.browserActions or 0)+1
     self.actionCounts=self.actionCounts or {}
+    self.actionEvents=self.actionEvents or {}
     local key=tostring(position)
     self.actionCounts[key]=(self.actionCounts[key] or 0)+1
-    self.lastAction={position,action,kind}
+    local row={position,action,kind,base}
+    self.actionEvents[#self.actionEvents+1]=row
+    self.lastAction=row
 end
 function web:battleSkillEffect(name,position,target,code)
     self.browserSkillEffects=(self.browserSkillEffects or 0)+1
@@ -464,6 +467,21 @@ assert(web.browserDialogues>0,'browser battle dialogue projection never ran')
 assert(web.browserSlotStatuses>0,'browser battle slot-status projection never ran')
 assert(web.lastNonEmptyStatus and tostring(web.lastNonEmptyStatus[2]):find('中毒',1,true),'authoritative player abnormal status was not projected')
 assert(web.browserActions>0,'browser battle action presentation never fired')
+local saw_actor_family=false
+local saw_skill_family=false
+for _,event in ipairs(web.actionEvents or {}) do
+    local kind=tostring(event[3] or '')
+    local base=tonumber(event[4]) or 0
+    if kind=='actor' and (
+        base==0x33039997 or base==0x33039998 or base==0x33069998 or base==0x33079999
+    ) then
+        saw_actor_family=true
+    elseif kind=='skill' and base==0x33049999 then
+        saw_skill_family=true
+    end
+end
+assert(saw_actor_family,'browser actor frameActionID did not expose original framelist family')
+assert(saw_skill_family,'browser skill frameActionID did not expose original skill framelist family')
 assert(web.browserSkillEffects>0,'browser battle skill-effect presentation never fired')
 assert(web.browserAudio>0,'original battle G.Play was not routed through browser audio')
 assert(web.browserAudioStops>0,'original battle G.Stop was not observed by browser audio bridge')
@@ -493,6 +511,14 @@ math.randomseed(20260918)
 
 assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
 assert(__jy_battle_browser_set_auto(false))
+web.lastAction=nil
+assert(__jy_battle_browser_frame_end('enemy1',1001,'actor'))
+assert(web.lastAction and tostring(web.lastAction[1])=='enemy1' and tonumber(web.lastAction[2])==1,'enemy frame-end did not restore role idle action')
+assert(tonumber(web.lastAction[4])==0x33069998,'enemy idle restore used wrong framelist family')
+web.lastAction=nil
+assert(__jy_battle_browser_frame_end('team1',1001,'actor'))
+assert(web.lastAction and tostring(web.lastAction[1])=='team1' and tonumber(web.lastAction[2])==0,'player frame-end did not restore default body action')
+assert(tonumber(web.lastAction[4])==0x33039997 or tonumber(web.lastAction[4])==0x33039998,'player idle restore used wrong body framelist family')
 assert(__jy_battle_browser_select_skill(1),'manual skill slot 1 was rejected')
 assert(web.browserTargetPrompt==2,'single-target skill did not request original range-2 target')
 assert(__jy_battle_browser_select_target('enemy1'),'manual enemy1 target was rejected')
