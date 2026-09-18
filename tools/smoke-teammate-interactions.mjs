@@ -119,7 +119,7 @@ body['46']=5000; body['217']=1000; body['218']=500
 for i=3,5 do body[tostring(i)]=0 end
 for i=14,21 do body[tostring(i)]=0 end
 body['44']=1000; body['45']=1000; body['47']=500
-local newbody=G.QueryName(0x101b0001); newbody.__placeholder=nil
+local newbody=G.QueryName(0x101b0001); newbody.__placeholder=nil; newbody['76']=0
 local misc=G.misc(); misc.__placeholder=nil
 local team=G.QueryName(0x10110001); team.__placeholder=nil
 local hotkey=G.QueryName(0x100c0001); hotkey.__placeholder=nil
