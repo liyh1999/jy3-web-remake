@@ -141,6 +141,23 @@
   window.JYWeb = {
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
+    async showLoggingUi(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareLoggingUI(progress);
+      const ok = fengari.load(
+        "local G=require 'gf'; return G.addUI('v_logging') ~= nil",
+        '@web/show-original-logging-ui'
+      )();
+      if (!ok) throw new Error('原 v_logging.lua 未能实例化');
+      ui.status.textContent = '原版伐木 UI 已实例化';
+      return loaded;
+    },
+    hideLoggingUi() {
+      return fengari.load(
+        "local G=require 'gf'; return G.removeUI('v_logging')",
+        '@web/hide-original-logging-ui'
+      )();
+    },
     async prepareOriginalBattle(onProgress) {
       const loaded = await window.JYUpstream.prepareBattleRuntime(onProgress);
       fengari.load('return __jy_battle_enable_original(true)', '@web/enable-original-battle')();

@@ -80,6 +80,13 @@ assert(clone.c_root.init_count==1,'root init failed')
 assert(clone_child.c_child and clone_child.c_child.value==9 and clone_child.c_child.obj==clone_child,'child component binding failed')
 clone.c_root.value=99
 assert(root.c_root.value==7,'component state leaked into template')
+function Component:start() self.start_count=(self.start_count or 0)+1 end
+local mounted=G.addUI('v_test')
+assert(mounted and G.getUI('v_test')==mounted,'addUI/getUI lifecycle failed')
+assert(mounted.parent==G.Stage(),'addUI did not attach to stage')
+assert(mounted.c_root.start_count==1,'component start did not run')
+assert(G.removeUI('v_test')==true and G.getUI('v_test')==nil,'removeUI lifecycle failed')
+assert(mounted.parent==nil,'removeUI did not detach from stage')
 print('gcore UI template runtime PASS')
 `;
 fs.writeFileSync(file, harness, 'utf8');

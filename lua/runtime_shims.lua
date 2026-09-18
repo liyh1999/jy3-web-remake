@@ -22,6 +22,7 @@ end
 
 local node_cache = setmetatable({}, { __mode = "v" })
 local cached_ui_templates = {}
+local active_ui = {}
 
 local function handle_of(value)
     if type(value) == "table" then return tonumber(rawget(value, "__handle")) or 0 end
@@ -153,6 +154,45 @@ function G.loadUI(name)
         end
     end
     return nil
+end
+
+local function start_component_tree(node)
+    if not node then return end
+    for key, component in pairs(node) do
+        if type(key) == "string" and string.sub(key, 1, 2) == "c_" and type(component) == "table" then
+            local fn = component.start
+            if type(fn) == "function" then fn(component) end
+        end
+    end
+    local count = tonumber(node.childCount) or 0
+    for index = 0, count - 1 do
+        start_component_tree(node.getChildAt(index))
+    end
+end
+
+function G.addUI(name)
+    name = tostring(name or "")
+    if name == "" then return nil end
+    if active_ui[name] then return active_ui[name] end
+    local ui = G.loadUI(name)
+    if not ui then return nil end
+    active_ui[name] = ui
+    G.Stage().addChild(ui)
+    start_component_tree(ui)
+    return ui
+end
+
+function G.getUI(name)
+    return active_ui[tostring(name or "")]
+end
+
+function G.removeUI(name)
+    name = tostring(name or "")
+    local ui = active_ui[name]
+    if not ui then return false end
+    active_ui[name] = nil
+    ui.removeFromParent()
+    return true
 end
 
 function G.GetPath(resource_id)

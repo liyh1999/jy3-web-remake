@@ -47,6 +47,15 @@
   ];
   const CACHED_PROGRAMS = [...new Set([...CORE_PROGRAMS, ...ON_DEMAND_PROGRAMS])];
 
+  const LOGGING_UI_MODULES = [
+    { module: 'c_button', path: '03_ui_component/c_button.lua' },
+    { module: 'c_logging', path: '03_ui_component/c_logging.lua' },
+  ];
+  const LOGGING_UI_VIEWS = [
+    '02_ui_view/v_button.lua',
+    '02_ui_view/v_logging.lua',
+  ];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -260,6 +269,21 @@ return true
     return battleRuntimePromise;
   }
 
+  let loggingUiPromise = null;
+  async function prepareLoggingUI(onProgress) {
+    if (!loggingUiPromise) {
+      loggingUiPromise = (async () => {
+        const loadedModules = await loadModules(LOGGING_UI_MODULES, onProgress);
+        const loadedViews = await loadPrograms(LOGGING_UI_VIEWS, onProgress);
+        return { loadedModules, loadedViews };
+      })().catch((error) => {
+        loggingUiPromise = null;
+        throw error;
+      });
+    }
+    return loggingUiPromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -284,6 +308,8 @@ return true
     CORE_PROGRAMS,
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
+    LOGGING_UI_MODULES,
+    LOGGING_UI_VIEWS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
@@ -294,6 +320,7 @@ return true
     loadPrograms,
     loadData,
     prepareBattleRuntime,
+    prepareLoggingUI,
     bootstrapData,
   };
 })();
