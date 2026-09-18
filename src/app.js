@@ -34,6 +34,10 @@
     setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:growth-changed')), 0);
   }
 
+  function emitRelationshipChanged() {
+    setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:relationship-changed')), 0);
+  }
+
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -151,6 +155,7 @@
     },
     skillChanged() { emitSkillChanged(); },
     growthChanged() { emitGrowthChanged(); },
+    relationshipChanged() { emitRelationshipChanged(); },
     setTeam(ids) {
       const next = [...ids].map(Number).filter(Boolean);
       const changed = next.length !== state.team.length || next.some((id, i) => state.team[i] !== id);
