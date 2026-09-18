@@ -13,8 +13,10 @@ const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-logging-ui-'));
 const targets = {
   c_button: '03_ui_component/c_button.lua',
   c_logging: '03_ui_component/c_logging.lua',
+  c_movie: '03_ui_component/c_movie.lua',
   v_button: '02_ui_view/v_button.lua',
   v_logging: '02_ui_view/v_logging.lua',
+  v_movie: '02_ui_view/v_movie.lua',
   p_order: '04_program/p_order.lua',
   p_init: '04_program/p_init.lua',
 };
