@@ -37,6 +37,7 @@ jobs:
           node --check src/resources.js
           node --check src/renderer.js
           node --check src/upstream.js
+          node --check tools/audit-minigames.mjs
           node --check tools/audit-newgame.mjs
           node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
@@ -182,6 +183,9 @@ jobs:
 
       - name: C3 battle presentation and audio bridge
         run: node tools/check-c3-battle-presentation.mjs
+
+      - name: Audit original five mini-game contracts
+        run: node tools/audit-minigames.mjs
 
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs

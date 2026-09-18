@@ -252,5 +252,16 @@
   "audio/02/000a.mp3",
   "script/03_ui_component/c_button.lua",
   "script/06_notify/n_common.lua",
-  "script/03_ui_component/c_book.lua"
+  "script/03_ui_component/c_book.lua",
+  "script/02_ui_view/v_hunting.lua",
+  "script/02_ui_view/v_logging.lua",
+  "script/02_ui_view/v_fishing.lua",
+  "script/02_ui_view/v_dig.lua",
+  "script/02_ui_view/v_gambling.lua",
+  "script/03_ui_component/c_hunting.lua",
+  "script/03_ui_component/c_logging.lua",
+  "script/03_ui_component/c_fishing.lua",
+  "script/03_ui_component/c_dig.lua",
+  "script/03_ui_component/c_gambling.lua",
+  "script/04_program/p_person.lua"
 ]
