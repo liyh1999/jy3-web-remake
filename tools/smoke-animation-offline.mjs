@@ -43,21 +43,21 @@ async function check(base, action, expectedFormat, expectedCount, firstPath, lab
   return selected;
 }
 
-const maleIdle = await check(0x33039998, 0, 'action', 0x16, 'image/body/0001.png', 'male DA=0000');
+const maleIdle = await check(0x33039998, 0, 'action', 16, 'image/body/0001.png', 'male DA=0000');
 assert(maleIdle.rate === 20 && maleIdle.width === 100 && maleIdle.height === 100, 'male master header mismatch');
 
-await check(0x33039998, 0x1001, 'action', 0x3b, 'image/body/0359.png', 'male DA=1001');
+await check(0x33039998, 0x1001, 'action', 35, 'image/body/0359.png', 'male DA=1001');
 await check(0x33039997, 0, 'action', 8, 'image/primadonna/0001.png', 'female DA=0000');
-await check(0x33039997, 0x1001, 'action', 0x16, 'image/primadonna/0041.png', 'female DA=1001');
+await check(0x33039997, 0x1001, 'action', 16, 'image/primadonna/0041.png', 'female DA=1001');
 
 const enemyIdle = await check(0x33069998, 1, 'action', 8, 'fonts/role/1/2/0001.png', 'enemy role1 idle');
 assert(enemyIdle.frames[0].x === -72 && enemyIdle.frames[0].y === -62, 'enemy master frame offsets were lost');
-await check(0x33069998, 0x1001, 'action', 0x2b, 'fonts/role/1/2/0009.png', 'enemy role1 attack');
+await check(0x33069998, 0x1001, 'action', 25, 'fonts/role/1/2/0009.png', 'enemy role1 attack');
 
 await check(0x33079999, 1, 'action', 8, 'fonts/role/1/1/0001.png', 'friendly role1 idle');
-await check(0x33079999, 0x1001, 'action', 0x2b, 'fonts/role/1/1/0009.png', 'friendly role1 attack');
+await check(0x33079999, 0x1001, 'action', 25, 'fonts/role/1/1/0009.png', 'friendly role1 attack');
 
-const skill = await check(0x33049999, 0x61, 'action', 0x27, 'spine/skill/61/0001.png', 'skill DA=061');
+const skill = await check(0x33049999, 0x61, 'action', 27, 'spine/skill/61/0001.png', 'skill DA=061');
 assert(skill.frames.at(-1)?.end === true, 'skill action end marker missing');
 
 const simple = await A.loadFrameAction(0x33010001, 0);
