@@ -199,7 +199,11 @@ for _,role in ipairs(G.DBTable('o_role')) do
   for i=1,8 do
     if tonumber(role[tostring(i)])==nil or tonumber(role[tostring(900+i)])==nil then ok=false break end
   end
-  if ok and tonumber(role.name) and tonumber(role.name)>0x10040000 then candidate=role break end
+  if ok and tonumber(role.name) and tonumber(role.name)>0x10040000
+      and tonumber(role['901'])>500 and tonumber(role['902'])>500 then
+    candidate=role
+    break
+  end
 end
 assert(candidate,'no original role with growth caps found')
 local role_no=tonumber(candidate.name)-0x10040000
