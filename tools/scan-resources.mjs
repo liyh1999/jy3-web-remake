@@ -107,6 +107,15 @@ const resources = [...references.values()].map(ref => {
   if (dynamicOnly) {
     status = 'dynamic-expression';
     existsUpstream = null;
+  } else if (hit.structured) {
+    // Particle/Spine canonical ids are logical structured resources. Their
+    // family root does not have to exist as a physical directory in the pinned
+    // tree (for example the generic particle root 0x04000000). Keep them in
+    // the structured audit bucket instead of turning a parser placeholder into
+    // a false missing-resource regression.
+    existsUpstream = directoryExists(hit.directory, upstreamFiles);
+    cached = directoryExists(hit.directory, cachedFiles);
+    status = 'structured-unresolved';
   } else if (hit.isDirectory) {
     existsUpstream = directoryExists(hit.directory, upstreamFiles);
     cached = directoryExists(hit.directory, cachedFiles);
