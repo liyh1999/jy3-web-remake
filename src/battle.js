@@ -95,6 +95,7 @@
       node.innerHTML = `
         <img class="battle-slot-sprite" alt="">
         <div class="battle-slot-head">
+          <img class="battle-slot-portrait" alt="">
           <strong class="battle-slot-name">${position}</strong>
           <span class="battle-slot-id"></span>
         </div>
@@ -181,6 +182,17 @@
         sprite.dataset.actionId = '';
         sprite.dataset.frameId = '';
       }
+      const portrait = node?.querySelector('.battle-slot-portrait');
+      if (portrait) {
+        portrait.removeAttribute('src');
+        portrait.classList.add('missing');
+        portrait.dataset.resourceId = '';
+      }
+      if (node) {
+        node.dataset.standResourceId = '';
+        node.dataset.battleMaster = '';
+        node.dataset.idleAction = '';
+      }
       const statusNode = node?.querySelector('.battle-slot-status');
       if (statusNode) statusNode.textContent = '';
       const talkNode = node?.querySelector('.battle-slot-talk');
@@ -229,6 +241,28 @@
       if ($('enemyHpText')) $('enemyHpText').textContent = `${Math.max(0, Math.floor(data.hp))} / ${Math.floor(data.maxHp)}`;
     }
     node.classList.toggle('targetable', controlsState.targetPending && data.enemy && data.visible && data.hp > 0);
+  }
+
+  function appearance(position, portraitId, standId, battleMaster, idleAction) {
+    ensureSlots();
+    const node = $(`battleSlot-${position}`);
+    if (!node) return;
+    const portrait = node.querySelector('.battle-slot-portrait');
+    const id = Number(portraitId) >>> 0;
+    const url = id ? window.JYResources?.url?.(id) : null;
+    if (portrait) {
+      portrait.src = url || '';
+      portrait.classList.toggle('missing', !url);
+      portrait.alt = url ? `${node.querySelector('.battle-slot-name')?.textContent || position}头像` : '';
+      portrait.dataset.resourceId = id ? `0x${id.toString(16).padStart(8, '0')}` : '';
+    }
+    node.dataset.standResourceId = (Number(standId) >>> 0)
+      ? `0x${(Number(standId) >>> 0).toString(16).padStart(8, '0')}`
+      : '';
+    node.dataset.battleMaster = (Number(battleMaster) >>> 0)
+      ? `0x${(Number(battleMaster) >>> 0).toString(16).padStart(8, '0')}`
+      : '';
+    node.dataset.idleAction = String(Number(idleAction) || 0);
   }
 
   function status(time, rage, maxRage, skillName, abnormal, result) {
@@ -455,7 +489,7 @@
   });
 
   window.JYBattleView = Object.freeze({
-    begin, slot, status, effect, dialogue, slotStatus, action, skillEffect, audio, audioStop,
+    begin, slot, appearance, status, effect, dialogue, slotStatus, action, skillEffect, audio, audioStop,
     skillOption, itemOption, controls, targetPrompt, end, hide,
     positions: Object.freeze([...positions])
   });
