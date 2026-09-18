@@ -20,6 +20,9 @@
   let battleState = null;
   let originalProgramLoaded = false;
   let pendingSavePayload = '';
+  let originalBattleCallback = null;
+  let originalBattleStarting = false;
+  let battlePumpTimer = null;
 
   function emitTeamChanged() {
     const detail = { team: [...state.team] };
@@ -146,6 +149,81 @@
     disableOriginalBattle() {
       return fengari.load('return __jy_battle_enable_original(false)', '@web/disable-original-battle')();
     },
+    startOriginalBattle(...rawArgs) {
+      const resume = typeof rawArgs[rawArgs.length - 1] === 'function' ? rawArgs.pop() : null;
+      const args = rawArgs.slice(0, 13);
+      while (args.length < 13) args.push(null);
+      if (originalBattleStarting || originalBattleCallback) {
+        console.warn('original battle already active');
+        if (resume) setTimeout(() => resume(0), 0);
+        return;
+      }
+      originalBattleStarting = true;
+      originalBattleCallback = resume;
+      ui.status.textContent = '按需加载原 p_battle.lua…';
+      this.prepareOriginalBattle((message) => { ui.status.textContent = message; })
+        .then(() => {
+          const luaArgs = args.map(value => {
+            if (value === null || value === undefined || value === '') return 'nil';
+            const number = Number(value);
+            return Number.isFinite(number) ? String(number) : 'nil';
+          });
+          ui.status.textContent = '原战斗状态机运行中';
+          fengari.load(
+            `return __jy_battle_browser_start(${luaArgs.join(',')})`,
+            '@web/original-battle-start'
+          )();
+        })
+        .catch(error => {
+          console.error('original battle start failed', error);
+          ui.status.textContent = `原战斗启动失败：${error?.message || error}`;
+          const cb = originalBattleCallback;
+          originalBattleCallback = null;
+          originalBattleStarting = false;
+          window.JYBattleView?.hide();
+          if (cb) setTimeout(() => cb(0), 0);
+        });
+    },
+    scheduleBattlePump(delay) {
+      if (battlePumpTimer !== null) return;
+      const ms = Math.max(0, Math.min(80, Number(delay) || 0));
+      battlePumpTimer = setTimeout(() => {
+        battlePumpTimer = null;
+        try {
+          fengari.load('return __jy_battle_browser_pump()', '@web/battle-pump')();
+        } catch (error) {
+          console.error('battle scheduler failed', error);
+          ui.status.textContent = `战斗调度错误：${error?.message || error}`;
+          const cb = originalBattleCallback;
+          originalBattleCallback = null;
+          originalBattleStarting = false;
+          window.JYBattleView?.end(2);
+          if (cb) setTimeout(() => cb(2), 0);
+        }
+      }, ms);
+    },
+    originalBattleFinished(result) {
+      const value = Number(result) || 0;
+      state.lastBattle = value;
+      window.JYBattleView?.end(value);
+      const cb = originalBattleCallback;
+      originalBattleCallback = null;
+      originalBattleStarting = false;
+      ui.status.textContent = value === 1 ? '原战斗结算完成：胜利' : value === 2 ? '原战斗结算完成：失败' : '原战斗结束';
+      setTimeout(() => {
+        window.JYBattleView?.hide();
+        if (cb) cb(value);
+      }, 420);
+    },
+    battleBegin(background, mode) { window.JYBattleView?.begin(background, mode); },
+    battleSlot(position, id, name, hp, maxHp, mp, maxMp, charge, visible, enemy) {
+      window.JYBattleView?.slot(position, id, name, hp, maxHp, mp, maxMp, charge, visible, enemy);
+    },
+    battleStatus(time, rage, maxRage, skillName, abnormal, result) {
+      window.JYBattleView?.status(time, rage, maxRage, skillName, abnormal, result);
+    },
+    battleEffect(actor, target, damage) { window.JYBattleView?.effect(actor, target, damage); },
+    battleEnd(result) { window.JYBattleView?.end(result); },
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
