@@ -149,6 +149,20 @@
     }
   }
 
+  function interactTeamMember(member, action) {
+    const roleNo = Math.trunc(Number(member?.roleNo) || 0);
+    if (!roleNo || !action) return;
+    try {
+      const source = `if not __jy_person_select_team(${roleNo}) then return false end; return __jy_run(${JSON.stringify(action)})`;
+      const started = runLua(source, '@web/person-interaction');
+      if (!started) throw new Error(`${member.name || '队友'} 当前无法${action}`);
+    } catch (error) {
+      console.error(error);
+      const status = $('#runtimeStatus');
+      if (status) status.textContent = `${action}失败：${error.message || error}`;
+    }
+  }
+
   function leaveTeamMember(member) {
     const roleNo = Math.trunc(Number(member?.roleNo) || 0);
     if (!roleNo) return;
@@ -223,6 +237,15 @@
 
       const actions = document.createElement('div');
       actions.className = 'person-team-actions';
+      for (const action of ['宴请', '馈赠', '治疗', '切磋']) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'person-team-action';
+        button.textContent = action;
+        button.title = `执行原 p_init.lua「${action}」流程`;
+        button.addEventListener('click', () => interactTeamMember(member, action));
+        actions.appendChild(button);
+      }
       const leave = document.createElement('button');
       leave.type = 'button';
       leave.className = 'person-team-leave';
@@ -376,6 +399,7 @@
   window.addEventListener('jy3:team-changed', refreshIfOpen);
   window.addEventListener('jy3:skill-changed', refreshIfOpen);
   window.addEventListener('jy3:growth-changed', refreshIfOpen);
+  window.addEventListener('jy3:relationship-changed', refreshIfOpen);
 
   const timer = setInterval(async () => {
     if (await install()) clearInterval(timer);
