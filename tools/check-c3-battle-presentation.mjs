@@ -29,8 +29,8 @@ for (const name of ['中毒','麻痹','晕眩','内伤','受伤','减速','混�
   must(runtime, name, `missing abnormal-state label: ${name}`);
 }
 
-must(runtime, 'web:battleAction(position, action_id, "actor")', 'original frameActionID actor bridge missing');
-must(runtime, 'web:battleAction(position, effect_id, "skill")', 'original flash frameActionID bridge missing');
+must(runtime, /web:battleAction\(position,\s*action_id,\s*"actor"/, 'original frameActionID actor bridge missing');
+must(runtime, /web:battleAction\(position,\s*effect_id,\s*"skill"/, 'original flash frameActionID bridge missing');
 must(runtime, 'web:battleSkillEffect(skill_name', 'skill-name/effect presentation bridge missing');
 must(runtime, 'root.getChildByName("图表").getChildByName("文字").text = skill_name', 'original skill-name field is not synchronized');
 
