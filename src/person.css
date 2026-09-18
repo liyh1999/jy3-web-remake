@@ -40,6 +40,10 @@
 .person-skill-main { min-width:0; display:grid; gap:1px; }
 .person-skill-main b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
 .person-skill-main span, .person-skill-main small { font-size:10px; color:#765f41; }
+.person-skill-actions { display:flex; justify-content:flex-end; margin-top:3px; }
+.person-skill-train { border:1px solid #6b5438; background:#efe0bd; color:#4a321e; padding:2px 8px; font-size:9px; cursor:pointer; }
+.person-skill-train:hover:not(:disabled) { background:#d9bd91; }
+.person-skill-train:disabled { opacity:.55; cursor:default; }
 .person-team { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
 .person-team-card { display:grid; grid-template-columns:48px minmax(0,1fr); gap:8px; padding:7px; border:1px solid #8b7555; background:#eadbb8; }
 .person-team-portrait { width:46px; height:58px; font-size:16px; }
