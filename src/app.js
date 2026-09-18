@@ -227,6 +227,9 @@
     battleSkillOption(slot, skillId, name, range, enabled, hotkey) {
       window.JYBattleView?.skillOption(slot, skillId, name, range, enabled, hotkey);
     },
+    battleItemOption(slot, itemId, name, count, enabled, hotkey) {
+      window.JYBattleView?.itemOption(slot, itemId, name, count, enabled, hotkey);
+    },
     battleControls(autoEnabled, canInput, targetPending, canEscape) {
       window.JYBattleView?.controls(autoEnabled, canInput, targetPending, canEscape);
     },
@@ -241,6 +244,10 @@
     chooseOriginalBattleTarget(position) {
       const safe = JSON.stringify(String(position || ''));
       return fengari.load(`return __jy_battle_browser_select_target(${safe})`, '@web/battle-target')();
+    },
+    chooseOriginalBattleItem(slot) {
+      const n = Math.max(1, Math.min(4, Number(slot) || 0));
+      return fengari.load(`return __jy_battle_browser_select_item(${n})`, '@web/battle-item')();
     },
     originalBattleEscape() {
       return fengari.load('return __jy_battle_browser_escape()', '@web/battle-escape')();
