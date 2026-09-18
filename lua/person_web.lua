@@ -174,6 +174,30 @@ function __jy_person_skill_level(skill_id, exp, strict)
     return skill_level(skill, exp, strict and true or false)
 end
 
+local function team_contains(role_no)
+    role_no = tonumber(role_no) or 0
+    if role_no <= 0 then return false end
+    local fn = G.api and G.api["in_team"]
+    if type(fn) == "function" then
+        return fn(role_no) == true
+    end
+    local team = G.QueryName(0x10110001)
+    local role_id = 0x10040000 + role_no
+    for slot = 1, 12 do
+        if tonumber(team[tostring(slot)]) == role_id then return true end
+    end
+    return false
+end
+
+function __jy_person_leave(role_no)
+    role_no = tonumber(role_no) or 0
+    if role_no <= 0 or not team_contains(role_no) then return false end
+    local fn = G.api and G.api["leave"]
+    if type(fn) ~= "function" then return false end
+    G.call("leave", role_no)
+    return not team_contains(role_no)
+end
+
 function __jy_person_refresh()
     local o_body = body()
     bridge:begin(
