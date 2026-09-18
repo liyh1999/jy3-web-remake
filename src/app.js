@@ -55,6 +55,10 @@
       ui.scene.innerHTML = `<div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>背景已通过原资源 ID <code>0x56050001</code> 解析；NPC 按钮直接触发原版 <code>p_niujiacun.lua</code>。</p></div>`;
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
+      // setScene replaces #scene children, so the gcore canvas may have been detached.
+      // Recreate/reattach it immediately; otherwise original Lua UI renders off-DOM.
+      window.JYRenderer?.ensureCanvas?.();
+      window.JYRenderer?.resizeCanvas?.();
     } else {
       ui.scene.style.backgroundImage = '';
       ui.scene.style.backgroundSize = '';
@@ -148,8 +152,17 @@
       closeDialogue();
       ui.battle.classList.add('hidden');
       setScene('village');
+      // The village HTML card/HUD is only a compatibility shell. Original mini-games
+      // are rendered by gcore, so remove the DOM overlay and expose the canvas.
+      ui.scene.querySelector('.title-copy')?.remove();
+      ui.actions.classList.add('hidden');
+      ui.hud.classList.add('hidden');
+      const canvas = window.JYRenderer?.ensureCanvas?.();
+      window.JYRenderer?.resizeCanvas?.();
+      if (!canvas?.isConnected) throw new Error('gcore canvas 未挂载到页面');
       fengari.load("return __jy_minigame_reset()", '@web/reset-minigame-before-logging')();
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
+      progress('伐木资源加载完成，正在启动原版程序…');
       const ok = fengari.load(
         "return __jy_minigame_start('logging')",
         '@web/start-original-logging'
