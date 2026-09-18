@@ -19,7 +19,7 @@ local templates = {
   [0x10180002] = {name=0x10180002, ['名称']='测试头冠', ['类型']=1},
   [0x10190001] = {name=0x10190001, ['装备']={{['代码']=0x10180002,['数量']=1}}},
   [0x10050001] = {name=0x10050001, ['名称']='测试武功', ['等级']=1, ['当前熟练度']=10, ['修为等级']=1, ['满级熟练度']=450},
-  [0x1004000c] = {name=0x1004000c, ['姓名']='测试队友', ['1']=1000, ['2']=800, ['3']=20, ['4']=20, ['5']=20, ['6']=20, ['7']=20, ['8']=20, ['9']=50, ['经验值']=120, ['生命']=900, ['内力']=700},
+  [0x1004000c] = {name=0x1004000c, ['姓名']='测试队友', ['1']=1000, ['2']=800, ['3']=20, ['4']=20, ['5']=20, ['6']=20, ['7']=20, ['8']=20, ['9']=50, ['经验值']=120, ['生命']=900, ['内力']=700, ['拥有1']=0, ['性别']=1},
 }
 
 local function clone(v)
@@ -78,6 +78,9 @@ G.QueryName(0x1004000c)['1']=1400
 G.QueryName(0x1004000c)['2']=1000
 G.QueryName(0x1004000c)['生命']=1300
 G.QueryName(0x1004000c)['内力']=950
+G.QueryName(0x1004000c)['9']=88
+G.QueryName(0x1004000c)['拥有1']=1
+G.QueryName(0x1004000c)['性别']=2
 
 local saved=__jy_export_state()
 assert(type(saved)=='string' and #saved>20,'save export failed')
@@ -97,6 +100,7 @@ assert(G.QueryName(0x10190001)['装备'][1]['数量']==1,'special equipment inve
 assert(G.QueryName(0x10050001)['等级']==1 and G.QueryName(0x10050001)['当前熟练度']==10 and G.QueryName(0x10050001)['修为等级']==1,'martial growth reset failed')
 assert(G.QueryName(0x10030001)['3']==nil and G.QueryName(0x10030001)['4']==nil and G.QueryName(0x10030001)['5']==nil,'player growth reset failed')
 assert(G.QueryName(0x1004000c)['经验值']==120 and G.QueryName(0x1004000c)['1']==1000 and G.QueryName(0x1004000c)['2']==800,'teammate growth reset failed')
+assert(G.QueryName(0x1004000c)['9']==50 and G.QueryName(0x1004000c)['拥有1']==0 and G.QueryName(0x1004000c)['性别']==1,'teammate relationship reset failed')
 
 local ok,err=__jy_import_state(saved)
 assert(ok,tostring(err))
@@ -121,10 +125,13 @@ assert(G.QueryName(0x10030001)['44']==1600 and G.QueryName(0x10030001)['45']==11
 assert(G.QueryName(0x10030001)['217']==1800 and G.QueryName(0x10030001)['218']==900,'player derived HP/MP maxima not restored')
 assert(G.QueryName(0x1004000c)['经验值']==9876 and G.QueryName(0x1004000c)['1']==1400 and G.QueryName(0x1004000c)['2']==1000,'teammate growth not restored')
 assert(G.QueryName(0x1004000c)['生命']==1300 and G.QueryName(0x1004000c)['内力']==950,'teammate current HP/MP not restored')
+assert(G.QueryName(0x1004000c)['9']==88,'teammate affection not restored')
+assert(G.QueryName(0x1004000c)['拥有1']==1,'teammate gift ownership not restored')
+assert(G.QueryName(0x1004000c)['性别']==2,'teammate gift-related state not restored')
 assert(web.points[15]==77 and web.money==1234,'web snapshot not synchronized')
 assert(web.points[3]==345 and web.points[4]==12 and web.points[5]==9,'web growth snapshot not synchronized')
 assert(#web.team==2 and web.team[1]==130 and web.team[2]==12,'web team snapshot not synchronized')
-print('save-state roundtrip PASS: player, map, inventory, equipment, team, martial and character growth state')
+print('save-state roundtrip PASS: player, map, inventory, equipment, team, martial, growth and relationship state')
 `;
 
 fs.writeFileSync(harnessPath, harness, 'utf8');
