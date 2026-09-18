@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check src/app.js
           node --check src/animation-resources.js
+          node --check src/animation-player.js
           node --check src/battle.js
           node --check src/gcore-scene.js
           node --check src/input.js
@@ -43,6 +44,7 @@ jobs:
           node --check tools/audit-battle.mjs
           node --check tools/audit-animation-resources.mjs
           node --check tools/smoke-battle-1v1.mjs
+          node --check tools/smoke-animation-offline.mjs
           node --check tools/scan-resources.mjs
           node --check tools/smoke-inventory.mjs
           node --check tools/smoke-map-runtime.mjs
@@ -59,6 +61,8 @@ jobs:
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
           node --check tools/test-animation-resources.mjs
+          node --check tools/test-animation-player.mjs
+          node --check tools/test-renderer-animation.mjs
           node --check tools/test-input.mjs
           node --check tools/test-map-scene.mjs
           node --check tools/test-renderer.mjs
@@ -72,6 +76,12 @@ jobs:
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
+
+      - name: Validate framelist player lifecycle
+        run: node tools/test-animation-player.mjs
+
+      - name: Validate renderer frameActionID binding
+        run: node tools/test-renderer-animation.mjs
 
       - name: Validate gcore scene graph
         run: node tools/test-renderer.mjs
@@ -196,6 +206,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/shop.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/battle.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/animation-resources.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/animation-player.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
 
       - name: Cache pinned offline inputs
@@ -205,6 +216,9 @@ jobs:
         run: |
           node tools/audit-animation-resources.mjs
           sed -n '1,120p' reports/animation-resource-audit.md
+
+      - name: Smoke real offline animation actions
+        run: node tools/smoke-animation-offline.mjs
 
       - name: Scan resource references and integrity
         run: |
@@ -233,12 +247,17 @@ jobs:
           test -f dist/vendor/upstream/JY3/audio/01/1003.mp3
           test -f dist/vendor/upstream/JY3/script/dir.lua
           test -f dist/vendor/upstream/JY3/framelist/body/0001.swf
+          test -f dist/vendor/upstream/JY3/framelist/body/9998.swf
+          test -f dist/vendor/upstream/JY3/framelist/enemy/9998.swf
+          test -f dist/vendor/upstream/JY3/framelist/friendly/9999.swf
+          test -f dist/vendor/upstream/JY3/framelist/skill/9999.swf
           test -f dist/vendor/upstream/JY3/framelist/skill/0061.swf
           test -f dist/vendor/upstream/JY3/image/body/0499.png
           test -f dist/vendor/upstream/JY3/fonts/role/1/1/0001.png
           test -f dist/vendor/upstream/JY3/spine/skill/97/0001.png
           test -f dist/src/resource-catalog.js
           test -f dist/src/animation-resources.js
+          test -f dist/src/animation-player.js
           test -f dist/src/renderer.js
           test -f dist/src/input.js
           test -f dist/src/map-scene.js
@@ -282,6 +301,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/audio/01/1003.mp3 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/resource-catalog.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/animation-resources.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/animation-player.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/renderer.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/map-scene.js >/dev/null
