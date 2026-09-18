@@ -21,6 +21,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/battle.js
           node --check src/gcore-scene.js
           node --check src/input.js
           node --check src/inventory.js
@@ -35,6 +36,7 @@ jobs:
           node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
           node --check tools/check-b4-battle-boundary.mjs
+          node --check tools/check-c3-browser-battle.mjs
           node --check tools/audit-battle.mjs
           node --check tools/smoke-battle-1v1.mjs
           node --check tools/scan-resources.mjs
@@ -137,6 +139,9 @@ jobs:
       - name: Original minimal 1v1 battle state machine
         run: node tools/smoke-battle-1v1.mjs
 
+      - name: C3 browser original-battle bridge
+        run: node tools/check-c3-browser-battle.mjs
+
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
 
@@ -175,6 +180,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/person.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/shop.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/shop.css >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/battle.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
 
       - name: Cache pinned offline inputs
@@ -210,6 +216,7 @@ jobs:
           test -f dist/src/input.js
           test -f dist/src/map-scene.js
           test -f dist/src/gcore-scene.js
+          test -f dist/src/battle.js
           test -f dist/src/person.js
           test -f dist/src/person.css
           test -f dist/src/shop.js
@@ -251,6 +258,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/map-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/battle.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/person.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/person.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/shop.js >/dev/null
