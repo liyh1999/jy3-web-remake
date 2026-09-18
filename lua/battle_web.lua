@@ -455,6 +455,22 @@ sync_browser_view = function()
             tostring(slot)
         )
     end
+    local item_keys = {"q","w","e","r"}
+    for slot = 1, 4 do
+        local item_id = tonumber(hotkey[tostring(10 + slot)]) or 0
+        local item = item_id > 0 and G.QueryName(item_id) or nil
+        local count = item and (tonumber(item["数量"]) or 0) or 0
+        local enabled = can_input and count > 0 and (tonumber(G.misc()["用药"]) or 0) == 0
+        safe_web(
+            "battleItemOption",
+            slot,
+            item_id,
+            item and tostring(item["名称"] or ("物品" .. tostring(slot))) or "",
+            count,
+            enabled == true,
+            item_keys[slot]
+        )
+    end
     safe_web(
         "battleControls",
         auto == 1,
@@ -912,6 +928,30 @@ function __jy_battle_browser_select_target(position)
     return true
 end
 
+function __jy_battle_browser_select_item(slot)
+    local ui = browser_battle_ui()
+    if not ui then return false end
+    slot = tonumber(slot) or 0
+    if slot < 1 or slot > 4 then return false end
+    if tonumber(G.misc()["自动战斗"]) ~= 0 or tonumber(G.misc()["战斗状态"]) ~= 0 then return false end
+    if (tonumber(G.misc()["用药"]) or 0) ~= 0 then return false end
+    if (tonumber(G.call("get_point", 44)) or 0) <= 0 or (tonumber(G.call("get_point", 87)) or 0) > 0 then return false end
+
+    local hotkey = G.QueryName(0x100c0001)
+    local item_id = tonumber(hotkey[tostring(10 + slot)]) or 0
+    if item_id < 0x100b0000 then return false end
+    local item = G.QueryName(item_id)
+    if not item or item.__placeholder or (tonumber(item["数量"]) or 0) <= 0 then return false end
+
+    G.misc()["战斗状态"] = 1
+    ui.getChildByName("状态").text = "2"
+    ui.getChildByName("代码").getChildByName("team1").text = tostring(item_id - 0x100b0000)
+    G.trig_event("主角准备")
+    sync_browser_view()
+    schedule_browser_pump(0)
+    return true
+end
+
 function __jy_battle_browser_escape()
     if not browser then return false end
     config.pending_target = false
@@ -931,4 +971,5 @@ _G.__jy_battle_browser_active = __jy_battle_browser_active
 _G.__jy_battle_browser_set_auto = __jy_battle_browser_set_auto
 _G.__jy_battle_browser_select_skill = __jy_battle_browser_select_skill
 _G.__jy_battle_browser_select_target = __jy_battle_browser_select_target
+_G.__jy_battle_browser_select_item = __jy_battle_browser_select_item
 _G.__jy_battle_browser_escape = __jy_battle_browser_escape
