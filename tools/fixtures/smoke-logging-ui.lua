@@ -132,6 +132,7 @@ package.preload['js'] = function()
     }
 end
 
+local reward_points, reward_items = {}, {}
 local body = {
     name = 0x10030001,
     ['1'] = '令狐',
@@ -148,8 +149,22 @@ end
 function G.DBTable() return {} end
 function G.misc() return {} end
 function G.call(name, ...)
-    local fn = G.api[tostring(name or '')]
-    if type(fn) == 'function' then return fn(...) end
+    name = tostring(name or '')
+    local args = {...}
+    local fn = G.api[name]
+    if type(fn) == 'function' then return fn(table.unpack(args)) end
+    if name == 'add_point' then
+        local id, delta = tonumber(args[1]) or 0, tonumber(args[2]) or 0
+        reward_points[id] = (reward_points[id] or 0) + delta
+        return reward_points[id]
+    end
+    if name == 'get_point' then return reward_points[tonumber(args[1]) or 0] or 0 end
+    if name == 'add_item' then
+        local id, delta = tonumber(args[1]) or 0, tonumber(args[2]) or 0
+        reward_items[id] = (reward_items[id] or 0) + delta
+        return reward_items[id]
+    end
+    if name == 'get_item' then return reward_items[tonumber(args[1]) or 0] or 0 end
     return 0
 end
 function G.wait_time() return true end
@@ -171,9 +186,13 @@ end
 package.preload['c_logging'] = function()
     return assert(loadfile(temp .. '/c_logging.lua'))()
 end
+package.preload['c_movie'] = function()
+    return assert(loadfile(temp .. '/c_movie.lua'))()
+end
 
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
+assert(loadfile(temp .. '/v_movie.lua'))()
 assert(loadfile(temp .. '/p_order.lua'))()
 assert(loadfile(temp .. '/p_init.lua'))()
 
@@ -194,14 +213,69 @@ assert(ui.getChildByName('姓名').text == '令狐冲', 'c_logging:start did not
 local knife = ui.getChildByName('砍刀')
 assert(knife and knife.c_button and knife.c_button.obj == knife, 'nested original v_button/c_button clone failed')
 
+local function latest_live_timer(delay)
+    for i = #scheduled, 1, -1 do
+        local row = scheduled[i]
+        if row.delay == delay and row.token > 0 and not cancelled[row.token] then return row.token end
+    end
+    return nil
+end
+
+assert(__jy_minigame_has('地图系统_小游戏'), 'original mini-game dispatcher did not start')
+assert(G.getUI('v_citymap_system_map'), 'dispatcher compatibility map context missing')
+
 local start = ui.getChildByName('开始')
 assert(start and start.mouseEnabled == true, 'original 开始 hit target missing')
-assert(__jy_minigame_signal_count('伐木') == 0, 'unexpected 伐木 signal before click')
-__jy_input_event('click', start.__handle, 0, 0, '', 0)
-assert(__jy_minigame_signal_count('伐木') == 1, 'click chain did not enter shared scheduler as 伐木')
 
-G.trig_event('伐木结束')
+local first_bar = latest_live_timer(5)
+assert(first_bar, '伐木条 did not schedule its first 5ms tick')
+local before_force = ui.getChildByName('力').text
+__jy_program_browser_pump(first_bar)
+assert(ui.getChildByName('力').text ~= before_force, '伐木条 did not advance on timer')
+
+ui.getChildByName('力').text = '10'
+ui.getChildByName('气').text = '10'
+ui.getChildByName('耐久').text = '999'
+ui.getChildByName('体力').text = '100'
+__jy_input_event('click', start.__handle, 0, 0, '', 0)
+assert(__jy_minigame_signal_count('伐木') == 0, '伐木 event was queued instead of consumed by dispatcher')
 __jy_program_browser_pump(0)
+
+local kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '600', 'dispatcher did not enter original playmovie 600ms wait')
+assert(G.getUI('v_movie'), 'original v_movie was not mounted for chop animation')
+local movie_timer = latest_live_timer(600)
+assert(movie_timer, 'playmovie timer missing')
+__jy_program_browser_pump(movie_timer)
+
+assert(G.getUI('v_movie') == nil, 'v_movie did not clean up after animation')
+assert(ui.getChildByName('体力').text == '90', 'original chop did not deduct 10 stamina')
+assert(ui.getChildByName('耐久').text == '979', 'original chop did not deduct tree durability')
+assert((reward_points[101] or 0) == 10, 'original chop did not award strength progress')
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '500', 'dispatcher did not enter original post-chop 500ms wait')
+local settle_timer = latest_live_timer(500)
+assert(settle_timer, 'post-chop timer missing')
+__jy_program_browser_pump(settle_timer)
+kind = select(1, __jy_minigame_status('地图系统_小游戏'))
+assert(kind == 'case', 'dispatcher did not return to wait_case after normal chop')
+assert(ui.c_logging.伐木 == 0, 'logging component did not re-enable the next chop')
+
+ui.getChildByName('力').text = '50'
+ui.getChildByName('气').text = '50'
+ui.getChildByName('耐久').text = '1'
+__jy_input_event('click', start.__handle, 0, 0, '', 0)
+__jy_program_browser_pump(0)
+movie_timer = latest_live_timer(600)
+assert(movie_timer, 'success chop playmovie timer missing')
+__jy_program_browser_pump(movie_timer)
+assert(ui.getChildByName('耐久').text == '0', 'success chop did not reduce durability to zero')
+settle_timer = latest_live_timer(500)
+assert(settle_timer, 'success chop settle timer missing')
+__jy_program_browser_pump(settle_timer)
+
+assert((reward_points[101] or 0) == 70, 'original logging reward path did not award expected point progress')
+assert((reward_items[280] or 0) == 1, 'original logging success did not award one wood item')
 assert(not __jy_minigame_has('logging'), 'logging program remained after 伐木结束')
 assert(not __jy_minigame_has('伐木条') and not __jy_minigame_has('伐木提示'), 'logging child programs leaked')
 assert(__jy_minigame_pending_timers() == 0, 'logging timers leaked after cleanup')
@@ -216,5 +290,6 @@ assert(__jy_minigame_signal_count('伐木') == 0, 'queued mini-game signals leak
 print('original logging scheduler PASS')
 print('  v_button + c_button: cloned and initialized')
 print('  v_logging + c_logging: mounted and started')
-print('  renderer/input click -> c_logging:click -> shared G.trig_event(伐木)')
-print('  logging wait1(伐木结束) -> resume -> child timer/UI cleanup')
+print('  renderer/input click -> original 地图系统_小游戏 dispatcher')
+print('  playmovie 600ms -> stamina/durability -> 500ms recovery')
+print('  durability zero -> original wood/point reward -> 伐木结束 cleanup')
