@@ -9,6 +9,7 @@
     [0x03070000, 'framelist/friendly'],
     [0x03020000, 'framelist/hunting'],
     [0x03030000, 'framelist/body'],
+    [0x03040000, 'framelist/skill'],
     [0x04000000, 'particle'],
     [0x05000000, 'spine'],
     [0x06000000, 'image'],
@@ -42,6 +43,26 @@
 
   const DIRS = new Map(DEFINITIONS);
   const BASES = [...DIRS.keys()].sort((a, b) => b - a);
+  // The original gcore resource id packs two independent pieces of data:
+  // - high nibble: file type / extension (gf.lua g_ext)
+  // - low 28 bits: directory + file index (dir.lua)
+  // Most existing JY3 ids happen to use matching families (0x56 image,
+  // 0x49 audio, 0x33 framelist), but animation frames also use ids such as
+  // 0x52xxxxxx: PNG files stored under fonts/role/... . Therefore the type
+  // tag must take precedence over the low-28-bit family.
+  const TYPE_TAG_RULES = new Map([
+    [0x20000000, { kind: 'mcf', extension: '.mcf' }],
+    [0x30000000, { kind: 'framelist', extension: '.swf' }],
+    [0x40000000, { kind: 'audio', extension: '.mp3' }],
+    [0x50000000, { kind: 'image', extension: '.png' }],
+    [0x60000000, { kind: 'system', extension: '.sys' }],
+    [0x70000000, { kind: 'font', extension: '.ttf' }],
+    [0x80000000, { kind: 'image', extension: '.png' }],
+    [0x90000000, { kind: 'tilemap', extension: '.tmx' }],
+    [0xa0000000, { kind: 'video', extension: '.avi' }],
+    [0xd0000000, { kind: 'lua', extension: '.lua' }],
+  ]);
+
   const FAMILY_RULES = new Map([
     [0x02000000, { kind: 'font', extension: '.ttf' }],
     [0x03000000, { kind: 'framelist', extension: '.swf' }],
@@ -60,6 +81,10 @@
     return u32(resourceId) & 0x0fffffff;
   }
 
+  function typeTagOf(resourceId) {
+    return u32(resourceId) & 0xf0000000;
+  }
+
   function familyOf(pathId) {
     return canonicalPathId(pathId) & 0xff000000;
   }
@@ -75,16 +100,28 @@
   }
 
   function ruleFor(resourceId) {
+    const tagged = TYPE_TAG_RULES.get(typeTagOf(resourceId));
+    if (tagged) return tagged;
     return FAMILY_RULES.get(familyOf(resourceId)) || null;
   }
 
-  function resolve(resourceId, assetBase = '') {
+  function findDirectoryBaseIn(pathId, directories) {
+    pathId = canonicalPathId(pathId);
+    let best = null;
+    for (const base of directories.keys()) {
+      const n = Number(base) >>> 0;
+      if (pathId >= n && pathId - n < 0x10000 && (best === null || n > best)) best = n;
+    }
+    return best;
+  }
+
+  function resolveWithDirectories(resourceId, directories, assetBase = '') {
     const id = u32(resourceId);
     const pathId = canonicalPathId(id);
-    const base = findDirectoryBase(pathId);
+    const base = findDirectoryBaseIn(pathId, directories);
     if (base === null) return null;
 
-    const directory = DIRS.get(base);
+    const directory = directories.get(base);
     const index = pathId - base;
     const rule = ruleFor(pathId);
     const isDirectory = pathId === base;
@@ -128,14 +165,22 @@
     };
   }
 
+  function resolve(resourceId, assetBase = '') {
+    return resolveWithDirectories(resourceId, DIRS, assetBase);
+  }
+
   window.JYResourceCatalog = Object.freeze({
     DEFINITIONS,
     DIRS,
+    TYPE_TAG_RULES,
     FAMILY_RULES,
     canonicalPathId,
+    typeTagOf,
     familyOf,
     findDirectoryBase,
+    findDirectoryBaseIn,
     ruleFor,
+    resolveWithDirectories,
     resolve,
   });
 })();
