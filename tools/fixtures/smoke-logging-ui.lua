@@ -142,6 +142,12 @@ local logging_achievement = { name = 0x10170007, ['完成'] = 0, ['进度列表'
 local mining_progress = {}
 for i = 1, 8 do mining_progress[i] = { ['当前进度'] = 0, ['完成'] = 0 } end
 local mining_achievement = { name = 0x10170006, ['完成'] = 0, ['进度列表'] = mining_progress }
+local fishing_progress = {}
+for i = 1, 8 do fishing_progress[i] = { ['当前进度'] = 0, ['完成'] = 0 } end
+local fishing_master = { name = 0x10170003, ['完成'] = 0, ['进度列表'] = fishing_progress }
+local fishing_money = { name = 0x10170004, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local fishing_count = { name = 0x10170005, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local worm_item = { name = 0x100b013d, ['数量'] = 1, ['名称'] = '蚯蚓' }
 local misc_state = {}
 local newbody = { name = 0x101b0001, ['80'] = 0 }
 local body = {
@@ -158,6 +164,10 @@ function G.QueryName(id)
     if id == 0x10030001 then return body end
     if id == 0x10170007 then return logging_achievement end
     if id == 0x10170006 then return mining_achievement end
+    if id == 0x10170003 then return fishing_master end
+    if id == 0x10170004 then return fishing_money end
+    if id == 0x10170005 then return fishing_count end
+    if id == 0x100b013d then return worm_item end
     if id == 0x101b0001 then return newbody end
     return { name = id, __placeholder = true }
 end
@@ -175,6 +185,7 @@ function G.call(name, ...)
     if name == 'add_item' then
         local id, delta = tonumber(args[1]) or 0, tonumber(args[2]) or 0
         reward_items[id] = (reward_items[id] or 0) + delta
+        if id == 318 then worm_item['数量'] = worm_item['数量'] + delta end
         return reward_items[id]
     end
     if name == 'get_item' then return reward_items[tonumber(args[1]) or 0] or 0 end
@@ -207,12 +218,16 @@ end
 package.preload['c_dig'] = function()
     return assert(loadfile(temp .. '/c_dig.lua'))()
 end
+package.preload['c_fishing'] = function()
+    return assert(loadfile(temp .. '/c_fishing.lua'))()
+end
 
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
 assert(loadfile(temp .. '/v_movie.lua'))()
 assert(loadfile(temp .. '/v_empty.lua'))()
 assert(loadfile(temp .. '/v_dig.lua'))()
+assert(loadfile(temp .. '/v_fishing.lua'))()
 assert(loadfile(temp .. '/p_order.lua'))()
 assert(loadfile(temp .. '/p_init.lua'))()
 
@@ -373,6 +388,75 @@ assert(finished == 'dig', 'browser host was not notified of mining completion')
 __jy_minigame_reset()
 assert(__jy_minigame_signal_count('挖矿') == 0, 'queued mining signals leaked after reset')
 
+scheduled, cancelled, finished = {}, {}, nil
+misc_state = {}
+worm_item['数量'] = 1
+assert(__jy_minigame_start('fishing'), 'original fishing program failed to start')
+wait_kind, wait_name = __jy_minigame_status('fishing')
+assert(wait_kind == 'event' and wait_name == '钓鱼结束', 'fishing did not stop at wait1(钓鱼结束)')
+assert(__jy_minigame_has('钓鱼时间条'), 'original 钓鱼时间条 child program did not start')
+assert(__jy_minigame_has('钓鱼提示'), 'original 钓鱼提示 child program did not start')
+assert(__jy_minigame_has('钓鱼水花'), 'original 钓鱼水花 child program did not start')
+assert(__jy_minigame_pending_timers() == 3, 'fishing child timers were not scheduled independently')
+
+local fish_ui = G.getUI('v_fishing')
+assert(fish_ui and fish_ui.c_fishing and fish_ui.c_fishing.obj == fish_ui, 'original v_fishing/c_fishing failed to mount')
+assert(tonumber(fish_ui.getChildByName('显示').getChildByName('蚯蚓').text) == 1, 'c_fishing:start did not initialize worm count')
+assert(__jy_minigame_has('地图系统_小游戏'), 'fishing dispatcher did not start')
+
+local fish_time_before = tonumber(fish_ui.getChildByName('时间').width)
+local fish_time_timer = latest_live_timer(100)
+assert(fish_time_timer, '钓鱼时间条 did not schedule 100ms tick')
+__jy_program_browser_pump(fish_time_timer)
+assert(tonumber(fish_ui.getChildByName('时间').width) == fish_time_before - 0.5, '钓鱼时间条 did not advance')
+
+fish_ui.getChildByName('结果').text = '1'
+fish_ui.getChildByName('时间').width = 100
+local fish_start = fish_ui.getChildByName('开始')
+assert(fish_start and fish_start.mouseEnabled == true, 'original fishing 开始 hit target missing')
+local saved_random = math.random
+math.random = function(a, b)
+    if a and b then return a end
+    if a then return 1 end
+    return 0.5
+end
+__jy_input_event('click', fish_start.__handle, 0, 0, '', 0)
+assert(__jy_minigame_signal_count('钓鱼') == 0, '钓鱼 event was queued instead of consumed by dispatcher')
+__jy_program_browser_pump(0)
+math.random = saved_random
+
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '1000', 'fishing dispatcher did not enter original 1000ms result wait')
+assert(not __jy_minigame_has('钓鱼水花'), 'fishing ripple program was not stopped during reel-in')
+assert((reward_points[106] or 0) == 10, 'small fishing result did not award fishing progress')
+assert((reward_items[319] or 0) == 1, 'small fishing result did not award original shell item')
+assert(tonumber(fish_ui.getChildByName('显示').getChildByName('积分').text) == 5, 'small fishing result did not update score')
+
+local fish_result_timer = latest_live_timer(1000)
+assert(fish_result_timer, 'fishing result display timer missing')
+__jy_program_browser_pump(fish_result_timer)
+assert(worm_item['数量'] == 0, 'fishing did not consume one worm')
+assert((reward_items[318] or 0) == -1, 'worm inventory mutation did not use original add_item path')
+assert(fishing_count['进度列表'][1]['当前进度'] == 1, 'fishing count achievement was not updated')
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '500', 'worm exhaustion did not enter original 500ms finish wait')
+
+local fish_finish_timer = latest_live_timer(500)
+assert(fish_finish_timer, 'fishing worm-exhaustion finish timer missing')
+__jy_program_browser_pump(fish_finish_timer)
+assert(not __jy_minigame_has('fishing'), 'fishing program remained after original 钓鱼结束')
+assert(not __jy_minigame_has('钓鱼时间条') and not __jy_minigame_has('钓鱼提示') and not __jy_minigame_has('钓鱼水花'), 'fishing child programs leaked')
+assert(__jy_minigame_pending_timers() == 0, 'fishing timers leaked after cleanup')
+assert(G.getUI('v_fishing') == nil, 'v_fishing remained active after program cleanup')
+assert(finished == 'fishing', 'browser host was not notified of fishing completion')
+
+__jy_minigame_reset()
+assert(__jy_minigame_signal_count('钓鱼') == 0, 'queued fishing signals leaked after reset')
+
+print('original fishing scheduler PASS')
+print('  v_empty + v_button + v_fishing/c_fishing mounted and initialized')
+print('  100ms timer -> result=1 reel-in -> shell reward -> worm consumption')
+print('  worm zero -> 500ms finish -> 钓鱼结束 cleanup')
 print('original mining scheduler PASS')
 print('  v_empty + v_button + v_dig/c_dig mounted and initialized')
 print('  100ms oxygen timer -> click -> dispatcher -> 1000ms strike -> 300ms recovery')
