@@ -13,10 +13,10 @@ globalThis.window = {};
 vm.runInThisContext(fs.readFileSync(path.join(root, 'src/upstream.js'), 'utf8'), {
   filename: 'src/upstream.js'
 });
-const { UPSTREAM_REV, RAW_BASE, CORE_DATA, CORE_PROGRAMS } = globalThis.window.JYUpstream;
+const { UPSTREAM_REV, RAW_BASE, CORE_DATA, CACHED_PROGRAMS } = globalThis.window.JYUpstream;
 const upstreamJY3Base = `https://raw.githubusercontent.com/ssz66666/jy3-mirror/${UPSTREAM_REV}/JY3`;
 const upstreamApiBase = 'https://api.github.com/repos/ssz66666/jy3-mirror';
-const runtimeScripts = [...new Set([...CORE_DATA, ...CORE_PROGRAMS])];
+const runtimeScripts = [...new Set([...CORE_DATA, ...CACHED_PROGRAMS])];
 const scanSources = JSON.parse(fs.readFileSync(path.join(root, 'tools/resource-scan-sources.json'), 'utf8'));
 const files = [...new Set([...runtimeScripts, ...scanSources])];
 const assets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
