@@ -367,13 +367,17 @@ local function make_battle_ui()
         local flash = root.getChildByName("flash").getChildByName(position)
         flash.frameActionID = function(a, b)
             local effect_id = tonumber(b or a) or 0
-            if browser then pcall(function() web:battleAction(position, effect_id, "skill") end) end
+            if browser then pcall(function()
+                web:battleAction(position, effect_id, "skill", battle_framelist_base(position, "skill"))
+            end) end
             return true
         end
     end
     root.getChildByName("图标").frameActionID = function(a, b)
         local effect_id = tonumber(b or a) or 0
-        if browser then pcall(function() web:battleAction("all", effect_id, "overlay") end) end
+        if browser then pcall(function()
+            web:battleAction("icon", effect_id, "overlay", 0x33030020)
+        end) end
         return true
     end
 
