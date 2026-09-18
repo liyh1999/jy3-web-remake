@@ -43,6 +43,7 @@ jobs:
           node --check tools/check-c3-battle-presentation.mjs
           node --check tools/audit-battle.mjs
           node --check tools/audit-animation-resources.mjs
+          node --check tools/audit-character-appearance.mjs
           node --check tools/smoke-battle-1v1.mjs
           node --check tools/smoke-animation-offline.mjs
           node --check tools/scan-resources.mjs
@@ -217,6 +218,11 @@ jobs:
           node tools/audit-animation-resources.mjs
           sed -n '1,120p' reports/animation-resource-audit.md
 
+      - name: Audit original character appearance rules
+        run: |
+          node tools/audit-character-appearance.mjs
+          sed -n '1,140p' reports/character-appearance-audit.md
+
       - name: Smoke real offline animation actions
         run: node tools/smoke-animation-offline.mjs
 
@@ -237,10 +243,15 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/04_program/p_citymap_system.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
+          test -f dist/vendor/upstream/JY3/script/02_ui_view/v_battle.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_battle.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_citymap_system_map.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
           test -f dist/vendor/upstream/JY3/image/bjmap/0028.png
           test -f dist/vendor/upstream/JY3/image/bjmap/0029.png
+          test -f dist/vendor/upstream/JY3/image/head/0001.png
           test -f dist/vendor/upstream/JY3/image/head/0082.png
+          test -f dist/vendor/upstream/JY3/image/standmap/0001.png
           test -f dist/vendor/upstream/JY3/image/dump/0001.png
           test -f dist/vendor/upstream/JY3/image/worldmap/1001.png
           test -f dist/vendor/upstream/JY3/image/worldmap/101c.png
