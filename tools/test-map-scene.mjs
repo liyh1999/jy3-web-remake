@@ -29,6 +29,12 @@ const scene = {
 const status = { textContent: '' };
 const actions = { classList: { add() {} } };
 const hud = { classList: { remove() {} } };
+const hudPortrait = {
+  style: {},
+  dataset: {},
+  classList: { toggle(name, enabled) { this[name] = Boolean(enabled); } },
+  textContent: '侠',
+};
 
 globalThis.window = {
   JYRenderer: {
@@ -41,6 +47,9 @@ globalThis.window = {
     quad: () => node('quad'),
     textQuad: () => node('text'),
     render() {},
+  },
+  JYResources: {
+    url(id) { return id === 0x56080001 ? './image/head/0001.png' : null; },
   },
   JYInput: {
     subscribe(kind, callback) { listeners[kind] = callback; return () => {}; },
@@ -61,6 +70,7 @@ globalThis.document = {
     if (selector === '#runtimeStatus') return status;
     if (selector === '#villageActions') return actions;
     if (selector === '#hud') return hud;
+    if (selector === '#hudPortrait') return hudPortrait;
     return null;
   },
 };
@@ -68,7 +78,7 @@ globalThis.document = {
 vm.runInThisContext(fs.readFileSync('src/map-scene.js', 'utf8'), { filename: 'src/map-scene.js' });
 const host = window.JYMapHost;
 
-host.beginMap(0x10060003, '牛家村', 0x56050001, 1, 0, 0, 0);
+host.beginMap(0x10060003, '牛家村', 0x56050001, 1, 0, 0, 0, 0x56080001);
 const eventHandle = host.addHotspot(8, 0x10070061, '牛家村穆念慈', 0x56080082, 200, 280, '牛家村-穆念慈', 0, 0, 0, 0);
 const mapHandle = host.addHotspot(1, 0x10070025, '大地图', 0x56070001, 32, 47, '', 0x10060001, 0, 0, 0);
 const lockedHandle = host.addHotspot(25, 0x10070019, '神龙教', 0x56061010, 590, 32, '', 0x1006000a, 1, 1, 0);
@@ -80,6 +90,9 @@ if (event.originalX !== 200 || event.originalY !== 280) throw new Error('origina
 const logical = host.logicalFromOriginal(200, 280);
 if (logical.x !== -226.5 || logical.y !== -40) throw new Error(`unexpected logical projection ${logical.x},${logical.y}`);
 if (window.JYRenderer.background !== 0x56050001) throw new Error('map background was not routed through renderer');
+if (hudPortrait.dataset.resourceId !== '0x56080001') throw new Error('map HUD did not record original portrait resource id');
+if (!hudPortrait.style.backgroundImage.includes('image/head/0001.png')) throw new Error('map HUD did not render original portrait URL');
+if (!hudPortrait.classList['has-image']) throw new Error('map HUD portrait did not enter image mode');
 
 listeners.click({ handle: eventHandle });
 if (!luaCalls.at(-1)?.includes('__jy_activate_city(268894305)')) throw new Error('event hotspot did not dispatch original city id');
