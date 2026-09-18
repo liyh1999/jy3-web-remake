@@ -251,6 +251,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/app.js >/dev/null
 
       - name: Cache pinned offline inputs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: npm run cache:offline
 
       - name: Smoke original logging UI
