@@ -16,6 +16,8 @@ local raw = {
     start_program = G.start_program,
     stop_program = G.stop_program,
     remove_program = G.remove_program,
+    Play = G.Play,
+    Stop = G.Stop,
 }
 
 local headless = false
@@ -268,6 +270,18 @@ local function make_battle_ui()
     for i = 1, 11 do
         local node = root.getChildByName("map").getChildByName(positions[i])
         local tab = root.getChildByName("tab").getChildByName(positions[i])
+        local position = positions[i]
+        tab.frameActionID = function(a, b)
+            local action_id = tonumber(b or a) or 0
+            if browser then pcall(function() web:battleAction(position, action_id, "actor") end) end
+            return true
+        end
+        local flash = root.getChildByName("flash").getChildByName(position)
+        flash.frameActionID = function(a, b)
+            local effect_id = tonumber(b or a) or 0
+            if browser then pcall(function() web:battleAction(position, effect_id, "skill") end) end
+            return true
+        end
         local active
         if i == 1 then
             active = player_alive and ((tonumber(battle["模式"]) or 0) < 4 or tonumber(battle["模式"]) == 99)
@@ -282,6 +296,19 @@ local function make_battle_ui()
         code.text = "0"
         code.getChildByName("id").text = "0"
         code.getChildByName("min").text = "0"
+    end
+    for _, position in ipairs({"all1","all2","all3"}) do
+        local flash = root.getChildByName("flash").getChildByName(position)
+        flash.frameActionID = function(a, b)
+            local effect_id = tonumber(b or a) or 0
+            if browser then pcall(function() web:battleAction(position, effect_id, "skill") end) end
+            return true
+        end
+    end
+    root.getChildByName("图标").frameActionID = function(a, b)
+        local effect_id = tonumber(b or a) or 0
+        if browser then pcall(function() web:battleAction("all", effect_id, "overlay") end) end
+        return true
     end
 
     local c = {
@@ -309,9 +336,20 @@ local function make_battle_ui()
     c["刷新显示"] = refresh_display
     c.__jy_u_5237_65b0_663e_793a = refresh_display
 
-    c["战场_效果"] = function(self, actor, _, target, needmp)
+    c["战场_效果"] = function(self, actor, action_id, target, needmp)
         actor = tonumber(actor) or 0
+        action_id = tonumber(action_id) or 0
         target = tonumber(target) or 0
+        local actor_position = positions[actor] or ("all" .. tostring(actor))
+        local code_node = positions[actor] and root.getChildByName("代码").getChildByName(positions[actor]) or nil
+        local skill_code = code_node and (tonumber(code_node.text) or 0) or 0
+        local skill = skill_code > 0 and G.QueryName(0x10050000 + skill_code) or nil
+        local skill_name = skill and tostring(skill["名称"] or "") or ""
+        root.getChildByName("图表").getChildByName("文字").text = skill_name
+        if browser then
+            pcall(function() web:battleAction(actor_position, action_id, "actor") end)
+            pcall(function() web:battleSkillEffect(skill_name, actor_position, target, skill_code) end)
+        end
         if actor == 1 and tonumber(needmp) and tonumber(needmp) > 0 then
             G.call("add_point", 46, -math.min(tonumber(needmp), tonumber(G.call("get_point", 46)) or 0))
         end
@@ -397,6 +435,27 @@ local function safe_web(method, ...)
     end)
 end
 
+function G.Play(resource_id, channel, loop, volume)
+    local ok = raw.Play and raw.Play(resource_id, channel, loop, volume)
+    if browser then
+        safe_web(
+            "battleAudio",
+            tonumber(resource_id) or 0,
+            tonumber(channel) or 1,
+            loop and true or false,
+            tonumber(volume) or 1,
+            ok == true
+        )
+    end
+    return ok == nil and true or ok
+end
+
+function G.Stop(channel)
+    local ok = raw.Stop and raw.Stop(channel)
+    if browser then safe_web("battleAudioStop", tonumber(channel) or 1) end
+    return ok == nil and true or ok
+end
+
 sync_browser_view = function()
     if not browser then return end
     local ui = ui_by_name["v_battle"]
@@ -428,6 +487,42 @@ sync_browser_view = function()
         end
         safe_web("battleSlot", position, id, name, hp, maxhp, mp, maxmp,
             tonumber(map_node.x) or 0, map_node.visible == true, i >= 6)
+
+        local talk = ui.getChildByName("talk").getChildByName(position)
+        safe_web(
+            "battleDialogue",
+            position,
+            tostring(talk.getChildByName("text").text or ""),
+            talk.visible == true
+        )
+
+        local source = i == 1 and body or (id > 0 and G.QueryName(0x10040000 + id) or nil)
+        local status_names = {
+            [81]="中毒",[82]="麻痹",[83]="晕眩",[84]="内伤",[85]="受伤",
+            [86]="减速",[87]="混乱",[88]="致盲",[89]="御风",[90]="剧毒",[241]="强伤",
+        }
+        local status_parts = {}
+        if source then
+            for code = 81, 90 do
+                local value = tonumber(source[tostring(code)]) or 0
+                if value > 0 then
+                    local duration = tonumber(source[tostring(code + 10)]) or 0
+                    status_parts[#status_parts + 1] = status_names[code] .. (duration > 0 and (" " .. tostring(math.floor(duration))) or "")
+                end
+            end
+            local strong = tonumber(source["241"]) or 0
+            if strong > 0 then
+                local duration = tonumber(source["251"]) or 0
+                status_parts[#status_parts + 1] = status_names[241] .. (duration > 0 and (" " .. tostring(math.floor(duration))) or "")
+            end
+        end
+        local yc = ui.getChildByName("tab").getChildByName(position).getChildByName("yc")
+        local icon_mask = 0
+        if yc.getChildByName("y1").visible == true then icon_mask = icon_mask + 1 end
+        if yc.getChildByName("y2").visible == true then icon_mask = icon_mask + 2 end
+        if yc.getChildByName("y3").visible == true then icon_mask = icon_mask + 4 end
+        if yc.getChildByName("y4").visible == true then icon_mask = icon_mask + 8 end
+        safe_web("battleSlotStatus", position, table.concat(status_parts, " · "), icon_mask)
     end
 
     local abnormal = ""
