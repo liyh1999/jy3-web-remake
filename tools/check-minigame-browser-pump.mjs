@@ -21,6 +21,8 @@ for (const needle of [
   'function __jy_minigame_start',
   'function __jy_program_browser_pump',
   'function __jy_minigame_reset',
+  '地图系统_小游戏',
+  'compat_map_context',
 ]) {
   if (!lua.includes(needle)) throw new Error('missing Lua mini-game bridge: ' + needle);
 }
