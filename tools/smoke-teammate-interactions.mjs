@@ -77,7 +77,9 @@ function G.stop_program() return true end
 function G.remove_program() return true end
 
 local teammate_component={['副按钮']={visible=true},refreshes=0}
-teammate_component["显示更新"]=function(self) self.refreshes=self.refreshes+1 end
+local function fixture_refresh(self) self.refreshes=self.refreshes+1 end
+teammate_component["显示更新"]=fixture_refresh
+teammate_component["__jy_u_663e_793a_66f4_65b0"]=fixture_refresh
 local teammate_ui={c_teammate=teammate_component}
 function G.getUI(name) if name=='v_teammate' then return teammate_ui end return nil end
 
