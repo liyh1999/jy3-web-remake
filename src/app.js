@@ -224,6 +224,27 @@
     },
     battleEffect(actor, target, damage) { window.JYBattleView?.effect(actor, target, damage); },
     battleEnd(result) { window.JYBattleView?.end(result); },
+    battleSkillOption(slot, skillId, name, range, enabled, hotkey) {
+      window.JYBattleView?.skillOption(slot, skillId, name, range, enabled, hotkey);
+    },
+    battleControls(autoEnabled, canInput, targetPending, canEscape) {
+      window.JYBattleView?.controls(autoEnabled, canInput, targetPending, canEscape);
+    },
+    battleTargetPrompt(range) { window.JYBattleView?.targetPrompt(range); },
+    setOriginalBattleAuto(enabled) {
+      return fengari.load(`return __jy_battle_browser_set_auto(${enabled ? 'true' : 'false'})`, '@web/battle-auto')();
+    },
+    chooseOriginalBattleSkill(slot) {
+      const n = Math.max(1, Math.min(8, Number(slot) || 0));
+      return fengari.load(`return __jy_battle_browser_select_skill(${n})`, '@web/battle-skill')();
+    },
+    chooseOriginalBattleTarget(position) {
+      const safe = JSON.stringify(String(position || ''));
+      return fengari.load(`return __jy_battle_browser_select_target(${safe})`, '@web/battle-target')();
+    },
+    originalBattleEscape() {
+      return fengari.load('return __jy_battle_browser_escape()', '@web/battle-escape')();
+    },
     setPoint(id, value) { state.points[Number(id)] = Number(value); renderStats(); },
     addPoint(id, delta) { id = Number(id); state.points[id] = (state.points[id] || 0) + Number(delta); renderStats(); },
     getPoint(id) { return state.points[Number(id)] || 0; },
