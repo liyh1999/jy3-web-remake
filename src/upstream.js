@@ -58,6 +58,16 @@
     '02_ui_view/v_movie.lua',
   ];
 
+  const DIG_UI_MODULES = [
+    { module: 'c_button', path: '03_ui_component/c_button.lua' },
+    { module: 'c_dig', path: '03_ui_component/c_dig.lua' },
+  ];
+  const DIG_UI_VIEWS = [
+    '02_ui_view/v_empty.lua',
+    '02_ui_view/v_button.lua',
+    '02_ui_view/v_dig.lua',
+  ];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -286,6 +296,21 @@ return true
     return loggingUiPromise;
   }
 
+  let digUiPromise = null;
+  async function prepareDigUI(onProgress) {
+    if (!digUiPromise) {
+      digUiPromise = (async () => {
+        const loadedModules = await loadModules(DIG_UI_MODULES, onProgress);
+        const loadedViews = await loadPrograms(DIG_UI_VIEWS, onProgress);
+        return { loadedModules, loadedViews };
+      })().catch((error) => {
+        digUiPromise = null;
+        throw error;
+      });
+    }
+    return digUiPromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -312,6 +337,8 @@ return true
     CACHED_PROGRAMS,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
+    DIG_UI_MODULES,
+    DIG_UI_VIEWS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
@@ -323,6 +350,7 @@ return true
     loadData,
     prepareBattleRuntime,
     prepareLoggingUI,
+    prepareDigUI,
     bootstrapData,
   };
 })();
