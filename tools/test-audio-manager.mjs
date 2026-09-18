@@ -113,8 +113,15 @@ if (blocked.longLived?.pending || blockedMedia.playCount !== 2) {
 }
 R.stop(3);
 
-if (A.browserGain(1) !== 1 || A.browserGain(100) !== 1) {
-  throw new Error('initial D2-2 gain policy unexpectedly changed legacy browser loudness');
+const policy = A.gainPolicy();
+if (policy.name !== 'jy3-web-compat-v1' || policy.source !== 'web-compat-not-native-gcore') {
+  throw new Error('explicit Web gain policy metadata missing');
+}
+if (Math.abs(A.browserGain(1) - 0.55) > 1e-9 || A.browserGain(100) !== 1) {
+  throw new Error('raw 1/100 must remain audibly distinct under the default Web compatibility curve');
+}
+if (!(A.browserGain(50) > A.browserGain(1) && A.browserGain(50) < A.browserGain(100))) {
+  throw new Error('intermediate raw gain must remain monotonic');
 }
 
-console.log('JYAudio lifecycle PASS: long-lived replacement + overlapping SFX + group Stop + raw volume + autoplay retry');
+console.log('JYAudio lifecycle PASS: grouped lifecycle + raw gain policy + autoplay retry');

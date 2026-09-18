@@ -65,6 +65,7 @@ must(catalog.resolve(0x4902000a)?.relativePath === 'audio/02/000a.mp3',
 const city = read('vendor/upstream/JY3/script/04_program/p_citymap_system.lua');
 const order = read('vendor/upstream/JY3/script/04_program/p_order.lua');
 const button = read('vendor/upstream/JY3/script/03_ui_component/c_button.lua');
+const book = read('vendor/upstream/JY3/script/03_ui_component/c_book.lua');
 const common = read('vendor/upstream/JY3/script/06_notify/n_common.lua');
 
 must(/G\.Stop\(\s*1\s*\)/.test(city), 'map transition must explicitly stop audio group 1');
@@ -74,8 +75,12 @@ must(/G\.Play\(\s*0x49010000\s*\+\s*math\.random\(25,30\)\s*,\s*1\s*,\s*true\s*,
   'battle BGM signature changed');
 must(/G\.Play\(\s*self\.audio_(?:hover|press)\s*,\s*1\s*,\s*false\s*,\s*100\s*\)/.test(button),
   'UI SFX signature changed');
+must(/G\.Play\(\s*0x49020001\s*\+\s*G\.misc\(\)\.book_data\s*,\s*1\s*,\s*true\s*,\s*100\s*\)/.test(book),
+  'true/100 counterexample changed');
 must(/G\.Play\(\s*0x49020001\s*\+\s*int_序列帧\s*-\s*1\s*,\s*1\s*,\s*false\s*,\s*100\s*\)/.test(common),
   'battle skill SFX signature changed');
+must(/G\.Play\(\s*music\s*,\s*1\s*,\s*false\s*,\s*1\s*\)/.test(order),
+  'false/1 counterexample changed');
 
 const resources = read('src/resources.js');
 const currentSingleSlot = /\bstop\(key\);/.test(resources) && /audioChannels\.set\(key/.test(resources);
@@ -89,7 +94,7 @@ console.log([
   `mp3=${totalMp3} (audio/01=${audio01}, audio/02=${audio02})`,
   `audio/role png=${rolePng}`,
   'resource ids: 0x49011003 -> audio/01/1003.mp3; 0x49010038 -> audio/01/0038.mp3; 0x4902000a -> audio/02/000a.mp3',
-  'observed representative signatures: group=1, long-lived true/1, one-shot false/100',
+  'observed representative signatures include true/1, false/100, true/100 and false/1; loop and raw gain are independent',
   `current Web single-slot-per-group behavior=${currentSingleSlot ? 'yes (D2-2 gap)' : 'no'}`,
   `current Web collapses raw 1/100 distinction=${collapsesOneAndHundred ? 'yes (D2-2 gap)' : 'no'}`,
 ].join('\n'));

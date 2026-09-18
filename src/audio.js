@@ -15,14 +15,34 @@
     return Number.isFinite(number) ? number : 1;
   }
 
-  // D2-2 keeps gain policy centralized here. The original raw value is stored
-  // independently on every voice so later calibration never loses Lua intent.
-  // This initial browser gain policy intentionally preserves the legacy audible
-  // behavior; final balance calibration remains separate from resource routing.
+  // The native gcore gain curve is not present in the fixed upstream mirror.
+  // D2-2 therefore keeps the raw Lua value and applies an explicit Web
+  // compatibility curve. The two observed endpoints stay configurable so this
+  // can be calibrated later without touching original scripts.
+  const gainConfig = window.JY_CONFIG?.audioGain || {};
+  const raw1Gain = Number.isFinite(Number(gainConfig.raw1))
+    ? Math.max(0, Math.min(1, Number(gainConfig.raw1)))
+    : 0.55;
+  const raw100Gain = Number.isFinite(Number(gainConfig.raw100))
+    ? Math.max(0, Math.min(1, Number(gainConfig.raw100)))
+    : 1;
+
   function browserGain(value) {
     const number = rawValue(value);
-    if (number <= 1) return Math.max(0, Math.min(1, number));
-    return Math.max(0, Math.min(1, number / 100));
+    if (number <= 0) return 0;
+    if (number <= 1) return Math.max(0, Math.min(1, number * raw1Gain));
+    if (number >= 100) return raw100Gain;
+    const t = (number - 1) / 99;
+    return Math.max(0, Math.min(1, raw1Gain + (raw100Gain - raw1Gain) * t));
+  }
+
+  function gainPolicy() {
+    return {
+      name: 'jy3-web-compat-v1',
+      raw1: raw1Gain,
+      raw100: raw100Gain,
+      source: 'web-compat-not-native-gcore',
+    };
   }
 
   function stateFor(group, create = true) {
@@ -207,5 +227,6 @@
     snapshot,
     retryBlocked,
     browserGain,
+    gainPolicy,
   });
 })();
