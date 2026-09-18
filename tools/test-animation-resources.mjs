@@ -32,7 +32,7 @@ _dir[0x6130000]="image/body"
 return _dir
 `;
 const dirs = A.parseDirectoryMap(dirSource);
-if (dirs.size !== 12) throw new Error(`directory parser expected 12 entries, got ${dirs.size}`);
+if (dirs.size !== 13) throw new Error(`directory parser expected 13 entries, got ${dirs.size}`);
 
 const bodySource = `520683530
 15,1
