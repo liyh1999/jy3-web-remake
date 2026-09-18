@@ -72,6 +72,9 @@ function web:battleStatus(...) self.browserStatuses=(self.browserStatuses or 0)+
 function web:battleEffect(...) self.browserEffects=(self.browserEffects or 0)+1; self.lastBrowserEffect={...} end
 function web:battleEnd(result) self.browserEnd=(self.browserEnd or 0)+1; self.browserEndResult=tonumber(result) or 0 end
 function web:originalBattleFinished(result) self.browserResult=tonumber(result) or 0 end
+function web:battleSkillOption(...) self.browserSkillOptions=(self.browserSkillOptions or 0)+1; self.lastSkillOption={...} end
+function web:battleControls(...) self.browserControls=(self.browserControls or 0)+1; self.lastControls={...} end
+function web:battleTargetPrompt(range) self.browserTargetPrompt=tonumber(range) or 0 end
 
 local bridge={vitals={},skills={},team={}}
 local active_team=nil
@@ -153,8 +156,10 @@ local notebook=G.QueryName(0x101a0001)
 local skill=G.QueryName(0x1005000d)
 local enemy=G.QueryName(0x10040001)
 local files=G.QueryName(0x10160001)
+local hotkey=G.QueryName(0x100c0001)
 
 files['难度']=1
+hotkey['1']=0x1005000d
 body['1']='测'
 body['2']='试侠'
 body['6']='测试侠'
@@ -363,8 +368,59 @@ assert((tonumber(body['3']) or 0)>0,'browser original victory monitor did not aw
 assert((tonumber(body['46']) or 0)<5000,'browser original battle did not spend MP')
 assert((tonumber(skill['当前熟练度']) or 0)>100,'browser original battle did not grow proficiency')
 
+-- C3-2 manual input: disable auto, choose original hotkey slot 1, choose enemy1,
+-- then let p_battle consume the same code/id/min/单目标 fields used by c_battle.lua.
+body['3']=0
+body['44']=5000
+body['46']=5000
+body['235']=0
+skill['当前熟练度']=100
+enemy['生命']=80
+enemy['内力']=1000
+for i=81,115 do enemy[tostring(i)]=0 end
+G.misc()['战斗结果']=0
+web.browserResult=nil
+web.browserTargetPrompt=0
+web.browserSkillOptions=0
+web.browserControls=0
+math.randomseed(20260918)
+
+assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+assert(__jy_battle_browser_set_auto(false))
+assert(__jy_battle_browser_select_skill(1),'manual skill slot 1 was rejected')
+assert(web.browserTargetPrompt==2,'single-target skill did not request original range-2 target')
+assert(__jy_battle_browser_select_target('enemy1'),'manual enemy1 target was rejected')
+
+local manual_pumps=0
+while web.browserResult == nil and manual_pumps < 3000 do
+    manual_pumps=manual_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==1,'manual browser battle did not finish with victory')
+assert(web.browserSkillOptions>0 and web.browserControls>0,'manual control state was not projected to Web')
+assert((tonumber(body['3']) or 0)>0,'manual original battle did not award EXP')
+assert((tonumber(body['46']) or 0)<5000,'manual original battle did not spend MP')
+assert((tonumber(skill['当前熟练度']) or 0)>100,'manual original battle did not grow proficiency')
+
+-- Original escape event path.
+body['44']=5000
+body['235']=0
+enemy['生命']=80
+G.misc()['战斗结果']=0
+web.browserResult=nil
+assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+assert(__jy_battle_browser_set_auto(false))
+assert(__jy_battle_browser_escape(),'browser escape input was rejected')
+local escape_pumps=0
+while web.browserResult == nil and escape_pumps < 1000 do
+    escape_pumps=escape_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==2,'original escape path did not end battle as failure/result=2')
+assert(tonumber(body['235'])==2,'original escape path did not write body[235]=2')
+
 print(string.format(
-    'original battle 1v1 + browser scheduler PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
+    'original battle 1v1 + browser auto/manual/escape PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
     attacks,damage,exp_before,exp_after,mp_before,mp_after,prof_before,prof_after,steps
 ))
 `;
