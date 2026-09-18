@@ -14,14 +14,16 @@ vm.runInThisContext(fs.readFileSync('src/resources.js', 'utf8'), { filename: 'sr
 const R = globalThis.window.JYResources;
 
 const cases = [
-  [0x52000001, 'fonts/0001.ttf', 'font'],
+  [0x72000001, 'fonts/0001.ttf', 'font'],
+  [0x52000001, 'fonts/0001.png', 'image'],
   [0x53030001, 'framelist/body/0001.swf', 'framelist'],
+  [0x53040061, 'framelist/skill/0061.swf', 'framelist'],
   [0x56050001, 'image/bjmap/0001.png', 'image'],
   [0x56080001, 'image/head/0001.png', 'image'],
   [0x560e0001, 'image/item/0001.png', 'image'],
   [0x56160001, 'image/UI/0001.png', 'image'],
-  [0x59010001, 'audio/01/0001.mp3', 'audio'],
-  [0x59020001, 'audio/02/0001.mp3', 'audio'],
+  [0x49010001, 'audio/01/0001.mp3', 'audio'],
+  [0x49020001, 'audio/02/0001.mp3', 'audio'],
   [0x49011003, 'audio/01/1003.mp3', 'audio'],
 ];
 
@@ -73,4 +75,4 @@ if (!R.stop(1) || R.activeAudio(1) !== null) {
   throw new Error('audio channel stop failed');
 }
 
-console.log(`resource resolver PASS: ${cases.length} files + directory ids + structured families + image/audio APIs`);
+console.log(`resource resolver PASS: ${cases.length} tagged files + directory ids + structured families + image/audio APIs`);
