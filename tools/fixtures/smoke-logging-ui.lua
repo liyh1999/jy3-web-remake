@@ -62,6 +62,11 @@ function renderer:setNodeProperty(handle, key, value)
     local node = nodes[handle]
     if not node then return false end
     node[key] = value
+    if (key == 'left' or key == 'right') and type(node.left) == 'number' and type(node.right) == 'number' then
+        node.width = math.max(0, node.right - node.left)
+    elseif (key == 'bottom' or key == 'top') and type(node.bottom) == 'number' and type(node.top) == 'number' then
+        node.height = math.max(0, node.top - node.bottom)
+    end
     return true
 end
 function renderer:nodeCall(handle, method, ...)
