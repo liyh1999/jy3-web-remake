@@ -266,5 +266,6 @@
   "script/04_program/p_person.lua",
   "script/02_ui_view/v_button.lua",
   "script/03_ui_component/c_movie.lua",
-  "script/02_ui_view/v_movie.lua"
+  "script/02_ui_view/v_movie.lua",
+  "script/02_ui_view/v_empty.lua"
 ]
