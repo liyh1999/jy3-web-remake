@@ -57,14 +57,16 @@ for (const [group, expected] of Object.entries(expectedGroups)) {
 if (framelistFiles.length !== 833) throw new Error('pinned framelist total changed: ' + framelistFiles.length + ' != 833');
 
 const spineFiles = [...upstream].filter(p => p.startsWith('spine/'));
-const spineJson = spineFiles.filter(p => /\.(json|atlas|skel)$/i.test(p));
+const spineRuntime = spineFiles.filter(p => /\.(json|atlas|skel)$/i.test(p));
 const spinePng = spineFiles.filter(p => /\.png$/i.test(p));
-if (spineJson.length !== 0) throw new Error('pinned spine tree unexpectedly contains json/atlas/skel runtime data');
-if (!spinePng.length) throw new Error('pinned spine tree contains no PNG sequence frames');
-if (spinePng.length !== spineFiles.length) {
-  const other = spineFiles.filter(p => !/\.png$/i.test(p));
-  throw new Error('pinned spine tree has unexpected non-PNG files: ' + other.slice(0,10).join(', '));
+const spinePsd = spineFiles.filter(p => /\.psd$/i.test(p));
+const spineOther = spineFiles.filter(p => !/\.(png|psd|json|atlas|skel)$/i.test(p));
+if (spineRuntime.length !== 0) throw new Error('pinned spine tree unexpectedly contains json/atlas/skel runtime data');
+if (spinePng.length !== 2075) throw new Error('pinned spine PNG count changed: ' + spinePng.length + ' != 2075');
+if (spinePsd.length !== 1 || spinePsd[0] !== 'spine/skill/97/未标题-1.psd') {
+  throw new Error('pinned spine PSD source-artifact set changed: ' + spinePsd.join(', '));
 }
+if (spineOther.length) throw new Error('pinned spine tree has unexpected files: ' + spineOther.slice(0,10).join(', '));
 
 const samples = [
   { id:0x33030001, file:'framelist/body/0001.swf', rate:15, frames:34, first:'image/body/0499.png' },
@@ -114,13 +116,13 @@ const report = {
   upstreamRevision:index.upstreamRevision,
   directoryEntryCount:dirs.size,
   framelist:{total:framelistFiles.length,byGroup},
-  spine:{fileCount:spineFiles.length,pngCount:spinePng.length,jsonAtlasSkelCount:spineJson.length},
+  spine:{fileCount:spineFiles.length,pngCount:spinePng.length,psdCount:spinePsd.length,jsonAtlasSkelCount:spineRuntime.length},
   samples:sampleReport,
   findings:{
     framelistEncoding:'plain-text marker + rate,loop + hexadecimal resource ids',
     marker:A.FRAME_LIST_MARKER,
     typeTagRule:'high nibble chooses extension; low 28 bits choose dir.lua directory/index',
-    spineLayout:'PNG sequence directories; no .json/.atlas/.skel in pinned tree',
+    spineLayout:'2075 PNG sequence frames + one PSD source artifact; no .json/.atlas/.skel in pinned tree',
   },
 };
 fs.mkdirSync(path.join(root,'reports'),{recursive:true});
@@ -132,7 +134,7 @@ const md = [
   '',
   '- framelist 文本文件：' + report.framelist.total,
   '- body/effect/enemy/friendly/hunting/skill：' + Object.entries(byGroup).map(([k,v])=>k+'='+v).join(', '),
-  '- spine/ 文件：' + report.spine.fileCount + '，全部为 PNG：' + report.spine.pngCount,
+  '- spine/ 文件：' + report.spine.fileCount + '，PNG：' + report.spine.pngCount + '，PSD 源素材：' + report.spine.psdCount,
   '- 标准 Spine json/atlas/skel：' + report.spine.jsonAtlasSkelCount,
   '- framelist marker：' + A.FRAME_LIST_MARKER,
   '',
@@ -147,7 +149,7 @@ const md = [
   '- .swf 是纯文本资源清单，不是 Adobe SWF 二进制。',
   '- 第 1 行是固定 marker；第 2 行是 rate,loop；后续行是无 0x 前缀的十六进制资源 ID。',
   '- 原资源 ID 的高 4 位决定扩展名，低 28 位由 dir.lua 决定目录和文件序号。',
-  '- spine/skill/* 在固定上游中是 PNG 序列帧目录，不存在标准 Spine runtime 数据。',
+  '- spine/skill/* 的运行时素材是 PNG 序列帧；另有 1 个 PSD 源素材残留，不存在标准 Spine json/atlas/skel runtime 数据。',
   '',
 ].join('\n');
 fs.writeFileSync(path.join(root,'reports','animation-resource-audit.md'),md);
