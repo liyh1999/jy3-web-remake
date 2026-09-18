@@ -295,8 +295,10 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_battle.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_button.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_logging.lua
+          test -f dist/vendor/upstream/JY3/script/02_ui_view/v_movie.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_button.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_logging.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_movie.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_battle.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_citymap_system_map.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
