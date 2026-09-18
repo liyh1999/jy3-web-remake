@@ -33,6 +33,13 @@
     '04_program/p_niujiacun.lua'
   ];
 
+  // Cached and compile-gated, but deliberately not executed during normal boot.
+  // C2 will load these on demand once the battle runtime surface is ready.
+  const ON_DEMAND_PROGRAMS = [
+    '04_program/p_battle.lua'
+  ];
+  const CACHED_PROGRAMS = [...new Set([...CORE_PROGRAMS, ...ON_DEMAND_PROGRAMS])];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -208,6 +215,8 @@
     OFFLINE,
     CORE_DATA,
     CORE_PROGRAMS,
+    ON_DEMAND_PROGRAMS,
+    CACHED_PROGRAMS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
