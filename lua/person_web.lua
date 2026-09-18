@@ -9,9 +9,12 @@ local G = require "gf"
 -- original interaction code touches and delegate real rendering back to JS.
 local original_get_ui = G.getUI
 local teammate_component = { ["副按钮"] = { visible = true } }
-teammate_component["显示更新"] = function(self, _slot)
+local function teammate_refresh(self, _slot)
     if type(__jy_person_refresh) == "function" then pcall(__jy_person_refresh) end
 end
+teammate_component["显示更新"] = teammate_refresh
+-- normalizeLuaSource encodes non-ASCII identifiers used after ':'.
+teammate_component["__jy_u_663e_793a_66f4_65b0"] = teammate_refresh
 local teammate_ui = { c_teammate = teammate_component }
 
 G.getUI = function(name, ...)
