@@ -67,6 +67,13 @@
     return Catalog.resolveWithDirectories(resourceId, directoryMap, assetBase);
   }
 
+  function actionResourceId(baseResourceId, actionId) {
+    const base = u32(baseResourceId);
+    const action = Number(actionId);
+    if (!Number.isFinite(action) || Math.trunc(action) === 0) return base;
+    return ((base & 0xffff0000) | (Math.trunc(action) & 0xffff)) >>> 0;
+  }
+
   function describeFrameList(parsed, directoryMap, assetBase = Resources?.ASSET_BASE || '') {
     const frames = parsed.frames.map((id, index) => {
       const hit = resolveWithDirectoryMap(id, directoryMap, assetBase);
@@ -135,6 +142,7 @@
     parseFrameResourceId,
     parseFrameList,
     resolveWithDirectoryMap,
+    actionResourceId,
     describeFrameList,
     loadDirectoryMap,
     loadFrameList,
