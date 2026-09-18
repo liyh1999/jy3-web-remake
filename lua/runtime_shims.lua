@@ -282,6 +282,7 @@ function __jy_render_map(map_id)
     if map_id == 0 or not map_host_ready() then return false end
     local map = G.QueryName(map_id)
     if type(map) ~= "table" or map.__placeholder then return false end
+    local body = G.QueryName(0x10030001)
 
     map_host:beginMap(
         map_id,
@@ -290,7 +291,8 @@ function __jy_render_map(map_id)
         tonumber(map["显示主菜单"]) or 0,
         tonumber(map["显示休息"]) or 0,
         tonumber(map["显示树林"]) or 0,
-        tonumber(map["显示河边"]) or 0
+        tonumber(map["显示河边"]) or 0,
+        tonumber(body[tostring(119)]) or 0
     )
 
     local count = 0
@@ -377,7 +379,8 @@ function __jy_render_legacy_map(title, map_index, map_family)
     else
         background = 0x56050000 + map_index
     end
-    map_host:beginMap(0, tostring(title or ""), background, 0, 0, 0, 0)
+    local body = G.QueryName(0x10030001)
+    map_host:beginMap(0, tostring(title or ""), background, 0, 0, 0, 0, tonumber(body[tostring(119)]) or 0)
     map_host:endMap(0)
     return true
 end
