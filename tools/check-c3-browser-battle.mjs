@@ -24,7 +24,7 @@ for (const name of ['集气','战斗对话1','战斗对话2','异常显示','战
 }
 must(runtime, 'safe_web("battleSlot"', 'original battle slots are not projected to Web');
 must(runtime, /safe_web\(\s*["']battleStatus["']/, 'original battle status is not projected to Web');
-must(runtime, 'safe_web("battleEffect"', 'original battle effects are not projected to Web');
+must(runtime, /web:battleEffect\(actor, target, total\)/, 'original battle effects are not projected to Web');
 must(runtime, 'G.call("add_role", role_id, 15, -damage)', 'battle effect bridge does not mutate authoritative original role HP');
 must(runtime, 'G.call("add_point", 44, -damage)', 'battle effect bridge does not mutate authoritative original player HP');
 
