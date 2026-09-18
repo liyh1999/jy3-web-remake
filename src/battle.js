@@ -30,6 +30,8 @@
         <div class="battle-meter mp"><i></i></div>
         <div class="battle-charge"><i></i></div>
         <div class="battle-slot-numbers"><span class="hp-text">0 / 0</span><span class="mp-text">0 / 0</span></div>
+        <div class="battle-slot-status"></div>
+        <div class="battle-slot-talk hidden"></div>
       `;
       if (index >= 5) {
         node.addEventListener('click', () => {
@@ -96,6 +98,17 @@
     if ($('battleTime')) $('battleTime').textContent = '00:00:00';
     if ($('battleRageText')) $('battleRageText').textContent = '0 / 100';
     if ($('battleRageBar')) $('battleRageBar').style.width = '0%';
+    positions.forEach(position => {
+      const node = $(`battleSlot-${position}`);
+      node?.classList.remove('acting','skill-flash','down');
+      const statusNode = node?.querySelector('.battle-slot-status');
+      if (statusNode) statusNode.textContent = '';
+      const talkNode = node?.querySelector('.battle-slot-talk');
+      if (talkNode) {
+        talkNode.textContent = '';
+        talkNode.classList.add('hidden');
+      }
+    });
   }
 
   function slot(position, id, name, hp, maxHp, mp, maxMp, charge, visible, enemy) {
@@ -171,6 +184,77 @@
     }
   }
 
+  function dialogue(position, text, visible) {
+    const node = $(`battleSlot-${position}`);
+    const bubble = node?.querySelector('.battle-slot-talk');
+    if (!bubble) return;
+    const message = String(text || '').replace(/\[[^\]]+\]/g, '').trim();
+    bubble.textContent = message;
+    bubble.classList.toggle('hidden', !Boolean(visible) || !message);
+  }
+
+  function slotStatus(position, text, iconMask) {
+    const node = $(`battleSlot-${position}`);
+    const statusNode = node?.querySelector('.battle-slot-status');
+    if (!statusNode) return;
+    const clean = String(text || '').replace(/\[[^\]]+\]/g, '').trim();
+    statusNode.textContent = clean;
+    statusNode.dataset.iconMask = String(Number(iconMask) || 0);
+    statusNode.classList.toggle('active', Boolean(clean) || Number(iconMask) > 0);
+  }
+
+  function action(position, actionId, kind) {
+    const node = $(`battleSlot-${position}`);
+    const id = Number(actionId) || 0;
+    if (!node) return;
+    if (id === 9002 || id === 9001) node.classList.add('down');
+    if (kind === 'actor') {
+      node.classList.remove('acting');
+      void node.offsetWidth;
+      node.classList.add('acting');
+      setTimeout(() => node.classList.remove('acting'), 360);
+    } else if (kind === 'skill') {
+      node.classList.remove('skill-flash');
+      void node.offsetWidth;
+      node.classList.add('skill-flash');
+      setTimeout(() => node.classList.remove('skill-flash'), 420);
+    }
+    node.dataset.actionId = String(id);
+  }
+
+  function skillEffect(name, actorPosition, target, skillCode) {
+    const skillName = String(name || '').trim();
+    if (skillName && $('battleSkillName')) $('battleSkillName').textContent = skillName;
+    const layer = $('battleEffectLayer');
+    if (layer && skillName) {
+      const tag = document.createElement('span');
+      tag.className = 'battle-skill-flash';
+      tag.textContent = skillName;
+      tag.dataset.actor = String(actorPosition || '');
+      tag.dataset.target = String(target ?? '');
+      tag.dataset.skill = String(Number(skillCode) || 0);
+      layer.appendChild(tag);
+      setTimeout(() => tag.remove(), 650);
+    }
+  }
+
+  function audio(resourceId, channel, loop, volume, routed) {
+    const meta = $('battleMeta');
+    if (!meta) return;
+    const id = Number(resourceId) >>> 0;
+    const hex = `0x${id.toString(16).padStart(8,'0')}`;
+    meta.dataset.audio = hex;
+    meta.dataset.audioChannel = String(Number(channel) || 1);
+    meta.dataset.audioLoop = Boolean(loop) ? '1' : '0';
+    meta.dataset.audioVolume = String(Number(volume) || 1);
+    meta.dataset.audioRouted = Boolean(routed) ? '1' : '0';
+  }
+
+  function audioStop(channel) {
+    const meta = $('battleMeta');
+    if (!meta) return;
+    meta.dataset.audioStopped = String(Number(channel) || 1);
+  }
   function rangeLabel(range) {
     return ({0:'自身',1:'辅助',2:'单体',3:'横排',4:'纵列',5:'全体'})[Number(range)] || `范围${Number(range) || 0}`;
   }
@@ -286,7 +370,8 @@
   });
 
   window.JYBattleView = Object.freeze({
-    begin, slot, status, effect, skillOption, itemOption, controls, targetPrompt, end, hide,
+    begin, slot, status, effect, dialogue, slotStatus, action, skillEffect, audio, audioStop,
+    skillOption, itemOption, controls, targetPrompt, end, hide,
     positions: Object.freeze([...positions])
   });
 })();
