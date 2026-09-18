@@ -78,6 +78,16 @@
     '02_ui_view/v_fishing.lua',
   ];
 
+  const HUNTING_UI_MODULES = [
+    { module: 'c_button', path: '03_ui_component/c_button.lua' },
+    { module: 'c_hunting', path: '03_ui_component/c_hunting.lua' },
+  ];
+  const HUNTING_UI_VIEWS = [
+    '02_ui_view/v_empty.lua',
+    '02_ui_view/v_button.lua',
+    '02_ui_view/v_hunting.lua',
+  ];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -336,6 +346,21 @@ return true
     return fishingUiPromise;
   }
 
+  let huntingUiPromise = null;
+  async function prepareHuntingUI(onProgress) {
+    if (!huntingUiPromise) {
+      huntingUiPromise = (async () => {
+        const loadedModules = await loadModules(HUNTING_UI_MODULES, onProgress);
+        const loadedViews = await loadPrograms(HUNTING_UI_VIEWS, onProgress);
+        return { loadedModules, loadedViews };
+      })().catch((error) => {
+        huntingUiPromise = null;
+        throw error;
+      });
+    }
+    return huntingUiPromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -366,6 +391,8 @@ return true
     DIG_UI_VIEWS,
     FISHING_UI_MODULES,
     FISHING_UI_VIEWS,
+    HUNTING_UI_MODULES,
+    HUNTING_UI_VIEWS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
@@ -379,6 +406,7 @@ return true
     prepareLoggingUI,
     prepareDigUI,
     prepareFishingUI,
+    prepareHuntingUI,
     bootstrapData,
   };
 })();
