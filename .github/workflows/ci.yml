@@ -24,6 +24,7 @@ jobs:
           node --check src/animation-resources.js
           node --check src/animation-player.js
           node --check src/battle.js
+          node --check src/battle-effects.js
           node --check src/gcore-scene.js
           node --check src/input.js
           node --check src/inventory.js
@@ -62,6 +63,7 @@ jobs:
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
           node --check tools/test-animation-resources.mjs
+          node --check tools/test-battle-effects.mjs
           node --check tools/test-animation-player.mjs
           node --check tools/test-renderer-animation.mjs
           node --check tools/test-input.mjs
@@ -80,6 +82,9 @@ jobs:
 
       - name: Validate framelist player lifecycle
         run: node tools/test-animation-player.mjs
+
+      - name: Validate original battle effect layout
+        run: node tools/test-battle-effects.mjs
 
       - name: Validate renderer frameActionID binding
         run: node tools/test-renderer-animation.mjs
@@ -205,6 +210,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8080/src/person.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/shop.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/shop.css >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/battle-effects.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/battle.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/animation-resources.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/src/animation-player.js >/dev/null
@@ -273,6 +279,7 @@ jobs:
           test -f dist/src/input.js
           test -f dist/src/map-scene.js
           test -f dist/src/gcore-scene.js
+          test -f dist/src/battle-effects.js
           test -f dist/src/battle.js
           test -f dist/src/person.js
           test -f dist/src/person.css
@@ -317,6 +324,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/src/input.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/map-scene.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/gcore-scene.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/battle-effects.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/battle.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/person.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/person.css >/dev/null
