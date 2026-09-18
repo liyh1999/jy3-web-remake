@@ -27,6 +27,7 @@
 
   const CORE_PROGRAMS = [
     '04_program/p_order.lua',
+    '04_program/p_init.lua',
     '04_program/p_citymap_system.lua',
     '04_program/p_newgame.lua',
     '04_program/p_niujiacun.lua'
