@@ -175,6 +175,7 @@ end
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
 assert(loadfile(temp .. '/p_order.lua'))()
+assert(loadfile(temp .. '/p_init.lua'))()
 
 assert(__jy_minigame_start('logging'), 'original logging program failed to start')
 local wait_kind, wait_name = __jy_minigame_status('logging')
