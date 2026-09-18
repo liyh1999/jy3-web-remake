@@ -1,7 +1,7 @@
 .save-actions { grid-template-columns: repeat(4, 1fr); }
 .person-panel { position: absolute; inset: 0; z-index: 46; }
 .person-backdrop { position: absolute; inset: 0; width: 100%; border: 0; margin: 0; padding: 0; background: #0d0a07b8; cursor: default; }
-.person-window { position: absolute; left: 8%; right: 8%; top: 78px; bottom: 54px; display: grid; grid-template-rows: auto minmax(0,1fr); background: #e6d6af; border: 2px solid #57432c; box-shadow: 8px 10px 0 #1f160d99; color: #2d2116; }
+.person-window { position: absolute; left: 5%; right: 5%; top: 64px; bottom: 42px; display: grid; grid-template-rows: auto minmax(0,1fr); background: #e6d6af; border: 2px solid #57432c; box-shadow: 8px 10px 0 #1f160d99; color: #2d2116; }
 .person-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #7c6546; }
 .person-header strong { font-size: 21px; letter-spacing: .12em; }
 .person-close { border: 1px solid #665136; background: #f2e4c2; color: #332619; padding: 6px 13px; border-radius: 2px; }
@@ -16,7 +16,8 @@
 .person-id-row { display: flex; justify-content: space-between; gap: 8px; }
 .person-main { min-width: 0; overflow: auto; padding-right: 3px; }
 .person-section { margin-bottom: 12px; }
-.person-section h3 { margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid #8c7555; font-size: 13px; letter-spacing: .08em; }
+.person-section h3 { display:flex; align-items:center; justify-content:space-between; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid #8c7555; font-size: 13px; letter-spacing: .08em; }
+.person-section h3 span { font-size:10px; font-weight:normal; color:#765f41; letter-spacing:0; }
 .person-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
 .person-qualities { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }
 .person-stat { min-height: 44px; display: grid; align-content: center; padding: 6px 8px; background: #f0e2bf; border: 1px solid #9a825e; }
@@ -26,17 +27,36 @@
 .person-slots { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 7px; }
 .person-slot { min-height: 58px; display: grid; grid-template-columns: 42px minmax(0,1fr); align-items: center; gap: 8px; padding: 6px; border: 1px solid #8b7555; background: #eadbb8; }
 .person-slot.equipped { background: #f0e2bf; outline: 1px solid #8c3927; outline-offset: -2px; }
-.person-slot-icon { width: 40px; height: 40px; display: grid; place-items: center; background: #3a3024; color: #d9c8a5; border: 1px solid #766044; }
+.person-slot-icon, .person-skill-icon, .person-team-portrait { display:grid; place-items:center; background:#3a3024; color:#d9c8a5; border:1px solid #766044; overflow:hidden; }
+.person-slot-icon { width:40px; height:40px; }
 .person-slot-icon img { max-width: 38px; max-height: 38px; object-fit: contain; image-rendering: pixelated; }
 .person-slot div:last-child { min-width: 0; display: grid; }
 .person-slot span { font-size: 10px; color: #725f45; }
 .person-slot b { margin-top: 2px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person-skills { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.person-skill { display:grid; grid-template-columns:42px minmax(0,1fr); gap:8px; align-items:center; min-height:58px; padding:6px; border:1px solid #8b7555; background:#f0e2bf; }
+.person-skill-icon { width:40px; height:40px; }
+.person-skill-icon img, .person-team-portrait img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+.person-skill-main { min-width:0; display:grid; gap:1px; }
+.person-skill-main b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.person-skill-main span, .person-skill-main small { font-size:10px; color:#765f41; }
+.person-team { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.person-team-card { display:grid; grid-template-columns:48px minmax(0,1fr); gap:8px; padding:7px; border:1px solid #8b7555; background:#eadbb8; }
+.person-team-portrait { width:46px; height:58px; font-size:16px; }
+.person-team-body { min-width:0; display:grid; align-content:start; gap:3px; }
+.person-team-head { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.person-team-head b { font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.person-team-head span, .person-team-status { font-size:9px; color:#765f41; }
+.person-team-status { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.person-team-skills { display:flex; flex-wrap:wrap; gap:3px; font-size:9px; color:#765f41; }
+.person-team-skill { padding:2px 4px; border:1px solid #a18a68; background:#f3e5c3; color:#3b2b1c; }
+.person-empty { grid-column:1/-1; padding:10px; border:1px dashed #9a825e; color:#765f41; text-align:center; font-size:11px; }
 @media (max-width: 760px) {
   .save-actions { grid-template-columns: repeat(2, 1fr); }
-  .person-window { left: 3%; right: 3%; top: 70px; bottom: 48px; }
+  .person-window { left: 2%; right: 2%; top: 62px; bottom: 40px; }
   .person-content { grid-template-columns: 130px minmax(0,1fr); }
   .person-portrait { width: 112px; height: 112px; }
   .person-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .person-qualities { grid-template-columns: repeat(3,minmax(0,1fr)); }
-  .person-slots { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .person-slots, .person-skills, .person-team { grid-template-columns: repeat(1,minmax(0,1fr)); }
 }
