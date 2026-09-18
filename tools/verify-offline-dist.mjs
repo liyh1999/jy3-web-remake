@@ -66,7 +66,7 @@ vm.runInContext(fs.readFileSync(path.join(dist, 'src/upstream.js'), 'utf8'), con
 const upstream = context.window.JYUpstream;
 if (!upstream?.OFFLINE) throw new Error('upstream loader did not enter offline mode');
 
-for (const remotePath of [...upstream.CORE_DATA, ...upstream.CORE_PROGRAMS]) {
+for (const remotePath of [...upstream.CORE_DATA, ...upstream.CACHED_PROGRAMS]) {
   const source = await upstream.fetchText(remotePath);
   if (!source || source.length < 8) throw new Error(`offline Lua source empty: ${remotePath}`);
 }
@@ -106,4 +106,4 @@ const buildInfo = JSON.parse(fs.readFileSync(path.join(dist, 'build-info.json'),
 if (buildInfo.upstreamRevision !== upstream.UPSTREAM_REV) throw new Error('build-info upstream revision mismatch');
 if (buildInfo.fengariVersion !== '0.1.4') throw new Error('unexpected Fengari version in build-info');
 
-console.log(`offline dist PASS: ${upstream.CORE_DATA.length} data modules, ${upstream.CORE_PROGRAMS.length} programs, ${refs.length} local page dependencies`);
+console.log(`offline dist PASS: ${upstream.CORE_DATA.length} data modules, ${upstream.CORE_PROGRAMS.length} boot programs + ${upstream.ON_DEMAND_PROGRAMS.length} on-demand programs, ${refs.length} local page dependencies`);
