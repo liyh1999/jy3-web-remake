@@ -37,6 +37,7 @@ jobs:
           node --check tools/check-normalized-upstream.mjs
           node --check tools/check-b4-battle-boundary.mjs
           node --check tools/check-c3-browser-battle.mjs
+          node --check tools/check-c3-battle-input.mjs
           node --check tools/audit-battle.mjs
           node --check tools/smoke-battle-1v1.mjs
           node --check tools/scan-resources.mjs
@@ -141,6 +142,9 @@ jobs:
 
       - name: C3 browser original-battle bridge
         run: node tools/check-c3-browser-battle.mjs
+
+      - name: C3 original battle input bridge
+        run: node tools/check-c3-battle-input.mjs
 
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
