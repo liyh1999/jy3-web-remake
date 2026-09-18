@@ -160,13 +160,6 @@
       state.team = next;
       if (changed) emitTeamChanged();
     },
-    join(id) {
-      id = Number(id);
-      if (!id || state.team.includes(id) || state.team.length >= 12) return;
-      state.team.push(id);
-      emitTeamChanged();
-    },
-    teamFull() { return state.team.length >= 12; },
     story(text, resume) { this.showTalk('旁白', text, resume); },
     showTalk(speaker, text, resume) {
       closeDialogue();
