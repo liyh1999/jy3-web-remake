@@ -91,7 +91,7 @@ if (/^https?:\/\//i.test(resources.ASSET_BASE)) throw new Error(`offline asset b
 
 const probes = [
   [0x56050001, 'image/bjmap/0001.png'],
-  [0x59011003, 'audio/01/1003.mp3'],
+  [0x49011003, 'audio/01/1003.mp3'],
 ];
 for (const [id, expected] of probes) {
   const hit = resources.resolve(id);
@@ -100,6 +100,24 @@ for (const [id, expected] of probes) {
   }
   if (/^https?:\/\//i.test(hit.url)) throw new Error(`resource probe produced external URL: ${hit.url}`);
   if (!fs.existsSync(localPath(hit.url))) throw new Error(`cached resource missing: ${hit.url}`);
+}
+
+vm.runInContext(fs.readFileSync(path.join(dist, 'src/animation-resources.js'), 'utf8'), context, {
+  filename: 'src/animation-resources.js'
+});
+const animationResources = context.window.JYAnimationResources;
+const offlineAnimation = await animationResources.loadFrameList(0x33030001);
+if (offlineAnimation.relativePath !== 'framelist/body/0001.swf' || offlineAnimation.frameCount !== 34) {
+  throw new Error('offline animation loader did not parse cached body framelist');
+}
+if (offlineAnimation.frames[0]?.relativePath !== 'image/body/0499.png') {
+  throw new Error('offline animation loader first-frame resolution mismatch');
+}
+if (!fs.existsSync(localPath(offlineAnimation.frames[0].url))) {
+  throw new Error('offline animation representative frame is not cached');
+}
+if (externalFetchAttempts !== 0) {
+  throw new Error(`offline animation loader attempted ${externalFetchAttempts} external fetch(es)`);
 }
 
 const buildInfo = JSON.parse(fs.readFileSync(path.join(dist, 'build-info.json'), 'utf8'));
