@@ -240,8 +240,22 @@
     battleSlotStatus(position, text, iconMask) {
       window.JYBattleView?.slotStatus(position, text, iconMask);
     },
-    battleAction(position, actionId, kind) {
-      window.JYBattleView?.action(position, actionId, kind);
+    battleAction(position, actionId, kind, baseResourceId) {
+      window.JYBattleView?.action(position, actionId, kind, baseResourceId);
+    },
+    originalBattleFrameEnd(position, actionId, kind) {
+      const safePosition = JSON.stringify(String(position || ''));
+      const safeKind = JSON.stringify(String(kind || ''));
+      const id = Number(actionId) || 0;
+      try {
+        return fengari.load(
+          `return __jy_battle_browser_frame_end(${safePosition},${id},${safeKind})`,
+          '@web/battle-frame-end'
+        )();
+      } catch (error) {
+        console.warn('battle frame-end bridge failed', error);
+        return false;
+      }
     },
     battleSkillEffect(name, actorPosition, target, skillCode) {
       window.JYBattleView?.skillEffect(name, actorPosition, target, skillCode);
