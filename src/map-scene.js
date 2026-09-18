@@ -18,7 +18,19 @@
     hotspotRoot = null;
   }
 
-  function beginMap(mapId, name, background, showMenu, showRest, showWoods, showRiver = 0) {
+  function setPlayerPortrait(resourceId) {
+    const host = document.querySelector('#hudPortrait');
+    if (!host) return false;
+    const id = Number(resourceId) >>> 0;
+    const url = id ? window.JYResources?.url?.(id) : null;
+    host.dataset.resourceId = id ? `0x${id.toString(16).padStart(8, '0')}` : '';
+    host.style.backgroundImage = url ? `url("${url}")` : '';
+    host.classList.toggle('has-image', Boolean(url));
+    host.textContent = url ? '' : '侠';
+    return Boolean(url);
+  }
+
+  function beginMap(mapId, name, background, showMenu, showRest, showWoods, showRiver = 0, portraitId = 0) {
     if (!R) return false;
     const scene = document.querySelector('#scene');
     if (scene) {
@@ -47,6 +59,7 @@
       count: 0,
     };
 
+    setPlayerPortrait(portraitId);
     document.querySelector('#villageActions')?.classList.add('hidden');
     document.querySelector('#hud')?.classList.remove('hidden');
     return true;
@@ -164,5 +177,6 @@
       return runLua(`return __jy_render_map(${currentMap.id})`, '@web/map-refresh');
     },
     clear: clearHotspots,
+    setPlayerPortrait,
   };
 })();
