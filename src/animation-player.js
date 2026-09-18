@@ -180,6 +180,9 @@
           cycle: state.cycle,
           frameCount: state.parsed.frames.length,
           rate: state.parsed.rate,
+          format: state.parsed.format || '',
+          width: Number(state.parsed.width) || 0,
+          height: Number(state.parsed.height) || 0,
         });
       } catch (_) {}
       return true;
