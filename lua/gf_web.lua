@@ -38,6 +38,14 @@ local function deep_copy(value, seen)
     return copy
 end
 
+function G.deepcopy(destination, source)
+    if type(destination) ~= "table" or type(source) ~= "table" then return destination end
+    for k in pairs(destination) do destination[k] = nil end
+    local copy = deep_copy(source)
+    for k, v in pairs(copy) do destination[k] = v end
+    return destination
+end
+
 local function js_array(t)
     local a = js.new(js.global.Array)
     for i, v in ipairs(t or {}) do a:push(v) end
@@ -268,6 +276,12 @@ end
 
 function G.call(name, ...)
     local args = {...}
+    local battle_alias = {
+        get_ponit = "get_point",
+        ser_point = "set_point",
+        ser_role = "set_role",
+    }
+    name = battle_alias[name] or name
 
     -- Async UI bridge: these must stay on the Web side so the original synchronous
     -- Lua story code can pause/resume around browser interaction.
@@ -292,6 +306,10 @@ function G.call(name, ...)
     elseif name == "shop" then
         return open_web_shop(args[1])
     elseif name == "call_battle" then
+        if G.__original_battle_enabled and type(G.api["call_battle"]) == "function" then
+            local found, result = call_lua_api(name, args)
+            if found then return result end
+        end
         local enemy_no = tonumber(args[5]) or 0
         local enemy = "江湖对手"
         if enemy_no > 0 then
@@ -305,6 +323,10 @@ function G.call(name, ...)
         web:setLastBattle(result)
         return result
     elseif name == "get_battle" then
+        if G.__original_battle_enabled and type(G.api["get_battle"]) == "function" then
+            local found, result = call_lua_api(name, args)
+            if found then return result end
+        end
         return web:getLastBattle()
     end
 
