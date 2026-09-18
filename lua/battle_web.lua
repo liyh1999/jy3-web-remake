@@ -612,6 +612,7 @@ end
 
 function __jy_battle_headless_begin(skill_no, attack_budget, scheduler_budget, full_flow)
     headless = true
+    browser = false
     G.__original_battle_enabled = true
     programs = {}
     co_meta = setmetatable({}, { __mode = "k" })
@@ -651,6 +652,7 @@ end
 
 function __jy_battle_headless_end()
     headless = false
+    browser = false
     G.__original_battle_enabled = false
     ui_by_name = {}
     programs = {}
@@ -667,7 +669,85 @@ function __jy_battle_headless_stats()
            config.skill or 0, table.concat(skipped, ","), step_count, config.full_flow == true
 end
 
+function __jy_battle_browser_start(...)
+    headless = false
+    browser = true
+    G.__original_battle_enabled = true
+    programs = {}
+    co_meta = setmetatable({}, { __mode = "k" })
+    ready = {}
+    signals = {}
+    pumping = false
+    step_count = 0
+    max_steps = 30000
+    ui_by_name = { v_citymap_system_map = make_map_ui() }
+    config = {
+        skill = 0,
+        max_attacks = 512,
+        attack_count = 0,
+        damage = 0,
+        last_enemy = 0,
+        skipped = {},
+        full_flow = true,
+    }
+
+    local misc = G.misc()
+    misc["战斗状态"] = 0
+    misc["范围无双"] = 0
+    misc["战斗结果"] = 0
+    misc["自动选择"] = 1
+    misc["修改锁定检测_5"] = 0
+    misc["选择目标"] = 0
+    misc["加血阈值"] = 0
+    misc["吃药次数"] = 0
+    misc["行动序号"] = 0
+    if misc["经验开关"] == nil then misc["经验开关"] = 1 end
+    misc["队友AI"] = 1
+    -- C3-1 uses original automatic targeting so the browser shell can exercise
+    -- the full p_battle state machine before manual skill/target input lands.
+    misc["自动战斗"] = 1
+    misc["木桩"] = misc["木桩"] or 0
+
+    local args = {...}
+    local root = { name = "__jy_browser_battle_root", cases = {}, removed = false, queued = false }
+    root.co = coroutine.create(function()
+        local fn = G.api["call_battle"]
+        if type(fn) ~= "function" then error("original call_battle is not loaded") end
+        fn(table.unpack(args))
+        local result_fn = G.api["get_battle"]
+        local result = type(result_fn) == "function" and result_fn() or 0
+        safe_web("originalBattleFinished", tonumber(result) or 0)
+        return result
+    end)
+    programs[root.name] = root
+    co_meta[root.co] = root
+    resume_program(root)
+    sync_browser_view()
+    schedule_browser_pump(0)
+    return true
+end
+
+function __jy_battle_browser_pump()
+    if not browser then return false end
+    pumping = true
+    local count = math.min(#ready, 16)
+    for _ = 1, count do
+        if not run_one() then break end
+    end
+    pumping = false
+    sync_browser_view()
+    if #ready > 0 then schedule_browser_pump(16) end
+    return true
+end
+
+function __jy_battle_browser_active()
+    return browser == true
+end
+
 _G.__jy_battle_enable_original = __jy_battle_enable_original
 _G.__jy_battle_headless_begin = __jy_battle_headless_begin
 _G.__jy_battle_headless_end = __jy_battle_headless_end
 _G.__jy_battle_headless_stats = __jy_battle_headless_stats
+_G.__jy_battle_browser_start = __jy_battle_browser_start
+_G.__jy_battle_browser_pump = __jy_battle_browser_pump
+_G.__jy_battle_browser_active = __jy_battle_browser_active
