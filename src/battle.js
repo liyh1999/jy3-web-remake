@@ -75,7 +75,7 @@
       onFrame(frame, meta) {
         const url = frame.url || window.JYResources?.url?.(frame.id);
         if (url) image.src = url;
-        const placement = BattleEffects?.framePlacement?.(position, frame, {
+        const placement = kind === 'actor' ? null : BattleEffects?.framePlacement?.(position, frame, {
           master: meta.format === 'action'
         });
         if (placement) {
