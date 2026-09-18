@@ -7,12 +7,8 @@ import { spawnSync } from 'node:child_process';
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 
-const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
-const targets = [
-  '04_program/p_order.lua',
-  '04_program/p_newgame.lua',
-  '04_program/p_niujiacun.lua',
-];
+const { RAW_BASE, normalizeLuaSource, CORE_PROGRAMS } = globalThis.window.JYUpstream;
+const targets = [...CORE_PROGRAMS];
 
 function printContext(source, stderr) {
   const match = String(stderr || '').match(/:(\d+):/);
