@@ -96,6 +96,8 @@ button:disabled { opacity: .45; cursor: wait; }
 .battle-slot.dead { opacity: .35; filter: grayscale(.8); }
 .battle-slot.impact { animation: battle-impact .22s ease-out; }
 .battle-slot-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; }
+.battle-slot-portrait { width: 18px; height: 22px; flex: 0 0 auto; object-fit: contain; background: #17120e; border: 1px solid #665137; }
+.battle-slot-portrait.missing { visibility: hidden; }
 .battle-slot-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .battle-slot-id { color: #82735b; font: 9px ui-monospace, Consolas, monospace; }
 .battle-meter { height: 5px; margin-top: 4px; background: #090705; border: 0; }
