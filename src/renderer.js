@@ -293,6 +293,12 @@
     return true;
   }
 
+  function defaultActionLoop(baseResourceId, actionId) {
+    const directoryBase = u32(baseResourceId) & 0x0fff0000;
+    const actorFamily = directoryBase === 0x03030000 || directoryBase === 0x03060000 || directoryBase === 0x03070000;
+    return actorFamily && (Number(actionId) || 0) < 1000;
+  }
+
   function playNodeAction(node, actionId, options = {}) {
     if (!node || !window.JYFramePlayer?.play) return false;
     const baseResourceId = u32(node.img);
@@ -304,7 +310,7 @@
       baseResourceId,
       actionId: Number(actionId) || 0,
       rate: Number(options.rate) > 0 ? Number(options.rate) : undefined,
-      loop: options.loop,
+      loop: options.loop === undefined ? defaultActionLoop(baseResourceId, actionId) : options.loop,
       onFrame(frame) {
         node._animationFrameImg = u32(frame.id);
       },
