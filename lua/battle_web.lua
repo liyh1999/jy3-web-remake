@@ -179,6 +179,44 @@ local function battle_framelist_base(position, kind)
     return 0
 end
 
+local function battle_role_selector(role_id)
+    role_id = tonumber(role_id) or 0
+    if role_id <= 0 then return 0 end
+    if role_id >= 253 and role_id < 385 then
+        local role = G.QueryName(0x10040000 + role_id)
+        return tonumber(role["编号"]) or role_id
+    end
+    return role_id
+end
+
+local function battle_role_appearance(role_id)
+    local selector = battle_role_selector(role_id)
+    if selector <= 0 then return 0, 0, 0 end
+    local role = G.QueryName(0x10040000 + selector)
+    local portrait = tonumber(role["头像"]) or 0
+    -- Original p_init assigns 0x56080000 + DB index to every role portrait.
+    -- Browser battle tests do not execute p_init, so mirror that initialization
+    -- only when the authoritative role field is still empty.
+    if portrait <= 0 then portrait = 0x56080000 + selector end
+    return selector, portrait, tonumber(role["站立图像"]) or 0
+end
+
+local function start_browser_actor_idles(root)
+    if not browser or not root then return end
+    local battle = G.QueryName(0x10150001)
+    for i = 1, 11 do
+        local position = positions[i]
+        local tab = root.getChildByName("tab").getChildByName(position)
+        if tab.visible == true then
+            if i == 1 then
+                tab.frameActionID(0)
+            else
+                tab.frameActionID(battle_role_selector(battle[position]))
+            end
+        end
+    end
+end
+
 local function first_living_enemy()
     local battle = G.QueryName(0x10150001)
     for i = 6, 11 do
@@ -538,6 +576,23 @@ sync_browser_view = function()
         safe_web("battleSlot", position, id, name, hp, maxhp, mp, maxmp,
             tonumber(map_node.x) or 0, map_node.visible == true, i >= 6)
 
+        local portrait, stand, idle_action
+        if i == 1 then
+            portrait = tonumber(body[tostring(119)]) or 0
+            stand = 0
+            idle_action = 0
+        else
+            idle_action, portrait, stand = battle_role_appearance(id)
+        end
+        safe_web(
+            "battleSlotAppearance",
+            position,
+            portrait or 0,
+            stand or 0,
+            battle_actor_framelist_base(position),
+            idle_action or 0
+        )
+
         local talk = ui.getChildByName("talk").getChildByName(position)
         safe_web(
             "battleDialogue",
@@ -783,6 +838,7 @@ function G.addUI(name, ...)
         if browser then
             local battle = G.QueryName(0x10150001)
             safe_web("battleBegin", tonumber(battle["背景"]) or 0, tonumber(battle["模式"]) or 0)
+            start_browser_actor_idles(ui_by_name[name])
             sync_browser_view()
         end
     elseif name == "v_citymap_system_map" then
