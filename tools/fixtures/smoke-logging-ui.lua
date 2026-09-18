@@ -259,7 +259,7 @@ assert(settle_timer, 'post-chop timer missing')
 __jy_program_browser_pump(settle_timer)
 kind = select(1, __jy_minigame_status('地图系统_小游戏'))
 assert(kind == 'case', 'dispatcher did not return to wait_case after normal chop')
-assert(ui.c_logging.伐木 == 0, 'logging component did not re-enable the next chop')
+assert(ui.c_logging['伐木'] == 0, 'logging component did not re-enable the next chop')
 
 ui.getChildByName('力').text = '50'
 ui.getChildByName('气').text = '50'
