@@ -3,7 +3,7 @@
   const $$ = (s) => [...document.querySelectorAll(s)];
   const SAVE_KEY = 'jy3-web-remake:save:v1';
   const ui = {
-    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'),
+    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
@@ -149,23 +149,25 @@
     }
   }
 
+  function prepareMinigameSurface() {
+    closeDialogue();
+    ui.battle.classList.add('hidden');
+    setScene('village');
+    ui.scene.querySelector('.title-copy')?.remove();
+    ui.actions.classList.add('hidden');
+    ui.hud.classList.add('hidden');
+    const canvas = window.JYRenderer?.ensureCanvas?.();
+    window.JYRenderer?.resizeCanvas?.();
+    if (!canvas?.isConnected) throw new Error('gcore canvas 未挂载到页面');
+    fengari.load("return __jy_minigame_reset()", '@web/reset-minigame-before-start')();
+    return canvas;
+  }
   window.JYWeb = {
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
     async startOriginalLogging(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
-      closeDialogue();
-      ui.battle.classList.add('hidden');
-      setScene('village');
-      // The village HTML card/HUD is only a compatibility shell. Original mini-games
-      // are rendered by gcore, so remove the DOM overlay and expose the canvas.
-      ui.scene.querySelector('.title-copy')?.remove();
-      ui.actions.classList.add('hidden');
-      ui.hud.classList.add('hidden');
-      const canvas = window.JYRenderer?.ensureCanvas?.();
-      window.JYRenderer?.resizeCanvas?.();
-      if (!canvas?.isConnected) throw new Error('gcore canvas 未挂载到页面');
-      fengari.load("return __jy_minigame_reset()", '@web/reset-minigame-before-logging')();
+      prepareMinigameSurface();
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
       progress('伐木资源加载完成，正在启动原版程序…');
       const ok = fengari.load(
@@ -174,6 +176,19 @@
       )();
       if (!ok) throw new Error('原 logging 程序启动失败');
       ui.status.textContent = '原版伐木程序运行中 · 点击画面中的开始';
+      return loaded;
+    },
+    async startOriginalDig(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      prepareMinigameSurface();
+      const loaded = await window.JYUpstream.prepareDigUI(progress);
+      progress('采矿资源加载完成，正在启动原版程序…');
+      const ok = fengari.load(
+        "return __jy_minigame_start('dig')",
+        '@web/start-original-dig'
+      )();
+      if (!ok) throw new Error('原 dig 程序启动失败');
+      ui.status.textContent = '原版采矿程序运行中 · 点击画面中的开始';
       return loaded;
     },
     async showLoggingUi(onProgress) {
@@ -277,6 +292,7 @@
     minigameFinished(name) {
       ui.status.textContent = `原版小游戏结束：${String(name || '')}`;
       if (ui.logging) ui.logging.disabled = false;
+      if (ui.dig) ui.dig.disabled = false;
       setTimeout(() => {
         try {
           fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
@@ -595,6 +611,18 @@
           console.error('logging mini-game start failed', error);
           ui.status.textContent = `伐木小游戏启动失败：${error?.message || error}`;
           ui.logging.disabled = false;
+        }
+      };
+      if (ui.dig) ui.dig.onclick = async () => {
+        ui.dig.disabled = true;
+        try {
+          resetJsState();
+          resetLuaState();
+          await window.JYWeb.startOriginalDig((message) => { ui.status.textContent = message; });
+        } catch (error) {
+          console.error('dig mini-game start failed', error);
+          ui.status.textContent = `采矿小游戏启动失败：${error?.message || error}`;
+          ui.dig.disabled = false;
         }
       };
       if (ui.save) ui.save.onclick = saveGame;
