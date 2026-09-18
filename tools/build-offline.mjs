@@ -42,8 +42,8 @@ globalThis.window = {};
 vm.runInThisContext(fs.readFileSync(path.join(root, 'src/upstream.js'), 'utf8'), {
   filename: 'src/upstream.js'
 });
-const { UPSTREAM_REV, CORE_DATA, CACHED_PROGRAMS } = globalThis.window.JYUpstream;
-const requiredScripts = [...new Set([...CORE_DATA, ...CACHED_PROGRAMS])];
+const { UPSTREAM_REV, CACHED_DATA, CACHED_PROGRAMS } = globalThis.window.JYUpstream;
+const requiredScripts = [...new Set([...CACHED_DATA, ...CACHED_PROGRAMS])];
 const requiredAssets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
 
 const manifestPath = path.join(vendor, 'manifest.json');
