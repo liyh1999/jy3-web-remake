@@ -16,6 +16,7 @@ const targets = {
   v_button: '02_ui_view/v_button.lua',
   v_logging: '02_ui_view/v_logging.lua',
   p_order: '04_program/p_order.lua',
+  p_init: '04_program/p_init.lua',
 };
 
 for (const [name, relative] of Object.entries(targets)) {
