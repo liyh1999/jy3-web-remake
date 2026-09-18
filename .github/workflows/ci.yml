@@ -69,6 +69,7 @@ jobs:
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
           node --check tools/test-upstream-module-loader.mjs
+          node --check tools/test-program-runtime.mjs
           node --check tools/test-ui-runtime.mjs
           node --check tools/test-animation-resources.mjs
           node --check tools/test-battle-effects.mjs
@@ -128,6 +129,7 @@ jobs:
 
       - name: Check Lua syntax
         run: |
+          luac5.3 -p lua/program_runtime.lua
           luac5.3 -p lua/gf_web.lua
           luac5.3 -p lua/gcore_web.lua
           luac5.3 -p lua/battle_web.lua
@@ -137,6 +139,9 @@ jobs:
           luac5.3 -p lua/person_web.lua
           luac5.3 -p lua/shop_web.lua
           luac5.3 -p lua/jy3_demo.lua
+
+      - name: Validate reusable Lua program runtime
+        run: node tools/test-program-runtime.mjs
 
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
