@@ -123,7 +123,7 @@
 
     const directory = directories.get(base);
     const index = pathId - base;
-    const rule = ruleFor(pathId);
+    const rule = ruleFor(id);
     const isDirectory = pathId === base;
     const stem = index.toString(16).padStart(4, '0').toLowerCase();
 
