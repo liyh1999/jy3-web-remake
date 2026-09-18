@@ -32,6 +32,7 @@ local config = {
     damage = 0,
     last_enemy = 0,
     skipped = {},
+    full_flow = false,
 }
 
 local function enqueue(meta, value)
@@ -250,6 +251,30 @@ local function make_battle_ui()
     root.getChildByName("状态").text = "0"
     root.getChildByName("num").text = "0"
     root.getChildByName("num0").text = "1"
+    root.getChildByName("单目标").text = "0"
+    root.getChildByName("横目标").text = "0"
+    root.getChildByName("纵目标").text = "0"
+
+    local battle = G.QueryName(0x10150001)
+    local player_alive = (tonumber(G.call("get_point", 44)) or 0) > 0
+    for i = 1, 11 do
+        local node = root.getChildByName("map").getChildByName(positions[i])
+        local tab = root.getChildByName("tab").getChildByName(positions[i])
+        local active
+        if i == 1 then
+            active = player_alive and ((tonumber(battle["模式"]) or 0) < 4 or tonumber(battle["模式"]) == 99)
+        else
+            active = (tonumber(battle[positions[i]]) or 0) > 0
+        end
+        node.visible = active
+        node.x = 0
+        tab.visible = active
+        tab.getChildByName("over").text = "0"
+        local code = root.getChildByName("代码").getChildByName(positions[i])
+        code.text = "0"
+        code.getChildByName("id").text = "0"
+        code.getChildByName("min").text = "0"
+    end
 
     local c = {
         obj = root,
@@ -262,7 +287,7 @@ local function make_battle_ui()
         self["敌方存活"] = enemies
         root.getChildByName("num0").text = tostring(allies)
         root.getChildByName("num").text = tostring(enemies)
-        if enemies > 0 then perform_headless_attack(self) end
+        if enemies > 0 and not config.full_flow then perform_headless_attack(self) end
         allies, enemies = battle_counts()
         self["我方存活"] = allies
         self["敌方存活"] = enemies
@@ -276,10 +301,56 @@ local function make_battle_ui()
     c["刷新显示"] = refresh_display
     c.__jy_u_5237_65b0_663e_793a = refresh_display
 
-    c["战场_效果"] = function(self, actor, _, _, needmp)
-        if tonumber(actor) == 1 and tonumber(needmp) and tonumber(needmp) > 0 then
+    c["战场_效果"] = function(self, actor, _, target, needmp)
+        actor = tonumber(actor) or 0
+        target = tonumber(target) or 0
+        if actor == 1 and tonumber(needmp) and tonumber(needmp) > 0 then
             G.call("add_point", 46, -math.min(tonumber(needmp), tonumber(G.call("get_point", 46)) or 0))
         end
+
+        if config.full_flow then
+            if config.attack_count >= config.max_attacks then
+                error("headless battle exceeded attack budget")
+            end
+            local battle = G.QueryName(0x10150001)
+            local total = 0
+            local function damage_at(index)
+                if index < 1 or index > 11 then return 0 end
+                local hurt = root.getChildByName("hurt").getChildByName(positions[index])
+                local damage = tonumber(hurt.getChildByName("减生命").text)
+                    or tonumber(hurt.getChildByName("生命").text) or 0
+                if damage <= 0 then return 0 end
+                if index == 1 then
+                    G.call("add_point", 44, -damage)
+                else
+                    local role_id = tonumber(battle[positions[index]]) or 0
+                    if role_id > 0 then G.call("add_role", role_id, 15, -damage) end
+                end
+                return damage
+            end
+
+            if target >= 1 and target <= 11 then
+                total = damage_at(target)
+            elseif target == 12 then
+                for i = 6, 11 do total = total + damage_at(i) end
+            elseif target == 13 then
+                for i = 1, 5 do total = total + damage_at(i) end
+            end
+
+            config.attack_count = config.attack_count + 1
+            config.damage = config.damage + total
+            if actor == 1 and target >= 6 and target <= 11 then
+                config.last_enemy = tonumber(battle[positions[target]]) or 0
+            end
+            for i = 1, 11 do
+                local hurt = root.getChildByName("hurt").getChildByName(positions[i])
+                hurt.getChildByName("减生命").visible = false
+                hurt.getChildByName("加生命").visible = false
+                hurt.getChildByName("闪避").visible = false
+            end
+            return true
+        end
+
         return G.call("通用_战斗飘字", actor)
     end
     root.c_battle = c
@@ -305,6 +376,12 @@ function G.wait_case()
     if not headless then return nil end
     local meta = current_meta()
     if not meta then return nil end
+    for event_name, index in pairs(meta.cases) do
+        if consume_signal(event_name) then
+            meta.cases = {}
+            return index
+        end
+    end
     return coroutine.yield("__jy_wait_case")
 end
 
@@ -365,6 +442,9 @@ end
 
 local function should_run_program(name)
     if name == "战斗系统_胜负监控" then return true end
+    if config.full_flow and (name == "集气" or name == "战斗系统_事件响应" or name == "战斗系统_主角监控") then
+        return true
+    end
     if tostring(name):match("^__jy_") then return true end
     return false
 end
@@ -437,7 +517,7 @@ function __jy_battle_enable_original(enabled)
     return G.__original_battle_enabled
 end
 
-function __jy_battle_headless_begin(skill_no, attack_budget, scheduler_budget)
+function __jy_battle_headless_begin(skill_no, attack_budget, scheduler_budget, full_flow)
     headless = true
     G.__original_battle_enabled = true
     programs = {}
@@ -455,6 +535,7 @@ function __jy_battle_headless_begin(skill_no, attack_budget, scheduler_budget)
         damage = 0,
         last_enemy = 0,
         skipped = {},
+        full_flow = full_flow == true,
     }
 
     local misc = G.misc()
@@ -490,7 +571,7 @@ function __jy_battle_headless_stats()
     for name in pairs(config.skipped or {}) do skipped[#skipped + 1] = name end
     table.sort(skipped)
     return config.attack_count or 0, config.damage or 0, config.last_enemy or 0,
-           config.skill or 0, table.concat(skipped, ","), step_count
+           config.skill or 0, table.concat(skipped, ","), step_count, config.full_flow == true
 end
 
 _G.__jy_battle_enable_original = __jy_battle_enable_original
