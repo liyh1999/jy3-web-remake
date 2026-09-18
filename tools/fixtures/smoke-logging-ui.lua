@@ -151,8 +151,6 @@ function G.misc() return {} end
 function G.call(name, ...)
     name = tostring(name or '')
     local args = {...}
-    local fn = G.api[name]
-    if type(fn) == 'function' then return fn(table.unpack(args)) end
     if name == 'add_point' then
         local id, delta = tonumber(args[1]) or 0, tonumber(args[2]) or 0
         reward_points[id] = (reward_points[id] or 0) + delta
@@ -165,6 +163,8 @@ function G.call(name, ...)
         return reward_items[id]
     end
     if name == 'get_item' then return reward_items[tonumber(args[1]) or 0] or 0 end
+    local fn = G.api[name]
+    if type(fn) == 'function' then return fn(table.unpack(args)) end
     return 0
 end
 function G.wait_time() return true end
