@@ -185,6 +185,38 @@
     return fengari.load(wrapper, '@web/register-data')();
   }
 
+  function registerModuleSource(moduleName, source, name = moduleName) {
+    const normalized = normalizeLuaSource(source);
+    const wrapper = `
+package.loaded[${JSON.stringify(String(moduleName))}] = nil
+package.preload[${JSON.stringify(String(moduleName))}] = function()
+  local fn, err = load(${luaLongString(normalized)}, ${JSON.stringify('@upstream-module/' + String(name))})
+  if not fn then error(err) end
+  return fn()
+end
+return true
+`;
+    return fengari.load(wrapper, '@web/register-module')();
+  }
+
+  async function loadModule(moduleName, path) {
+    const source = await fetchText(path);
+    registerModuleSource(moduleName, source, path);
+    return moduleName;
+  }
+
+  async function loadModules(entries, onProgress) {
+    let loaded = 0;
+    for (const entry of entries) {
+      const moduleName = typeof entry === 'string' ? entry : entry.module;
+      const path = typeof entry === 'string' ? entry : entry.path;
+      onProgress?.(`加载原模块 ${moduleName}…`);
+      await loadModule(moduleName, path);
+      loaded += 1;
+    }
+    return loaded;
+  }
+
   async function loadProgram(path) {
     const source = await fetchText(path);
     const normalized = normalizeLuaSource(source);
@@ -255,6 +287,9 @@
     normalizeLuaSource,
     fetchText,
     registerDataSource,
+    registerModuleSource,
+    loadModule,
+    loadModules,
     loadProgram,
     loadPrograms,
     loadData,

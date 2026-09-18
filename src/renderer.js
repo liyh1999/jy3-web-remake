@@ -645,6 +645,41 @@
     return nodes.get(Math.trunc(finite(handle))) || null;
   }
 
+  function cloneNode(source) {
+    if (!source) return null;
+    const clone = createNode(source.type || 'quad');
+    const skip = new Set([
+      'handle','parent','children','childCount',
+      'addChild','addChildAt','removeChild','removeAllChildren',
+      'removeFromParent','getChildAt','getChildByName',
+      'real_width','real_height','sendMsg',
+      'x','y','width','height','left','right','bottom','top',
+      '_animationFrameImg','_frameEndEvents'
+    ]);
+    for (const key of Object.keys(source)) {
+      if (skip.has(key)) continue;
+      const value = source[key];
+      if (typeof value === 'function' || Array.isArray(value) || (value && typeof value === 'object')) continue;
+      clone[key] = value;
+    }
+    clone._x = source._x;
+    clone._y = source._y;
+    clone._width = source._width;
+    clone._height = source._height;
+    clone._left = source._left;
+    clone._right = source._right;
+    clone._bottom = source._bottom;
+    clone._top = source._top;
+    clone._animationFrameImg = 0;
+    clone._frameEndEvents = [];
+    for (const child of source.children || []) clone.addChild(cloneNode(child));
+    return clone;
+  }
+
+  function cloneNodeHandle(handle) {
+    return cloneNode(nodeByHandle(handle))?.handle || 0;
+  }
+
   function createNodeHandle(type) {
     return createNode(String(type || 'quad')).handle;
   }
@@ -775,6 +810,7 @@
     spineQuad: () => createNode('spine'),
     particleSystem: () => createNode('particle'),
     createNodeHandle,
+    cloneNodeHandle,
     getNodeProperty,
     setNodeProperty,
     nodeCall,

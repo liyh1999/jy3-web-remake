@@ -68,6 +68,8 @@ jobs:
           node --check tools/smoke-shop-runtime.mjs
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
+          node --check tools/test-upstream-module-loader.mjs
+          node --check tools/test-ui-runtime.mjs
           node --check tools/test-animation-resources.mjs
           node --check tools/test-battle-effects.mjs
           node --check tools/test-animation-player.mjs
@@ -88,6 +90,9 @@ jobs:
 
       - name: Validate JYAudio settings and page lifecycle
         run: node tools/test-audio-settings.mjs
+
+      - name: Validate upstream Lua module loader
+        run: node tools/test-upstream-module-loader.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
@@ -132,6 +137,9 @@ jobs:
           luac5.3 -p lua/person_web.lua
           luac5.3 -p lua/shop_web.lua
           luac5.3 -p lua/jy3_demo.lua
+
+      - name: Validate gcore UI template runtime
+        run: node tools/test-ui-runtime.mjs
 
       - name: Map bridge with original data
         run: node tools/smoke-map-runtime.mjs

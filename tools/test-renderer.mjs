@@ -92,6 +92,14 @@ assert(R.nodeCall(handleRoot, 'getChildByName', 'handle-child') === handleChild,
 assert(R.findNodeHandle('handle-root|handle-child', '|') === handleChild, 'handle FindNode failed');
 assert(R.nodeCall(handleChild, 'real_width') === 50, 'handle real_width failed');
 
+const cloneRootHandle = R.cloneNodeHandle(handleRoot);
+const cloneChildHandle = R.nodeCall(cloneRootHandle, 'getChildByName', 'handle-child');
+assert(cloneRootHandle && cloneRootHandle !== handleRoot, 'cloneNodeHandle did not create a new root');
+assert(cloneChildHandle && cloneChildHandle !== handleChild, 'cloneNodeHandle did not deep-clone children');
+assert(R.getNodeProperty(cloneChildHandle, 'width') === 50, 'deep clone lost original node layout');
+R.setNodeProperty(cloneChildHandle, 'name', 'clone-child');
+assert(R.getNodeProperty(handleChild, 'name') === 'handle-child', 'clone mutation leaked into template');
+
 const snap = R.snapshot();
 assert(snap.type === 'stage' && Array.isArray(snap.children), 'renderer snapshot malformed');
 

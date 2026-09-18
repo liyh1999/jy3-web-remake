@@ -21,6 +21,7 @@ package.preload["co"] = package.preload["co"] or function()
 end
 
 local node_cache = setmetatable({}, { __mode = "v" })
+local cached_ui_templates = {}
 
 local function handle_of(value)
     if type(value) == "table" then return tonumber(rawget(value, "__handle")) or 0 end
@@ -101,6 +102,57 @@ local function wrap_node(handle)
     setmetatable(proxy, mt)
     node_cache[handle] = proxy
     return proxy
+end
+
+function G.com()
+    local t = {}
+    t.__index = t
+    return t
+end
+
+function G.cacheUI(node)
+    if not node then return false end
+    cached_ui_templates[#cached_ui_templates + 1] = node
+    return true
+end
+
+local function clone_component(source)
+    local copy = {}
+    for key, value in pairs(source or {}) do
+        if key ~= "obj" then copy[key] = value end
+    end
+    return setmetatable(copy, getmetatable(source))
+end
+
+local function bind_component_tree(source, target)
+    if not source or not target then return end
+    for key, value in pairs(source) do
+        if type(key) == "string" and string.sub(key, 1, 2) == "c_" and type(value) == "table" then
+            local component = clone_component(value)
+            rawset(target, key, component)
+            component.obj = target
+            if type(component.init) == "function" then component:init() end
+        end
+    end
+    local count = math.min(tonumber(source.childCount) or 0, tonumber(target.childCount) or 0)
+    for index = 0, count - 1 do
+        bind_component_tree(source.getChildAt(index), target.getChildAt(index))
+    end
+end
+
+function G.loadUI(name)
+    name = tostring(name or "")
+    for i = #cached_ui_templates, 1, -1 do
+        local template = cached_ui_templates[i]
+        if template and tostring(template.name or "") == name then
+            local handle = tonumber(renderer:cloneNodeHandle(handle_of(template))) or 0
+            if handle == 0 then return nil end
+            local clone = wrap_node(handle)
+            bind_component_tree(template, clone)
+            return clone
+        end
+    end
+    return nil
 end
 
 function G.GetPath(resource_id)
