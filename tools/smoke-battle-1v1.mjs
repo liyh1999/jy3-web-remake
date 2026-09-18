@@ -185,6 +185,13 @@ end
 for i=179,220 do
     if body[tostring(i)]==nil then body[tostring(i)]=120 end
 end
+-- 193/194 are equipment references and 196/197/198 are internal/lightness/
+-- projectile references. They must remain nil unless a real object is equipped.
+body['193']=nil
+body['194']=nil
+body['196']=nil
+body['197']=nil
+body['198']=nil
 for i=1,260 do
     local key=tostring(i)
     if newbody[key]==nil then newbody[key]=0 end
