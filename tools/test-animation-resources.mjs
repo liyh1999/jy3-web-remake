@@ -41,7 +41,7 @@ const bodySource = `520683530
 56130501
 56130502
 `;
-const body = A.parseFrameList(bodySource, 0x53030001);
+const body = A.parseFrameList(bodySource, 0x33030001);
 if (body.marker !== 520683530 || body.rate !== 15 || body.loop !== true || body.frameCount !== 4) {
   throw new Error('body framelist header parse mismatch');
 }
@@ -73,7 +73,7 @@ const skillSource = `520683530
 55860002
 55860003
 `;
-const skill = A.describeFrameList(A.parseFrameList(skillSource, 0x53040061), dirs, './vendor/upstream/JY3');
+const skill = A.describeFrameList(A.parseFrameList(skillSource, 0x33040061), dirs, './vendor/upstream/JY3');
 if (skill.frames[0].relativePath !== 'spine/skill/97/0001.png') {
   throw new Error(`skill sequence frame path mismatch: ${skill.frames[0].relativePath}`);
 }
