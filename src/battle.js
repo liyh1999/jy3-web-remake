@@ -2,6 +2,7 @@
   const positions = ['team1','team2','team3','team4','team5','enemy1','enemy2','enemy3','enemy4','enemy5','enemy6'];
   const slotState = new Map();
   const skillState = new Map();
+  const itemState = new Map();
   let controlsState = { autoEnabled: true, canInput: false, targetPending: false, canEscape: false };
 
   const $ = id => document.getElementById(id);
@@ -57,12 +58,32 @@
     }
   }
 
+  function ensureItems() {
+    const host = $('battleItems');
+    if (!host || host.children.length) return;
+    ['q','w','e','r'].forEach((key, index) => {
+      const slot = index + 1;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'battle-item';
+      button.dataset.slot = String(slot);
+      button.innerHTML = `<kbd>${key.toUpperCase()}</kbd><span>空</span><small></small>`;
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        window.JYWeb?.chooseOriginalBattleItem?.(slot);
+      });
+      host.appendChild(button);
+    });
+  }
+
   function begin(background, mode) {
     ensureSlots();
     ensureSkills();
+    ensureItems();
     bindControls();
     slotState.clear();
     skillState.clear();
+    itemState.clear();
     const panel = $('battle');
     panel?.classList.remove('hidden');
     if ($('battleTitle')) $('battleTitle').textContent = Number(mode) === 1 ? '单挑战斗' : '战斗';
@@ -168,6 +189,20 @@
     button.querySelector('small').textContent = data.skillId ? rangeLabel(data.range) : '';
   }
 
+  function itemOption(slot, itemId, name, count, enabled, hotkey) {
+    ensureItems();
+    const n = Number(slot) || 0;
+    const data = { slot:n, itemId:Number(itemId)||0, name:String(name||''), count:Number(count)||0, enabled:Boolean(enabled), hotkey:String(hotkey||'') };
+    itemState.set(n, data);
+    const button = $('battleItems')?.querySelector(`button[data-slot="${n}"]`);
+    if (!button) return;
+    button.disabled = !data.enabled;
+    button.classList.toggle('empty', !data.itemId);
+    button.querySelector('kbd').textContent = data.hotkey.toUpperCase();
+    button.querySelector('span').textContent = data.name || '空';
+    button.querySelector('small').textContent = data.itemId ? `×${data.count}` : '';
+  }
+
   function controls(autoEnabled, canInput, targetPending, canEscape) {
     controlsState = {
       autoEnabled: Boolean(autoEnabled),
@@ -235,6 +270,12 @@
         event.preventDefault();
         window.JYWeb?.chooseOriginalBattleSkill?.(slot);
       }
+    } else if (/^[qwer]$/i.test(event.key)) {
+      const slot = ({q:1,w:2,e:3,r:4})[event.key.toLowerCase()];
+      if (itemState.get(slot)?.enabled) {
+        event.preventDefault();
+        window.JYWeb?.chooseOriginalBattleItem?.(slot);
+      }
     } else if (event.key.toLowerCase() === 'a') {
       event.preventDefault();
       window.JYWeb?.setOriginalBattleAuto?.(!controlsState.autoEnabled);
@@ -245,7 +286,7 @@
   });
 
   window.JYBattleView = Object.freeze({
-    begin, slot, status, effect, skillOption, controls, targetPrompt, end, hide,
+    begin, slot, status, effect, skillOption, itemOption, controls, targetPrompt, end, hide,
     positions: Object.freeze([...positions])
   });
 })();
