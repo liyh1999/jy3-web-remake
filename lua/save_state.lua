@@ -73,7 +73,7 @@ end
 
 local function sync_web()
     local body = raw_query(0x10030001)
-    local point_ids = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45,46,47,104,110,119,130,134,135,136,143,200,217,218,237,238}
+    local point_ids = {3,4,5,14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45,46,47,76,104,110,119,130,134,135,136,143,200,217,218,237,238}
     for _, id in ipairs(point_ids) do
         web:setPoint(id, tonumber(body[tostring(id)]) or 0)
     end
