@@ -247,5 +247,9 @@
   "spine/skill/97/0009.png",
   "spine/skill/97/0010.png",
   "spine/skill/97/0011.png",
-  "spine/skill/97/0012.png"
+  "spine/skill/97/0012.png",
+  "audio/01/0038.mp3",
+  "audio/02/000a.mp3",
+  "script/03_ui_component/c_button.lua",
+  "script/06_notify/n_common.lua"
 ]
