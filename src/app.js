@@ -219,6 +219,9 @@
     battleSlot(position, id, name, hp, maxHp, mp, maxMp, charge, visible, enemy) {
       window.JYBattleView?.slot(position, id, name, hp, maxHp, mp, maxMp, charge, visible, enemy);
     },
+    battleSlotAppearance(position, portraitId, standId, battleMaster, idleAction) {
+      window.JYBattleView?.appearance(position, portraitId, standId, battleMaster, idleAction);
+    },
     battleStatus(time, rage, maxRage, skillName, abnormal, result) {
       window.JYBattleView?.status(time, rage, maxRage, skillName, abnormal, result);
     },
