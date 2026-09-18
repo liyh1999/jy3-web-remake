@@ -87,6 +87,7 @@ local function resume_program(meta, value)
     if marker == "__jy_wait_time" then
         meta.wait = { kind = "time", value = tonumber(a) or 0 }
         enqueue(meta, true)
+        if browser then schedule_browser_pump(meta.wait.value) end
     elseif marker == "__jy_wait_event" then
         meta.wait = { kind = "event", name = tostring(a) }
     elseif marker == "__jy_wait_case" then
@@ -102,6 +103,7 @@ local function run_one()
     if not item then return false end
     item.meta.queued = false
     resume_program(item.meta, item.value)
+    if browser then sync_browser_view() end
     return true
 end
 
@@ -371,7 +373,7 @@ local function make_map_ui()
 end
 
 function G.case(index, event_name)
-    if not headless then return true end
+    if not headless and not browser then return true end
     local meta = current_meta()
     if not meta then return false end
     meta.cases[tostring(event_name)] = tonumber(index) or index
@@ -379,7 +381,7 @@ function G.case(index, event_name)
 end
 
 function G.wait_case()
-    if not headless then return nil end
+    if not headless and not browser then return nil end
     local meta = current_meta()
     if not meta then return nil end
     for event_name, index in pairs(meta.cases) do
@@ -392,7 +394,7 @@ function G.wait_case()
 end
 
 function G.noti_call(name, ...)
-    if not headless then return true end
+    if not headless and not browser then return true end
     local ui = ui_by_name["v_battle"]
     local c = ui and ui.c_battle
     local fn = c and c[tostring(name)]
@@ -401,14 +403,14 @@ function G.noti_call(name, ...)
 end
 
 function G.wait_time(ms)
-    if not headless then return raw.wait_time(ms) end
+    if not headless and not browser then return raw.wait_time(ms) end
     local meta = current_meta()
     if not meta then return true end
     return coroutine.yield("__jy_wait_time", tonumber(ms) or 0)
 end
 
 function G.wait1(event_name)
-    if not headless then return raw.wait1(event_name) end
+    if not headless and not browser then return raw.wait1(event_name) end
     local event = tostring(event_name)
     if consume_signal(event) then return true end
     local meta = current_meta()
@@ -417,7 +419,7 @@ function G.wait1(event_name)
 end
 
 function G.trig_event(event_name)
-    if not headless then return raw.trig_event(event_name) end
+    if not headless and not browser then return raw.trig_event(event_name) end
     local event = tostring(event_name)
     local woke = 0
     for _, meta in pairs(programs) do
@@ -437,16 +439,26 @@ function G.trig_event(event_name)
     end
     if woke == 0 then signals[event] = (signals[event] or 0) + 1 end
     if not pumping then
-        while #ready > 0 do
-            local item = ready[1]
-            if item.meta.wait and item.meta.wait.kind == "time" then break end
-            run_one()
+        if browser then
+            schedule_browser_pump(0)
+        else
+            while #ready > 0 do
+                local item = ready[1]
+                if item.meta.wait and item.meta.wait.kind == "time" then break end
+                run_one()
+            end
         end
     end
     return true
 end
 
 local function should_run_program(name)
+    if browser then
+        return name == "集气" or name == "战斗对话1" or name == "战斗对话2"
+            or name == "异常显示" or name == "战斗系统_事件响应"
+            or name == "战斗系统_主角监控" or name == "战斗系统_胜负监控"
+            or tostring(name):match("^__jy_") ~= nil
+    end
     if name == "战斗系统_胜负监控" then return true end
     if config.full_flow and (name == "集气" or name == "战斗系统_事件响应" or name == "战斗系统_主角监控") then
         return true
@@ -456,7 +468,7 @@ local function should_run_program(name)
 end
 
 function G.start_program(name, ...)
-    if not headless then return raw.start_program(name, ...) end
+    if not headless and not browser then return raw.start_program(name, ...) end
     name = tostring(name)
     if not should_run_program(name) then
         config.skipped[name] = true
@@ -476,12 +488,12 @@ function G.start_program(name, ...)
 end
 
 function G.stop_program(name, ...)
-    if not headless then return raw.stop_program(name, ...) end
+    if not headless and not browser then return raw.stop_program(name, ...) end
     return G.remove_program(name)
 end
 
 function G.remove_program(name, ...)
-    if not headless then return raw.remove_program(name, ...) end
+    if not headless and not browser then return raw.remove_program(name, ...) end
     name = tostring(name)
     local meta = programs[name]
     if meta then
@@ -493,7 +505,7 @@ function G.remove_program(name, ...)
 end
 
 function G.addUI(name, ...)
-    if not headless then return raw.addUI(name, ...) end
+    if not headless and not browser then return raw.addUI(name, ...) end
     name = tostring(name)
     if name == "v_battle" then
         ui_by_name[name] = make_battle_ui()
@@ -506,13 +518,13 @@ function G.addUI(name, ...)
 end
 
 function G.removeUI(name, ...)
-    if not headless then return raw.removeUI(name, ...) end
+    if not headless and not browser then return raw.removeUI(name, ...) end
     ui_by_name[tostring(name)] = nil
     return true
 end
 
 function G.getUI(name, ...)
-    if not headless then return raw.getUI(name, ...) end
+    if not headless and not browser then return raw.getUI(name, ...) end
     name = tostring(name)
     if name == "v_citymap_system_map" and not ui_by_name[name] then ui_by_name[name] = make_map_ui() end
     return ui_by_name[name]
