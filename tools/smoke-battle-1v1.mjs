@@ -16,6 +16,7 @@ const SOURCES = [
   '01_data/o_files.lua',
   '01_data/o_hotkey.lua',
   '01_data/o_skill.lua',
+  '01_data/o_item.lua',
   '01_data/o_role.lua',
   '01_data/o_teammate.lua',
   '01_data/o_battle.lua',
@@ -72,7 +73,20 @@ function web:battleStatus(...) self.browserStatuses=(self.browserStatuses or 0)+
 function web:battleEffect(...) self.browserEffects=(self.browserEffects or 0)+1; self.lastBrowserEffect={...} end
 function web:battleEnd(result) self.browserEnd=(self.browserEnd or 0)+1; self.browserEndResult=tonumber(result) or 0 end
 function web:originalBattleFinished(result) self.browserResult=tonumber(result) or 0 end
-function web:battleSkillOption(...) self.browserSkillOptions=(self.browserSkillOptions or 0)+1; self.lastSkillOption={...} end
+function web:battleSkillOption(...)
+    self.browserSkillOptions=(self.browserSkillOptions or 0)+1
+    self.skillOptions=self.skillOptions or {}
+    local row={...}
+    self.skillOptions[tonumber(row[1]) or 0]=row
+    self.lastSkillOption=row
+end
+function web:battleItemOption(...)
+    self.browserItemOptions=(self.browserItemOptions or 0)+1
+    self.itemOptions=self.itemOptions or {}
+    local row={...}
+    self.itemOptions[tonumber(row[1]) or 0]=row
+    self.lastItemOption=row
+end
 function web:battleControls(...) self.browserControls=(self.browserControls or 0)+1; self.lastControls={...} end
 function web:battleTargetPrompt(range) self.browserTargetPrompt=tonumber(range) or 0 end
 
@@ -116,7 +130,7 @@ local function reg(name)
 end
 for _,name in ipairs({
     'o_body.lua','o_newbody.lua','o_misc.lua','o_files.lua','o_hotkey.lua',
-    'o_skill.lua','o_role.lua','o_teammate.lua','o_battle.lua','o_notebook.lua'
+    'o_skill.lua','o_item.lua','o_role.lua','o_teammate.lua','o_battle.lua','o_notebook.lua'
 }) do reg(name) end
 assert(__jy_reset_runtime())
 
@@ -160,6 +174,12 @@ local hotkey=G.QueryName(0x100c0001)
 
 files['难度']=1
 hotkey['1']=0x1005000d
+hotkey['2']=0x100500ee
+hotkey['3']=0x1005000c
+hotkey['4']=0x1005001a
+hotkey['7']=0x10050003
+hotkey['8']=0x1005000d
+hotkey['11']=0x100b0099
 body['1']='测'
 body['2']='试侠'
 body['6']='测试侠'
@@ -222,6 +242,32 @@ skill['消耗内力']=20
 skill['伤害倍数']=400
 skill['装备']=nil
 skill['内功']=nil
+
+local function prep_skill(id, range)
+    local s=G.QueryName(id)
+    s['等级']=10
+    s['当前熟练度']=100
+    s['修为等级']=1
+    s['类别']=3
+    s['范围']=range
+    s['附加效果']=0
+    s['消耗内力']=20
+    s['伤害倍数']=400
+    s['气槽']=35
+    s['装备']=nil
+    s['内功']=nil
+    return s
+end
+local row_skill=prep_skill(0x100500ee,3)
+local col_skill=prep_skill(0x1005000c,4)
+local all_skill=prep_skill(0x1005001a,5)
+local hidden_skill=G.QueryName(0x10050003)
+hidden_skill['等级']=10
+hidden_skill['当前熟练度']=100
+hidden_skill['范围']=2
+
+local food=G.QueryName(0x100b0099)
+food['数量']=2
 
 enemy['姓名']='C2木桩'
 for i=1,13 do enemy[tostring(i)]=5 end
@@ -418,6 +464,74 @@ while web.browserResult == nil and escape_pumps < 1000 do
 end
 assert(web.browserResult==2,'original escape path did not end battle as failure/result=2')
 assert(tonumber(body['235'])==2,'original escape path did not write body[235]=2')
+
+local function reset_for_input_battle()
+    body['3']=0
+    body['44']=3000
+    body['46']=5000
+    body['48']=0
+    body['235']=0
+    enemy['生命']=80
+    enemy['内力']=1000
+    for i=81,115 do enemy[tostring(i)]=0 end
+    G.misc()['战斗结果']=0
+    G.misc()['用药']=0
+    G.misc()['吃药次数']=0
+    web.browserResult=nil
+    web.browserTargetPrompt=0
+    web.skillOptions={}
+    web.itemOptions={}
+end
+
+local function run_manual_range(slot, label, needs_target)
+    reset_for_input_battle()
+    math.randomseed(20260918 + slot)
+    assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+    assert(__jy_battle_browser_set_auto(false))
+    assert(__jy_battle_browser_select_skill(slot),label..' skill rejected')
+    if needs_target then
+        assert(__jy_battle_browser_select_target('enemy1'),label..' enemy target rejected')
+    end
+    local pumps=0
+    while web.browserResult == nil and pumps < 3000 do
+        pumps=pumps+1
+        assert(__jy_battle_browser_pump())
+    end
+    assert(web.browserResult==1,label..' did not finish with victory')
+    assert(pumps<3000,label..' exceeded pump budget')
+end
+
+run_manual_range(2,'range-3 row',true)
+run_manual_range(3,'range-4 column',true)
+run_manual_range(4,'range-5 all',false)
+
+-- Original availability rules from c_battle: hidden weapons need equipped
+-- projectile slot 198; hotkey 8 needs 100 rage.
+reset_for_input_battle()
+assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+assert(__jy_battle_browser_set_auto(false))
+assert(web.skillOptions[7] and web.skillOptions[7][5]==false,'hidden-weapon skill should be disabled without body[198]')
+assert(web.skillOptions[8] and web.skillOptions[8][5]==false,'slot 8 should be disabled below 100 rage')
+
+-- Q/W/E/R item hotkey: use real 煎饺 through original use_item, then escape.
+local hp_before_food=tonumber(body['44']) or 0
+local qty_before_food=tonumber(food['数量']) or 0
+assert(web.itemOptions[1] and web.itemOptions[1][5]==true,'Q item should be enabled from o_hotkey/o_item')
+assert(__jy_battle_browser_select_item(1),'Q item hotkey was rejected')
+local item_pumps=0
+while (tonumber(food['数量']) or 0) == qty_before_food and item_pumps < 2000 do
+    item_pumps=item_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert((tonumber(food['数量']) or 0)==qty_before_food-1,'original use_item did not consume Q hotkey item')
+assert((tonumber(body['44']) or 0)>hp_before_food,'original healing item did not increase player HP')
+assert(__jy_battle_browser_escape())
+local item_escape_pumps=0
+while web.browserResult == nil and item_escape_pumps < 1000 do
+    item_escape_pumps=item_escape_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==2,'post-item original escape did not finish battle')
 
 print(string.format(
     'original battle 1v1 + browser auto/manual/escape PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
