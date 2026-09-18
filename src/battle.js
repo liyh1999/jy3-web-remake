@@ -1,6 +1,8 @@
 (() => {
   const positions = ['team1','team2','team3','team4','team5','enemy1','enemy2','enemy3','enemy4','enemy5','enemy6'];
   const slotState = new Map();
+  const skillState = new Map();
+  let controlsState = { autoEnabled: true, canInput: false, targetPending: false, canEscape: false };
 
   const $ = id => document.getElementById(id);
   const pct = (value, max) => {
@@ -28,13 +30,39 @@
         <div class="battle-charge"><i></i></div>
         <div class="battle-slot-numbers"><span class="hp-text">0 / 0</span><span class="mp-text">0 / 0</span></div>
       `;
+      if (index >= 5) {
+        node.addEventListener('click', () => {
+          if (!controlsState.targetPending || !slotState.get(position)?.visible || slotState.get(position)?.hp <= 0) return;
+          window.JYWeb?.chooseOriginalBattleTarget?.(position);
+        });
+      }
       (index >= 5 ? enemies : allies).appendChild(node);
     });
   }
 
+  function ensureSkills() {
+    const host = $('battleSkills');
+    if (!host || host.children.length) return;
+    for (let slot = 1; slot <= 8; slot += 1) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'battle-skill';
+      button.dataset.slot = String(slot);
+      button.innerHTML = `<kbd>${slot}</kbd><span>空</span><small></small>`;
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        window.JYWeb?.chooseOriginalBattleSkill?.(slot);
+      });
+      host.appendChild(button);
+    }
+  }
+
   function begin(background, mode) {
     ensureSlots();
+    ensureSkills();
+    bindControls();
     slotState.clear();
+    skillState.clear();
     const panel = $('battle');
     panel?.classList.remove('hidden');
     if ($('battleTitle')) $('battleTitle').textContent = Number(mode) === 1 ? '单挑战斗' : '战斗';
@@ -85,7 +113,8 @@
       if ($('enemyName')) $('enemyName').textContent = data.name || '敌人';
       if ($('enemyHpBar')) $('enemyHpBar').style.width = `${pct(data.hp, data.maxHp)}%`;
       if ($('enemyHpText')) $('enemyHpText').textContent = `${Math.max(0, Math.floor(data.hp))} / ${Math.floor(data.maxHp)}`;
-    }
+      node.classList.toggle('targetable', controlsState.targetPending && data.enemy && data.visible && data.hp > 0);
+  }
   }
 
   function status(time, rage, maxRage, skillName, abnormal, result) {
@@ -121,6 +150,73 @@
     }
   }
 
+  function rangeLabel(range) {
+    return ({0:'自身',1:'辅助',2:'单体',3:'横排',4:'纵列',5:'全体'})[Number(range)] || `范围${Number(range) || 0}`;
+  }
+
+  function skillOption(slot, skillId, name, range, enabled, hotkey) {
+    ensureSkills();
+    const n = Number(slot) || 0;
+    const data = { slot:n, skillId:Number(skillId)||0, name:String(name||''), range:Number(range)||0, enabled:Boolean(enabled), hotkey:String(hotkey||n) };
+    skillState.set(n, data);
+    const button = $('battleSkills')?.querySelector(`button[data-slot="${n}"]`);
+    if (!button) return;
+    button.disabled = !data.enabled;
+    button.classList.toggle('empty', !data.skillId);
+    button.querySelector('kbd').textContent = data.hotkey;
+    button.querySelector('span').textContent = data.name || '空';
+    button.querySelector('small').textContent = data.skillId ? rangeLabel(data.range) : '';
+  }
+
+  function controls(autoEnabled, canInput, targetPending, canEscape) {
+    controlsState = {
+      autoEnabled: Boolean(autoEnabled),
+      canInput: Boolean(canInput),
+      targetPending: Boolean(targetPending),
+      canEscape: Boolean(canEscape)
+    };
+    const auto = $('battleAutoBtn');
+    if (auto) {
+      auto.textContent = `自动：${controlsState.autoEnabled ? '开' : '关'}`;
+      auto.classList.toggle('active', controlsState.autoEnabled);
+    }
+    const escape = $('battleEscapeBtn');
+    if (escape) escape.disabled = !controlsState.canEscape;
+    const hint = $('battleTargetHint');
+    if (hint && !controlsState.targetPending) {
+      hint.textContent = controlsState.autoEnabled ? '自动战斗中' : controlsState.canInput ? '选择武功（1–8）' : '等待行动';
+    }
+    positions.slice(5).forEach(position => {
+      const node = $(`battleSlot-${position}`);
+      const data = slotState.get(position);
+      node?.classList.toggle('targetable', controlsState.targetPending && Boolean(data?.visible) && Number(data?.hp) > 0);
+    });
+  }
+
+  function targetPrompt(range) {
+    controlsState.targetPending = Number(range) > 0;
+    const hint = $('battleTargetHint');
+    if (!hint) return;
+    if (!controlsState.targetPending) {
+      hint.textContent = controlsState.autoEnabled ? '自动战斗中' : '等待行动';
+      return;
+    }
+    hint.textContent = `请选择敌方目标 · ${rangeLabel(range)}`;
+  }
+
+  function bindControls() {
+    const auto = $('battleAutoBtn');
+    if (auto && !auto.dataset.bound) {
+      auto.dataset.bound = '1';
+      auto.addEventListener('click', () => window.JYWeb?.setOriginalBattleAuto?.(!controlsState.autoEnabled));
+    }
+    const escape = $('battleEscapeBtn');
+    if (escape && !escape.dataset.bound) {
+      escape.dataset.bound = '1';
+      escape.addEventListener('click', () => window.JYWeb?.originalBattleEscape?.());
+    }
+  }
+
   function end(result) {
     const win = Number(result) === 1;
     if ($('battleResult')) $('battleResult').textContent = win ? '胜利' : Number(result) === 2 ? '失败' : '战斗结束';
@@ -131,5 +227,25 @@
     $('battle')?.classList.add('hidden');
   }
 
-  window.JYBattleView = Object.freeze({ begin, slot, status, effect, end, hide, positions: Object.freeze([...positions]) });
+  document.addEventListener('keydown', event => {
+    if ($('battle')?.classList.contains('hidden')) return;
+    if (/^[1-8]$/.test(event.key)) {
+      const slot = Number(event.key);
+      if (skillState.get(slot)?.enabled) {
+        event.preventDefault();
+        window.JYWeb?.chooseOriginalBattleSkill?.(slot);
+      }
+    } else if (event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      window.JYWeb?.setOriginalBattleAuto?.(!controlsState.autoEnabled);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      window.JYWeb?.originalBattleEscape?.();
+    }
+  });
+
+  window.JYBattleView = Object.freeze({
+    begin, slot, status, effect, skillOption, controls, targetPrompt, end, hide,
+    positions: Object.freeze([...positions])
+  });
 })();
