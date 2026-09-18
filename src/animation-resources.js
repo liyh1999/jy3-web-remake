@@ -67,9 +67,13 @@
     const parts = String(line || '').split(',').map(part => part.trim());
     if (parts.length < 1) throw new Error(`invalid action frame: ${line}`);
     const id = parseFrameResourceId(parts[0]);
-    const flag = parts.length > 1 ? Number(parts[1]) : 1;
-    const x = parts.length > 2 ? Number(parts[2]) : 0;
-    const y = parts.length > 3 ? Number(parts[3]) : 0;
+    const numberField = (token, fallback) => {
+      if (token === undefined || token === null || token === '') return fallback;
+      return Number(String(token).replace(/\s+/g, ''));
+    };
+    const flag = numberField(parts[1], 1);
+    const x = numberField(parts[2], 0);
+    const y = numberField(parts[3], 0);
     if (!Number.isFinite(flag) || !Number.isFinite(x) || !Number.isFinite(y)) {
       throw new Error(`invalid action frame metadata: ${line}`);
     }
