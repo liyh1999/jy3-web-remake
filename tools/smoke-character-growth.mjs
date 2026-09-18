@@ -117,6 +117,22 @@ assert(loadfile('${adapter}'))()
 
 local body=G.QueryName(0x10030001)
 local newbody=G.QueryName(0x101b0001)
+-- p_order.add_point always recomputes final attributes, so initialize the
+-- meridian objects before the first experience mutation just like gameinit does.
+for i=1,9 do
+  local meridian=G.QueryName(0x100a0000+i)
+  meridian['打通数量']=0
+  meridian['是否打通']=false
+end
+for i=22,37 do body[tostring(i)]=tonumber(body[tostring(i)]) or 0 end
+body['17']=10
+body['45']=1000
+body['47']=500
+body['44']=1000
+body['46']=500
+body['196']=nil
+body['197']=nil
+body['头戴']=nil; body['手戴']=nil; body['脚穿']=nil; body['印记']=nil
 body['143']=1
 body['237']=1
 G.QueryName(0x10160001)['难度']=1
