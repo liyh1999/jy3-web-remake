@@ -14,7 +14,7 @@ local missing_objects = {}
 package.preload["gf"] = function() return G end
 package.preload["gfbase"] = function() return G end
 
-local tracked_points = {14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45,46,47,104,110,119,130,134,135,136,143,200,217,218,237,238}
+local tracked_points = {3,4,5,14,15,16,17,18,19,20,21,22,23,24,25,26,32,33,34,35,44,45,46,47,76,104,110,119,130,134,135,136,143,200,217,218,237,238}
 local mutation_calls = {
     set_point=true, add_point=true, set_newpoint=true,
     add_money=true, add_item=true, set_item=true,
@@ -22,6 +22,7 @@ local mutation_calls = {
     add_magicexp=true, set_magicexp=true, set_magic_lv=true,
     ["逻辑读取-武功等级"]=true, ["逻辑整理-武功等级"]=true,
     add_love=true, add_maxhpmp=true,
+    add_exp=true, add_role=true, set_role=true, ["指令_存储属性"]=true,
     rest=true, set_note=true, join=true, leave=true,
 }
 
@@ -160,6 +161,20 @@ function G.start_program(...) return true end
 function G.stop_program(...) return true end
 function G.remove_program(...) return true end
 
+local growth_points = {
+    [3]=true,[4]=true,[5]=true,[17]=true,[18]=true,
+    [44]=true,[45]=true,[46]=true,[47]=true,[76]=true,[217]=true,[218]=true,
+}
+
+local function notify_growth(name, args)
+    local changed = name == "add_exp" or name == "add_role" or name == "set_role"
+        or name == "指令_存储属性" or name == "add_maxhpmp" or name == "rest"
+    if (name == "set_point" or name == "add_point") and growth_points[tonumber(args[1])] then
+        changed = true
+    end
+    if changed then pcall(function() web:growthChanged() end) end
+end
+
 local function call_lua_api(name, args)
     local fn = G.api[name]
     if type(fn) ~= "function" then return false, nil end
@@ -172,6 +187,7 @@ local function call_lua_api(name, args)
             or name == "逻辑读取-武功等级" or name == "逻辑整理-武功等级" then
             pcall(function() web:skillChanged() end)
         end
+        notify_growth(name, args)
     end
     return true, result
 end
