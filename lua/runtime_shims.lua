@@ -21,6 +21,7 @@ package.preload["co"] = package.preload["co"] or function()
 end
 
 local node_cache = setmetatable({}, { __mode = "v" })
+local node_components = {}
 local cached_ui_templates = {}
 local active_ui = {}
 
@@ -40,6 +41,10 @@ local function wrap_node(handle)
     mt.__index = function(self, key)
         local local_value = rawget(self, key)
         if local_value ~= nil then return local_value end
+        if type(key) == "string" and string.sub(key, 1, 2) == "c_" then
+            local components = node_components[handle]
+            if components and components[key] ~= nil then return components[key] end
+        end
 
         if key == "addChild" then
             return function(a, b)
@@ -77,7 +82,7 @@ local function wrap_node(handle)
             return function() return tonumber(renderer:nodeCall(handle, "real_height")) or 0 end
         elseif key == "sendMsg" then
             return function(message, ...)
-                for component_name, component in pairs(self) do
+                for component_name, component in pairs(node_components[handle] or {}) do
                     if type(component_name) == "string" and string.sub(component_name, 1, 2) == "c_" and type(component) == "table" then
                         local fn = component[message]
                         if type(fn) == "function" then fn(component, ...) end
@@ -93,7 +98,13 @@ local function wrap_node(handle)
     end
 
     mt.__newindex = function(self, key, value)
-        if type(key) == "string" and (string.sub(key, 1, 2) == "c_" or string.sub(key, 1, 2) == "__") then
+        if type(key) == "string" and string.sub(key, 1, 2) == "c_" then
+            node_components[handle] = node_components[handle] or {}
+            node_components[handle][key] = value
+            rawset(self, key, value)
+            return
+        end
+        if type(key) == "string" and string.sub(key, 1, 2) == "__" then
             rawset(self, key, value)
             return
         end
@@ -127,9 +138,13 @@ end
 
 local function bind_component_tree(source, target)
     if not source or not target then return end
-    for key, value in pairs(source) do
+    local source_components = node_components[handle_of(source)] or {}
+    local target_handle = handle_of(target)
+    for key, value in pairs(source_components) do
         if type(key) == "string" and string.sub(key, 1, 2) == "c_" and type(value) == "table" then
             local component = clone_component(value)
+            node_components[target_handle] = node_components[target_handle] or {}
+            node_components[target_handle][key] = component
             rawset(target, key, component)
             component.obj = target
             if type(component.init) == "function" then component:init() end
@@ -158,7 +173,7 @@ end
 
 local function start_component_tree(node)
     if not node then return end
-    for key, component in pairs(node) do
+    for key, component in pairs(node_components[handle_of(node)] or {}) do
         if type(key) == "string" and string.sub(key, 1, 2) == "c_" and type(component) == "table" then
             local fn = component.start
             if type(fn) == "function" then fn(component) end
