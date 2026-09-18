@@ -16,8 +16,8 @@ const R = globalThis.window.JYResources;
 const cases = [
   [0x72000001, 'fonts/0001.ttf', 'font'],
   [0x52000001, 'fonts/0001.png', 'image'],
-  [0x53030001, 'framelist/body/0001.swf', 'framelist'],
-  [0x53040061, 'framelist/skill/0061.swf', 'framelist'],
+  [0x33030001, 'framelist/body/0001.swf', 'framelist'],
+  [0x33040061, 'framelist/skill/0061.swf', 'framelist'],
   [0x56050001, 'image/bjmap/0001.png', 'image'],
   [0x56080001, 'image/head/0001.png', 'image'],
   [0x560e0001, 'image/item/0001.png', 'image'],
@@ -43,9 +43,13 @@ if (!imageRoot?.isDirectory || imageRoot.relativePath !== 'image' || imageRoot.r
   throw new Error('directory resource id was incorrectly treated as image/0000.png');
 }
 
-const spine = R.resolve(0x55000001);
+const spine = R.resolve(0x05000001);
 if (!spine || spine.kind !== 'spine' || !spine.structured || spine.resolvableFile || spine.relativePath !== null) {
-  throw new Error('structured Spine resource must not invent a fixed filename');
+  throw new Error('untagged structured Spine resource must not invent a fixed filename');
+}
+const taggedSpineFrame = R.resolve(0x55000001);
+if (!taggedSpineFrame || taggedSpineFrame.kind !== 'image' || taggedSpineFrame.relativePath !== 'spine/0001.png') {
+  throw new Error('tagged 0x5 Spine-path resource must resolve as PNG');
 }
 
 if (R.canonicalPathId(0x56050001) !== 0x06050001) {
