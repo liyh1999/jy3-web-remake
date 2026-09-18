@@ -43,6 +43,7 @@ jobs:
           node --check tools/smoke-person-profile.mjs
           node --check tools/smoke-person-growth.mjs
           node --check tools/smoke-player-skill-growth.mjs
+          node --check tools/smoke-character-growth.mjs
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/smoke-shop-runtime.mjs
@@ -106,6 +107,9 @@ jobs:
 
       - name: Original player martial growth
         run: node tools/smoke-player-skill-growth.mjs
+
+      - name: Original character growth
+        run: node tools/smoke-character-growth.mjs
 
       - name: Original shop settlement behavior
         run: node tools/smoke-shop-runtime.mjs
