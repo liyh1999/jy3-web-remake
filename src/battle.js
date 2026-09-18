@@ -13,11 +13,11 @@
     return Math.max(0, Math.min(100, n / m * 100));
   };
 
-  const battleAnimationPositions = [...positions, 'all1', 'all2', 'all3', 'all'];
+  const battleAnimationPositions = [...positions, 'all1', 'all2', 'all3', 'all', 'icon'];
   const animationKey = (kind, position) => `battle:${kind}:${position}`;
 
   function ensureEffectLayer() {
-    const layer = ensureEffectLayer();
+    const layer = $('battleEffectLayer');
     const board = document.querySelector('.battle-board');
     if (!layer || !board) return layer;
     if (layer.parentElement !== board) board.appendChild(layer);
