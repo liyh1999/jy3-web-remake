@@ -41,6 +41,7 @@ jobs:
           node --check tools/smoke-original-opening.mjs
           node --check tools/smoke-original-opening-flow.mjs
           node --check tools/smoke-person-profile.mjs
+          node --check tools/smoke-person-growth.mjs
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/smoke-shop-runtime.mjs
@@ -94,6 +95,9 @@ jobs:
 
       - name: Player profile adapter behavior
         run: node tools/smoke-person-profile.mjs
+
+      - name: Original team and martial arts state
+        run: node tools/smoke-person-growth.mjs
 
       - name: Original shop settlement behavior
         run: node tools/smoke-shop-runtime.mjs
