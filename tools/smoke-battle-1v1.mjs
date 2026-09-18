@@ -602,7 +602,7 @@ G.api['select']=function()
 end
 
 local teammate=G.QueryName(0x10110001)
-teammate['1']=12
+teammate['1']=0x1004000c
 local ally=G.QueryName(0x1004000c)      -- 黄蓉
 local mu=G.QueryName(0x10040082)        -- 穆念慈 / enemy1
 local cheng=G.QueryName(0x10040083)     -- 成不忧 / enemy2
@@ -861,7 +861,7 @@ local dropped_item=G.QueryName(0x100b004a)
 local inventory_row=inventory_bridge.items[0x100b004a]
 assert(inventory_row and tonumber(inventory_row.count)==tonumber(dropped_item['数量']),'inventory panel did not read post-battle drop from original o_item')
 
-teammate['1']=12
+teammate['1']=0x1004000c
 local c4_saved=__jy_export_state()
 local ally_ref=ally
 local drop_ref=dropped_item
