@@ -18,6 +18,7 @@ local templates = {
   [0x100b0002] = {name=0x100b0002, ['名称']='测试剑', ['数量']=1, ['类别']=1},
   [0x10180002] = {name=0x10180002, ['名称']='测试头冠', ['类型']=1},
   [0x10190001] = {name=0x10190001, ['装备']={{['代码']=0x10180002,['数量']=1}}},
+  [0x10050001] = {name=0x10050001, ['名称']='测试武功', ['等级']=1, ['当前熟练度']=10, ['修为等级']=1, ['满级熟练度']=450},
 }
 
 local function clone(v)
@@ -59,6 +60,9 @@ G.QueryName(0x10060001)['城市列表'][41]['隐藏']=0
 G.QueryName(0x10070019)['锁定']=false
 G.QueryName(0x100b0002)['数量']=4
 G.QueryName(0x10190001)['装备'][1]['数量']=0
+G.QueryName(0x10050001)['等级']=6
+G.QueryName(0x10050001)['当前熟练度']=150
+G.QueryName(0x10050001)['修为等级']=4
 
 local saved=__jy_export_state()
 assert(type(saved)=='string' and #saved>20,'save export failed')
@@ -75,6 +79,7 @@ assert(G.QueryName(0x10060001)['城市列表'][41]['隐藏']==1,'world-map hidde
 assert(G.QueryName(0x10070019)['锁定']==true,'city lock reset failed')
 assert(G.QueryName(0x100b0002)['数量']==1,'item quantity reset failed')
 assert(G.QueryName(0x10190001)['装备'][1]['数量']==1,'special equipment inventory reset failed')
+assert(G.QueryName(0x10050001)['等级']==1 and G.QueryName(0x10050001)['当前熟练度']==10 and G.QueryName(0x10050001)['修为等级']==1,'martial growth reset failed')
 
 local ok,err=__jy_import_state(saved)
 assert(ok,tostring(err))
@@ -91,9 +96,12 @@ assert(G.QueryName(0x10060001)['城市列表'][41]['隐藏']==0,'world-map hidde
 assert(G.QueryName(0x10070019)['锁定']==false,'dynamic city unlock not restored')
 assert(G.QueryName(0x100b0002)['数量']==4,'item quantity not restored')
 assert(G.QueryName(0x10190001)['装备'][1]['数量']==0,'special equipment inventory not restored')
+assert(G.QueryName(0x10050001)['等级']==6,'martial level not restored')
+assert(G.QueryName(0x10050001)['当前熟练度']==150,'martial proficiency not restored')
+assert(G.QueryName(0x10050001)['修为等级']==4,'martial cultivation not restored')
 assert(web.points[15]==77 and web.money==1234,'web snapshot not synchronized')
 assert(#web.team==2 and web.team[1]==130 and web.team[2]==12,'web team snapshot not synchronized')
-print('save-state roundtrip PASS: player, map, inventory, equipment and team state')
+print('save-state roundtrip PASS: player, map, inventory, equipment, team and martial growth state')
 `;
 
 fs.writeFileSync(harnessPath, harness, 'utf8');
