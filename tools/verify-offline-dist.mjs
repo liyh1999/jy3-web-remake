@@ -91,6 +91,8 @@ if (/^https?:\/\//i.test(resources.ASSET_BASE)) throw new Error(`offline asset b
 
 const probes = [
   [0x56050001, 'image/bjmap/0001.png'],
+  [0x56080001, 'image/head/0001.png'],
+  [0x56090001, 'image/standmap/0001.png'],
   [0x49011003, 'audio/01/1003.mp3'],
 ];
 for (const [id, expected] of probes) {
