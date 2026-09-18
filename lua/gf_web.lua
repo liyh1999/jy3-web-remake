@@ -306,6 +306,16 @@ function G.call(name, ...)
     elseif name == "shop" then
         return open_web_shop(args[1])
     elseif name == "call_battle" then
+        if web and web.startOriginalBattle then
+            web:startOriginalBattle(
+                args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+                args[8], args[9], args[10], args[11], args[12], args[13],
+                function(result) resume_after_ui(tonumber(result) or 0) end
+            )
+            local result = tonumber(coroutine.yield()) or 0
+            web:setLastBattle(result)
+            return result
+        end
         if G.__original_battle_enabled and type(G.api["call_battle"]) == "function" then
             local found, result = call_lua_api(name, args)
             if found then return result end
