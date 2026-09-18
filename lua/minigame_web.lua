@@ -7,6 +7,8 @@ local host = js.global.JYWeb
 
 local enabled = false
 local roots = {}
+local compat_map_context = nil
+local dispatcher_name = "地图系统_小游戏"
 local raw = {
     wait_time = G.wait_time,
     wait1 = G.wait1,
@@ -19,6 +21,7 @@ local raw = {
 }
 
 local runtime
+local finish_root
 runtime = Runtime.new({
     label = "minigame",
     max_steps = 20000,
@@ -33,12 +36,39 @@ runtime = Runtime.new({
         end
     end,
     on_step = function(name, state)
-        if state == "dead" and roots[name] then
-            roots[name] = nil
-            if host and host.minigameFinished then host:minigameFinished(name) end
-        end
+        if state == "dead" and roots[name] and finish_root then finish_root(name) end
     end,
 })
+
+local function clear_dispatcher()
+    runtime:remove_program(dispatcher_name)
+    if compat_map_context then
+        if G.__clearActiveUI then G.__clearActiveUI("v_citymap_system_map", compat_map_context) end
+        compat_map_context = nil
+    end
+end
+
+local function ensure_dispatcher()
+    if runtime:has_program(dispatcher_name) then return true end
+    local fn = G.api[dispatcher_name]
+    if type(fn) ~= "function" then return false end
+    if not G.getUI("v_citymap_system_map") then
+        compat_map_context = G.Entity()
+        compat_map_context.name = "__jy_minigame_map_context"
+        compat_map_context.c_citymap_system_map = { obj = compat_map_context }
+        if not G.__setActiveUI or not G.__setActiveUI("v_citymap_system_map", compat_map_context) then
+            compat_map_context = nil
+            return false
+        end
+    end
+    return runtime:start_program(dispatcher_name, fn)
+end
+
+finish_root = function(name)
+    roots[name] = nil
+    clear_dispatcher()
+    if host and host.minigameFinished then host:minigameFinished(name) end
+end
 
 local function scheduler_active()
     return enabled and runtime:current() ~= nil
@@ -92,8 +122,16 @@ function __jy_minigame_start(name)
     local fn = G.api[name]
     if name == "" or type(fn) ~= "function" then return false end
     enabled = true
+    if not ensure_dispatcher() then
+        enabled = false
+        return false
+    end
     roots[name] = true
-    return runtime:start_program(name, fn)
+    if runtime:start_program(name, fn) then return true end
+    roots[name] = nil
+    clear_dispatcher()
+    enabled = false
+    return false
 end
 
 function __jy_program_browser_pump(token)
@@ -125,6 +163,10 @@ end
 
 function __jy_minigame_reset()
     runtime:reset()
+    if compat_map_context then
+        if G.__clearActiveUI then G.__clearActiveUI("v_citymap_system_map", compat_map_context) end
+        compat_map_context = nil
+    end
     roots = {}
     enabled = false
     return true
