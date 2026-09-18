@@ -9,11 +9,14 @@ assert.equal(app.includes('state.skills'), false, 'JS must not own learned-skill
 assert.equal(gf.includes('web:join('), false, 'join must not silently mutate JS-only team state');
 assert.equal(gf.includes('web:learnMagic('), false, 'learnmagic must not silently mutate JS-only skill state');
 
-const battleStart = app.indexOf('    startBattle(enemy, resume) {');
-const battleEnd = app.indexOf('  ui.cont.onclick', battleStart);
-assert.ok(battleStart >= 0 && battleEnd > battleStart, 'battle shell section not found');
+const startBattleStart = app.indexOf('    startBattle(enemy, resume) {');
+const startBattleEnd = app.indexOf('    setLastBattle(result) {', startBattleStart);
+const attackStart = app.indexOf('  ui.attack.onclick = () => {');
+const attackEnd = app.indexOf('  ui.cont.onclick', attackStart);
+assert.ok(startBattleStart >= 0 && startBattleEnd > startBattleStart, 'startBattle shell section not found');
+assert.ok(attackStart >= 0 && attackEnd > attackStart, 'battle attack shell section not found');
 
-const battle = app.slice(battleStart, battleEnd);
+const battle = app.slice(startBattleStart, startBattleEnd) + app.slice(attackStart, attackEnd);
 assert.match(battle, /displayPlayerHp/);
 assert.match(battle, /displayEnemyHp/);
 for (const forbidden of ['state.points', 'state.money', 'state.items', 'state.team', 'setPoint(', 'addPoint(', 'setMoney(', 'addMoney(', 'setTeam(', 'setItem(', 'addItem(']) {
