@@ -590,6 +590,7 @@
       ui.village.disabled = false;
       ui.original.disabled = false;
       if (ui.logging) ui.logging.disabled = false;
+      if (ui.dig) ui.dig.disabled = false;
       if (ui.save) ui.save.disabled = false;
       refreshLoadButton();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
