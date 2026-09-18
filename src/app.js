@@ -21,6 +21,11 @@
   let originalProgramLoaded = false;
   let pendingSavePayload = '';
 
+  function emitTeamChanged() {
+    const detail = { team: [...state.team] };
+    setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:team-changed', { detail })), 0);
+  }
+
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -132,9 +137,19 @@
     getItem(id) { return state.items[String(id)] || 0; },
     addItem(id, count) { id = String(id); state.items[id] = (state.items[id] || 0) + Number(count); },
     learnMagic(id) { if (!state.skills.includes(Number(id))) state.skills.push(Number(id)); },
-    setTeam(ids) { state.team = [...ids].map(Number).filter(Boolean); },
-    join(id) { if (!state.team.includes(Number(id))) state.team.push(Number(id)); },
-    teamFull() { return state.team.length >= 5; },
+    setTeam(ids) {
+      const next = [...ids].map(Number).filter(Boolean);
+      const changed = next.length !== state.team.length || next.some((id, i) => state.team[i] !== id);
+      state.team = next;
+      if (changed) emitTeamChanged();
+    },
+    join(id) {
+      id = Number(id);
+      if (!id || state.team.includes(id) || state.team.length >= 12) return;
+      state.team.push(id);
+      emitTeamChanged();
+    },
+    teamFull() { return state.team.length >= 12; },
     story(text, resume) { this.showTalk('旁白', text, resume); },
     showTalk(speaker, text, resume) {
       closeDialogue();
