@@ -26,6 +26,7 @@ local objects = {
 }
 local G={api={}}
 function G.QueryName(id) return objects[tonumber(id)] or {name=id,__placeholder=true} end
+function G.DBTable() return {} end
 G.api['get_fullname']=function() return objects[0x10030001]['1']..objects[0x10030001]['2'] end
 package.preload['gf']=function() return G end
 
@@ -38,6 +39,10 @@ end
 function bridge:vital(label,value,max) self.vitals[#self.vitals+1]={label=label,value=value,max=max} end
 function bridge:quality(label,value) self.qualities[#self.qualities+1]={label=label,value=value} end
 function bridge:slot(label,id,name,icon,point) self.slots[#self.slots+1]={label=label,id=id,name=name,icon=icon,point=point} end
+function bridge:skill(...) end
+function bridge:teamBegin(...) end
+function bridge:teamSkill(...) end
+function bridge:teamEnd() end
 function bridge:finish() self.finished=true end
 package.preload['js']=function() return {global={JYPersonBridge=bridge}} end
 
@@ -63,7 +68,7 @@ assert(bridge.slots[5].label=='头戴' and bridge.slots[5].name=='头巾','speci
 assert(bridge.slots[8].label=='印记' and bridge.slots[8].name=='侠印','mark slot mismatch')
 for k,v in pairs(snapshot) do assert(objects[0x10030001][k]==v,'profile refresh mutated body field '..tostring(k)) end
 for k,v in pairs(objects[0x10030001]) do assert(snapshot[k]==v,'profile refresh added body field '..tostring(k)) end
-print('person profile PASS: original body fields, six qualities, eight equipment slots, read-only refresh')
+print('person profile PASS: original body fields, six qualities, eight equipment slots, read-only refresh + empty growth state')
 `;
 
 const file = path.join(tmp, 'person.lua');
