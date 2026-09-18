@@ -42,7 +42,7 @@ for (const name of [
 must(view, '/^[1-8]$/.test(event.key)', '1..8 skill keyboard binding missing');
 must(view, '/^[qwer]$/i.test(event.key)', 'QWER item keyboard binding missing');
 must(view, "event.key === 'Escape'", 'escape keyboard binding missing');
-must(view, 'battle-slot.targetable', 'enemy target highlight class missing');
+must(view, "classList.toggle('targetable'", 'enemy target highlight class missing');
 must(view, 'chooseOriginalBattleTarget', 'enemy click target bridge missing');
 must(view, 'chooseOriginalBattleSkill', 'skill click bridge missing');
 must(view, 'chooseOriginalBattleItem', 'item click bridge missing');
