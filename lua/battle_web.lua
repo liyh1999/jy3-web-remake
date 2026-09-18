@@ -159,6 +159,26 @@ end
 
 local positions = {"team1","team2","team3","team4","team5","enemy1","enemy2","enemy3","enemy4","enemy5","enemy6"}
 
+local function battle_actor_framelist_base(position)
+    if position == "team1" then
+        local body = G.QueryName(0x10030001)
+        return tonumber(body["性别"]) == 0 and 0x33039997 or 0x33039998
+    end
+    for i = 2, 5 do
+        if positions[i] == position then return 0x33079999 end
+    end
+    for i = 6, 11 do
+        if positions[i] == position then return 0x33069998 end
+    end
+    return 0
+end
+
+local function battle_framelist_base(position, kind)
+    if kind == "actor" then return battle_actor_framelist_base(position) end
+    if kind == "skill" then return 0x33049999 end
+    return 0
+end
+
 local function first_living_enemy()
     local battle = G.QueryName(0x10150001)
     for i = 6, 11 do
@@ -273,13 +293,17 @@ local function make_battle_ui()
         local position = positions[i]
         tab.frameActionID = function(a, b)
             local action_id = tonumber(b or a) or 0
-            if browser then pcall(function() web:battleAction(position, action_id, "actor") end) end
+            if browser then pcall(function()
+                web:battleAction(position, action_id, "actor", battle_framelist_base(position, "actor"))
+            end) end
             return true
         end
         local flash = root.getChildByName("flash").getChildByName(position)
         flash.frameActionID = function(a, b)
             local effect_id = tonumber(b or a) or 0
-            if browser then pcall(function() web:battleAction(position, effect_id, "skill") end) end
+            if browser then pcall(function()
+                web:battleAction(position, effect_id, "skill", battle_framelist_base(position, "skill"))
+            end) end
             return true
         end
         local active
@@ -347,7 +371,9 @@ local function make_battle_ui()
         local skill_name = skill and tostring(skill["名称"] or "") or ""
         root.getChildByName("图表").getChildByName("文字").text = skill_name
         if browser then
-            pcall(function() web:battleAction(actor_position, action_id, "actor") end)
+            pcall(function()
+                web:battleAction(actor_position, action_id, "actor", battle_framelist_base(actor_position, "actor"))
+            end)
             pcall(function() web:battleSkillEffect(skill_name, actor_position, target, skill_code) end)
         end
         if actor == 1 and tonumber(needmp) and tonumber(needmp) > 0 then
@@ -433,6 +459,30 @@ local function safe_web(method, ...)
         local fn = web[method]
         if fn then fn(web, table.unpack(args)) end
     end)
+end
+
+function _G.__jy_battle_browser_frame_end(position, action_id, kind)
+    if not browser then return false end
+    if tostring(kind or "") ~= "actor" then return true end
+    local ui = ui_by_name["v_battle"]
+    if not ui then return false end
+
+    local pos = tostring(position or "")
+    local action = tonumber(action_id) or 0
+    local tab = ui.getChildByName("tab").getChildByName(pos)
+    if not tab then return false end
+
+    if pos == "team1" then
+        if action ~= 9001 and action ~= 9002 then
+            tab.frameActionID(0)
+        end
+        return true
+    end
+
+    if action > 1000 then
+        tab.frameActionID(action - 1000)
+    end
+    return true
 end
 
 function G.Play(resource_id, channel, loop, volume)
