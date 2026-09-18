@@ -102,6 +102,8 @@
       alpha: 255,
       visible: true,
       img: 0,
+      _animationFrameImg: 0,
+      _frameEndEvents: [],
       text: '',
       color: null,
       font: 0,
@@ -133,13 +135,17 @@
       removeChild(child) {
         const index = this.children.indexOf(child);
         if (index >= 0) {
+          stopNodeTreeAnimations(child, 'detach');
           this.children.splice(index, 1);
           child.parent = null;
         }
         return child || null;
       },
       removeAllChildren() {
-        for (const child of this.children) child.parent = null;
+        for (const child of this.children) {
+          stopNodeTreeAnimations(child, 'detach');
+          child.parent = null;
+        }
         this.children.length = 0;
       },
       removeFromParent() {
@@ -154,11 +160,13 @@
       },
       real_width() {
         if (this.width) return this.width;
-        return window.JYResources?.imageWidth?.(this.img) || imageFor(this.img)?.naturalWidth || 0;
+        const id = this._animationFrameImg || this.img;
+        return window.JYResources?.imageWidth?.(id) || imageFor(id)?.naturalWidth || 0;
       },
       real_height() {
         if (this.height) return this.height;
-        return window.JYResources?.imageHeight?.(this.img) || imageFor(this.img)?.naturalHeight || 0;
+        const id = this._animationFrameImg || this.img;
+        return window.JYResources?.imageHeight?.(id) || imageFor(id)?.naturalHeight || 0;
       },
       sendMsg() { return true; },
     };
@@ -263,6 +271,59 @@
     return image;
   }
 
+  function preloadImage(resourceId) {
+    return imageFor(resourceId);
+  }
+
+  function animationKey(node) {
+    return `renderer:${node.handle}`;
+  }
+
+  function stopNodeAnimation(node, reason = 'manual') {
+    if (!node) return false;
+    const stopped = window.JYFramePlayer?.stop?.(animationKey(node), reason) || false;
+    node._animationFrameImg = 0;
+    return stopped;
+  }
+
+  function stopNodeTreeAnimations(node, reason = 'manual') {
+    if (!node) return false;
+    stopNodeAnimation(node, reason);
+    for (const child of node.children || []) stopNodeTreeAnimations(child, reason);
+    return true;
+  }
+
+  function playNodeAction(node, actionId, options = {}) {
+    if (!node || !window.JYFramePlayer?.play) return false;
+    const baseResourceId = u32(node.img);
+    const base = window.JYResources?.resolve?.(baseResourceId);
+    if (!base || base.kind !== 'framelist') return false;
+
+    node._frameEndEvents.length = 0;
+    window.JYFramePlayer.play(animationKey(node), {
+      baseResourceId,
+      actionId: Number(actionId) || 0,
+      rate: Number(options.rate) > 0 ? Number(options.rate) : undefined,
+      loop: options.loop,
+      onFrame(frame) {
+        node._animationFrameImg = u32(frame.id);
+      },
+      onFrameEnd(meta) {
+        node._frameEndEvents.push(Number(meta.actionId) || 0);
+        if (node._frameEndEvents.length > 16) node._frameEndEvents.shift();
+      },
+      onError() {
+        node._animationFrameImg = 0;
+      },
+      onStop() {
+        if (!window.JYFramePlayer?.state?.(animationKey(node))) {
+          node._animationFrameImg = 0;
+        }
+      },
+    });
+    return true;
+  }
+
   function setImageGrid(resourceId, left, top, right, bottom) {
     imageGrid.set(u32(resourceId), {
       left: Math.max(0, finite(left)),
@@ -320,15 +381,16 @@
   }
 
   function drawImageNode(node) {
-    if (!node.img) return;
-    const image = imageFor(node.img);
+    const resourceId = node._animationFrameImg || node.img;
+    if (!resourceId) return;
+    const image = imageFor(resourceId);
     if (!image?.complete || !(image.naturalWidth || image.width)) return;
     const sourceWidth = image.naturalWidth || image.width;
     const sourceHeight = image.naturalHeight || image.height;
     const width = finite(node.width) || sourceWidth;
     const height = finite(node.height) || sourceHeight;
     const rect = localRect(node, width, height);
-    const grid = imageGrid.get(u32(node.img));
+    const grid = imageGrid.get(u32(resourceId));
 
     if (!grid || (width === sourceWidth && height === sourceHeight)) {
       ctx.drawImage(image, rect.x, rect.y, width, height);
@@ -596,6 +658,7 @@
     if (!node) return false;
     const name = String(key);
     if (name === 'parent' || name === 'childCount' || name === 'handle' || name === 'children') return false;
+    if (name === 'img' && u32(node.img) !== u32(value)) stopNodeAnimation(node, 'image-change');
     node[name] = value;
     return true;
   }
@@ -618,6 +681,9 @@
     if (name === 'removeAllChildren') { node.removeAllChildren(); return true; }
     if (name === 'real_width') return node.real_width();
     if (name === 'real_height') return node.real_height();
+    if (name === 'frameActionID') return playNodeAction(node, args[0]);
+    if (name === 'stopFrameAction') return stopNodeAnimation(node, 'lua-stop');
+    if (name === 'popFrameEnd') return node._frameEndEvents.shift() ?? -1;
     if (name === 'sendMsg') return true;
     return 0;
   }
@@ -680,7 +746,9 @@
   }
 
   function reset() {
+    stopNodeTreeAnimations(stage, 'reset');
     stage.removeAllChildren();
+    window.JYFramePlayer?.stopAll?.('renderer-reset');
     imageCache.clear();
     for (const [handle, node] of [...nodes]) {
       if (node !== stage) nodes.delete(handle);
@@ -708,6 +776,9 @@
     findNodeHandle,
     setImageGrid,
     gridSlices,
+    preloadImage,
+    playNodeAction,
+    stopNodeAnimation,
     setFontName,
     addFontStyle,
     resetFontStyleInsert,
