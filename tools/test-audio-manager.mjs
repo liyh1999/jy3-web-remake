@@ -17,6 +17,10 @@ class FakeAudio {
   }
   play() {
     this.playCount += 1;
+    if (FakeAudio.rejectNext) {
+      FakeAudio.rejectNext = false;
+      return Promise.reject(new Error('autoplay blocked'));
+    }
     return Promise.resolve();
   }
   pause() {
@@ -95,8 +99,22 @@ snap = A.snapshot(1);
 if (snap.longLived || snap.oneShots.length) throw new Error('Stop(1) did not clear all group voices');
 if (!instances[4].paused || !instances[5].paused) throw new Error('Stop(1) did not pause remaining media');
 
+FakeAudio.rejectNext = true;
+if (!R.play(0x49010038, 3, true, 1)) throw new Error('failed to create autoplay retry case');
+await new Promise(resolve => setTimeout(resolve, 0));
+let blocked = A.snapshot(3);
+if (!blocked.longLived?.pending) throw new Error('blocked long-lived voice was not marked pending');
+const blockedMedia = instances[6];
+if (A.retryBlocked() !== 1) throw new Error('blocked long-lived voice was not retried');
+await Promise.resolve();
+blocked = A.snapshot(3);
+if (blocked.longLived?.pending || blockedMedia.playCount !== 2) {
+  throw new Error('long-lived autoplay retry did not recover');
+}
+R.stop(3);
+
 if (A.browserGain(1) !== 1 || A.browserGain(100) !== 1) {
   throw new Error('initial D2-2 gain policy unexpectedly changed legacy browser loudness');
 }
 
-console.log('JYAudio lifecycle PASS: long-lived replacement + overlapping SFX + group Stop + raw volume preservation');
+console.log('JYAudio lifecycle PASS: long-lived replacement + overlapping SFX + group Stop + raw volume + autoplay retry');
