@@ -70,6 +70,11 @@ function web:story(_,resume) if resume then resume(true) end return true end
 function web:scheduleBattlePump(_) self.pumpRequested=true; return true end
 function web:battleBegin(background,mode) self.browserBegin=(self.browserBegin or 0)+1; self.browserBackground=background; self.browserMode=mode end
 function web:battleSlot(...) self.browserSlots=(self.browserSlots or 0)+1; self.lastBrowserSlot={...} end
+function web:battleSlotAppearance(position,portrait,stand,master,idle)
+    self.browserAppearances=(self.browserAppearances or 0)+1
+    self.appearances=self.appearances or {}
+    self.appearances[tostring(position)]={portrait,stand,master,idle}
+end
 function web:battleStatus(...) self.browserStatuses=(self.browserStatuses or 0)+1; self.lastBrowserStatus={...} end
 function web:battleEffect(...) self.browserEffects=(self.browserEffects or 0)+1; self.lastBrowserEffect={...} end
 function web:battleEnd(result) self.browserEnd=(self.browserEnd or 0)+1; self.browserEndResult=tonumber(result) or 0 end
@@ -444,15 +449,30 @@ web.browserEffects=0
 web.browserDialogues=0
 web.browserSlotStatuses=0
 web.browserActions=0
+web.actionEvents={}
+web.browserAppearances=0
+web.appearances={}
 web.browserSkillEffects=0
 web.browserAudio=0
 web.browserAudioStops=0
 web.lastNonEmptyStatus=nil
 body['81']=1
 body['91']=5000
+body['性别']=1
 math.randomseed(20260918)
 
 assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+local initial_player=nil
+local initial_enemy=nil
+for _,event in ipairs(web.actionEvents or {}) do
+    if tostring(event[1])=='team1' and tonumber(event[2])==0 then initial_player=event end
+    if tostring(event[1])=='enemy1' and tonumber(event[2])==1 then initial_enemy=event end
+end
+assert(initial_player and tonumber(initial_player[4])==0x33039998,'male player did not enter battle on body/9998 action 0')
+assert(initial_enemy and tonumber(initial_enemy[4])==0x33069998,'enemy1 did not enter battle on enemy/9998 role action 1')
+assert(web.appearances.team1 and tonumber(web.appearances.team1[1])==tonumber(body['119']),'player battle portrait diverged from o_body[119]')
+assert(web.appearances.enemy1 and tonumber(web.appearances.enemy1[1])==0x56080001,'enemy1 portrait did not follow original p_init mapping')
+assert(web.appearances.enemy1 and tonumber(web.appearances.enemy1[2])==0x56090001,'enemy1 standmap field was not projected from o_role')
 local browser_pumps=0
 while web.browserResult == nil and browser_pumps < 3000 do
     browser_pumps=browser_pumps+1
@@ -504,8 +524,17 @@ web.browserTargetPrompt=0
 web.browserSkillOptions=0
 web.browserControls=0
 math.randomseed(20260918)
+body['性别']=0
+web.actionEvents={}
+web.appearances={}
 
 assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
+local female_idle=nil
+for _,event in ipairs(web.actionEvents or {}) do
+    if tostring(event[1])=='team1' and tonumber(event[2])==0 then female_idle=event break end
+end
+assert(female_idle and tonumber(female_idle[4])==0x33039997,'female player did not enter battle on body/9997 action 0')
+assert(web.appearances.team1 and tonumber(web.appearances.team1[3])==0x33039997,'female appearance projection used wrong battle master')
 assert(__jy_battle_browser_set_auto(false))
 local browser_ui=G.getUI('v_battle')
 assert(browser_ui,'browser battle UI missing for controlled frameActionID check')
@@ -535,6 +564,31 @@ assert(web.browserSkillOptions>0 and web.browserControls>0,'manual control state
 assert((tonumber(body['3']) or 0)>0,'manual original battle did not award EXP')
 assert((tonumber(body['46']) or 0)<5000,'manual original battle did not spend MP')
 assert((tonumber(skill['当前熟练度']) or 0)>100,'manual original battle did not grow proficiency')
+body['性别']=1
+
+-- Special cloned-role range 253..384 must use o_role.编号 for the master DA,
+-- matching original c_battle instead of trying to play a non-existent DA=00fd.
+local clone=G.QueryName(0x100400fd)
+assert(tonumber(clone['编号'])==164,'special-role fixture changed')
+clone['生命']=math.max(1,tonumber(clone['生命']) or 1500)
+web.actionEvents={}
+web.appearances={}
+web.browserResult=nil
+assert(__jy_battle_browser_start(1,10,1,0,253,0,0,0,0,0,0,0,0))
+assert(__jy_battle_browser_set_auto(false))
+local clone_idle=nil
+for _,event in ipairs(web.actionEvents or {}) do
+    if tostring(event[1])=='enemy1' and tonumber(event[2])==164 then clone_idle=event break end
+end
+assert(clone_idle and tonumber(clone_idle[4])==0x33069998,'special role 253 did not map to original 编号=164 enemy master action')
+assert(web.appearances.enemy1 and tonumber(web.appearances.enemy1[4])==164,'special role appearance did not expose original idle selector')
+assert(__jy_battle_browser_escape())
+local clone_escape_pumps=0
+while web.browserResult == nil and clone_escape_pumps < 1000 do
+    clone_escape_pumps=clone_escape_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==2,'special-role appearance fixture could not exit battle')
 
 -- Original escape event path.
 body['44']=5000
