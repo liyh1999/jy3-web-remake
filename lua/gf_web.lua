@@ -352,13 +352,11 @@ function G.call(name, ...)
         item["数量"] = math.max(0, (tonumber(item["数量"]) or 0) + (tonumber(args[2]) or 1))
         sync_item_to_web(code)
         return true
-    elseif name == "learnmagic" then
-        web:learnMagic(args[1])
-        return true
     elseif name == "team_full" then
-        return web:teamFull()
-    elseif name == "join" then
-        web:join(args[1])
+        local team = G.QueryName(0x10110001)
+        for i = 1, 12 do
+            if tonumber(team[tostring(i)]) == nil then return false end
+        end
         return true
     elseif name == "count_day" then
         return tonumber(body()["70"]) or 1
