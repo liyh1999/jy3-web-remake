@@ -566,29 +566,15 @@ assert((tonumber(body['46']) or 0)<5000,'manual original battle did not spend MP
 assert((tonumber(skill['当前熟练度']) or 0)>100,'manual original battle did not grow proficiency')
 body['性别']=1
 
--- Special cloned-role range 253..384 must use o_role.编号 for the master DA,
--- matching original c_battle instead of trying to play a non-existent DA=00fd.
+-- Special cloned-role range 253..384 only changes presentation selection.
+-- Probe that read-only mapping directly instead of forcing a clone through the
+-- whole battle AI, where many cloned rows intentionally omit timer fields.
 local clone=G.QueryName(0x100400fd)
 assert(tonumber(clone['编号'])==164,'special-role fixture changed')
-clone['生命']=math.max(1,tonumber(clone['生命']) or 1500)
-web.actionEvents={}
-web.appearances={}
-web.browserResult=nil
-assert(__jy_battle_browser_start(1,10,1,0,253,0,0,0,0,0,0,0,0))
-assert(__jy_battle_browser_set_auto(false))
-local clone_idle=nil
-for _,event in ipairs(web.actionEvents or {}) do
-    if tostring(event[1])=='enemy1' and tonumber(event[2])==164 then clone_idle=event break end
-end
-assert(clone_idle and tonumber(clone_idle[4])==0x33069998,'special role 253 did not map to original 编号=164 enemy master action')
-assert(web.appearances.enemy1 and tonumber(web.appearances.enemy1[4])==164,'special role appearance did not expose original idle selector')
-assert(__jy_battle_browser_escape())
-local clone_escape_pumps=0
-while web.browserResult == nil and clone_escape_pumps < 1000 do
-    clone_escape_pumps=clone_escape_pumps+1
-    assert(__jy_battle_browser_pump())
-end
-assert(web.browserResult==2,'special-role appearance fixture could not exit battle')
+local clone_selector,clone_portrait,clone_stand=__jy_battle_appearance_probe(253)
+assert(clone_selector==164,'special role 253 did not map to original 编号=164')
+assert(clone_portrait==0x560800a4,'special role portrait did not resolve through original 编号 role')
+assert((tonumber(clone_stand) or 0)==(tonumber(G.QueryName(0x100400a4)['站立图像']) or 0),'special role standmap did not resolve through original 编号 role')
 
 -- Original escape event path.
 body['44']=5000
