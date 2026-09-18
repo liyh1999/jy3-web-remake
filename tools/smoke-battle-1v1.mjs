@@ -134,7 +134,8 @@ G.api['通用_取得敌方装备特效']=function() return false end
 G.api['通用_取得内功轻功特效']=function() return false end
 G.api['通用_取得NPC内功效果']=function() return 0 end
 G.api['通用_取得剑神属性']=function() return 0 end
-G.api['通用_取得青龙附加效果']=function() return 0 end
+G.api['通用_取得青龙附加效果']=function() return false end
+G.api['通用_选择自动攻击武功']=function() return 13 end
 G.api['通用_是否满属性']=function() return false end
 G.api['通用_强退游戏']=function(code) error('unexpected anti-cheat exit '..tostring(code)) end
 
@@ -230,9 +231,12 @@ for i=1,4 do
     enemy['需求道具'..i]=nil
     enemy['拥有'..i]=0
 end
+enemy['技能1']=0x1005000d
+enemy['10']=280
+enemy['8']=8
 
 math.randomseed(20260918)
-assert(__jy_battle_headless_begin(13,32,4000))
+assert(__jy_battle_headless_begin(13,32,12000,true))
 
 -- Fixed upstream typo aliases must resolve to the authoritative original API.
 G.call('ser_point',81,2)
@@ -260,19 +264,23 @@ local notebook_before=#notebook['记事本']
 -- numeric zero for unused positions.
 G.call('call_battle',1,10,1,0,1,0,0,0,0,0,0,0,0)
 
-local attacks,damage,last_enemy,last_skill,skipped,steps=__jy_battle_headless_stats()
+local attacks,damage,last_enemy,last_skill,skipped,steps,full_flow=__jy_battle_headless_stats()
 assert(G.call('get_battle')==1,'original get_battle did not report victory')
 assert(tonumber(body['235'])==1,'original victory monitor did not write body[235]')
 assert(attacks>=1 and attacks<=32,'headless action count invalid')
 assert(damage>0,'original magic_power1 produced no damage')
 assert(last_enemy==1 and last_skill==13,'headless action used unexpected enemy/skill')
 assert(steps>0,'battle scheduler never advanced')
+assert(full_flow==true,'full original battle event flow was not enabled')
 assert((tonumber(body['3']) or 0)>exp_before,'original victory monitor did not award player EXP')
 assert((tonumber(body['46']) or 0)<mp_before,'player MP was not spent on original battle action')
 assert((tonumber(skill['当前熟练度']) or 0)>prof_before,'original o_skill proficiency did not grow')
 assert(#notebook['记事本']>notebook_before,'original magic_power1 did not append battle notebook entry')
 assert(tonumber(enemy['生命'])==1,'original call_battle cleanup should revive defeated enemy to 1 HP')
-assert(tostring(skipped):find('集气',1,true),'C2 should explicitly record presentation/event programs deferred to C3')
+assert(not tostring(skipped):find('集气',1,true),'original 集气 should run in C2 full flow')
+assert(not tostring(skipped):find('战斗系统_事件响应',1,true),'original event response should run in C2 full flow')
+assert(not tostring(skipped):find('战斗系统_主角监控',1,true),'original player monitor should run in C2 full flow')
+assert(tostring(skipped):find('战斗对话1',1,true),'dialogue presentation should remain deferred to C3')
 assert(__jy_missing_calls()=='','minimal original battle hit unimplemented G.call: '..tostring(__jy_missing_calls()))
 
 local exp_after=tonumber(body['3'])
@@ -311,7 +319,7 @@ end
 assert(skill_row and tonumber(skill_row[7])==prof_after,'person panel did not read post-battle o_skill proficiency')
 
 print(string.format(
-    'original battle 1v1 PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
+    'original battle 1v1 full-flow PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
     attacks,damage,exp_before,exp_after,mp_before,mp_after,prof_before,prof_after,steps
 ))
 `;
