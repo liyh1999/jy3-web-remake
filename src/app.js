@@ -234,6 +234,22 @@
       window.JYBattleView?.controls(autoEnabled, canInput, targetPending, canEscape);
     },
     battleTargetPrompt(range) { window.JYBattleView?.targetPrompt(range); },
+    battleDialogue(position, text, visible) {
+      window.JYBattleView?.dialogue(position, text, visible);
+    },
+    battleSlotStatus(position, text, iconMask) {
+      window.JYBattleView?.slotStatus(position, text, iconMask);
+    },
+    battleAction(position, actionId, kind) {
+      window.JYBattleView?.action(position, actionId, kind);
+    },
+    battleSkillEffect(name, actorPosition, target, skillCode) {
+      window.JYBattleView?.skillEffect(name, actorPosition, target, skillCode);
+    },
+    battleAudio(resourceId, channel, loop, volume, routed) {
+      window.JYBattleView?.audio(resourceId, channel, loop, volume, routed);
+    },
+    battleAudioStop(channel) { window.JYBattleView?.audioStop(channel); },
     setOriginalBattleAuto(enabled) {
       return fengari.load(`return __jy_battle_browser_set_auto(${enabled ? 'true' : 'false'})`, '@web/battle-auto')();
     },
