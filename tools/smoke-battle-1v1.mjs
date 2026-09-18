@@ -593,8 +593,306 @@ while web.browserResult == nil and item_escape_pumps < 1000 do
 end
 assert(web.browserResult==2,'post-item original escape did not finish battle')
 
+
+-- C4 matrix: original 2v2 team/enemy AI, abnormal state lifecycle, rewards,
+-- multi-target formations, escape policy and the real Niujia Village Mu Nianci call.
+G.api['select']=function()
+    G.call('set_team',12,0,0,0)
+    return true
+end
+
+local teammate=G.QueryName(0x10110001)
+teammate['1']=12
+local ally=G.QueryName(0x1004000c)      -- 黄蓉
+local mu=G.QueryName(0x10040082)        -- 穆念慈 / enemy1
+local cheng=G.QueryName(0x10040083)     -- 成不忧 / enemy2
+
+local function prep_matrix_role(role,hp,mp,speed,stat)
+    role['生命']=hp
+    role['内力']=mp
+    role['1']=hp
+    role['2']=mp
+    for p=3,7 do role[tostring(p)]=stat end
+    role['8']=speed
+    for p=10,13 do role[tostring(p)]=450 end
+    role['经验值']=0
+    for p=81,115 do role[tostring(p)]=0 end
+    for p=240,259 do role[tostring(p)]=0 end
+    for p=901,908 do
+        if role[tostring(p)]==nil or tonumber(role[tostring(p)])<=0 then role[tostring(p)]=9999 end
+    end
+end
+
+local function reset_matrix_web()
+    web.browserResult=nil
+    web.actionCounts={}
+    web.skillEvents={}
+    web.statusTexts={}
+    web.browserActions=0
+    web.browserSkillEffects=0
+end
+
+body['3']=0
+body['44']=8000
+body['45']=8000
+body['46']=8000
+body['47']=8000
+body['217']=8000
+body['218']=8000
+body['210']=2
+body['235']=0
+body['81']=0
+body['82']=0
+body['83']=0
+body['84']=0
+body['85']=0
+body['86']=0
+body['87']=0
+body['90']=0
+body['241']=0
+G.misc()['经验开关']=1
+prep_matrix_role(ally,8000,8000,85,55)
+prep_matrix_role(mu,6000,6000,120,20)
+prep_matrix_role(cheng,6000,6000,115,20)
+local ally_exp_before=tonumber(ally['经验值']) or 0
+local player_exp_before=tonumber(body['3']) or 0
+reset_matrix_web()
+math.randomseed(20260944)
+
+assert(__jy_battle_browser_start(1,10,3,0,130,131,0,0,0,0,0,0,0))
+assert(tonumber(battle['team2'])==12,'mode-3 deterministic select did not place Huang Rong in team2')
+assert(tonumber(battle['enemy1'])==130 and tonumber(battle['enemy2'])==131,'2v2 enemy formation was not preserved')
+
+local warm=0
+local function acted(position)
+    return (web.actionCounts[tostring(position)] or 0)>0
+end
+while web.browserResult==nil and not (acted('team2') and acted('enemy1') and acted('enemy2')) and warm<1800 do
+    warm=warm+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==nil,'2v2 ended before all NPC actors could enter original AI')
+assert(acted('team2'),'team2 original AI never acted')
+assert(acted('enemy1'),'enemy1 original AI never acted')
+assert(acted('enemy2'),'enemy2 original AI never acted')
+
+local actor_role={team2=12,enemy1=130,enemy2=131}
+local npc_codes={}
+local valid_npc_events=0
+for _,event in ipairs(web.skillEvents) do
+    local pos=tostring(event[2] or '')
+    local code=tonumber(event[4]) or 0
+    local role_no=actor_role[pos]
+    if role_no and code>0 and G.call('get_npcskill',role_no,0x10050000+code)==1 then
+        valid_npc_events=valid_npc_events+1
+        npc_codes[code]=true
+    end
+end
+local npc_code_count=0
+for _ in pairs(npc_codes) do npc_code_count=npc_code_count+1 end
+assert(valid_npc_events>=3,'multi-actor AI did not consume original NPC skill lists')
+assert(npc_code_count>=2,'NPC AI regression did not observe at least two distinct original martial skills')
+
+local matrix_statuses={
+    {81,'中毒'},{82,'麻痹'},{83,'晕眩'},{84,'内伤'},{85,'受伤'},
+    {86,'减速'},{87,'混乱'},{90,'剧毒'}
+}
+for _,row in ipairs(matrix_statuses) do
+    local code=row[1]
+    body[tostring(code)]=1
+    body[tostring(code+10)]=500
+end
+body['241']=1
+body['251']=500
+ally['81']=1; ally['91']=500
+ally['83']=1; ally['93']=500
+ally['86']=1; ally['96']=500
+mu['82']=1; mu['92']=500
+mu['84']=1; mu['94']=500
+mu['85']=1; mu['95']=500
+mu['87']=1; mu['97']=500
+mu['90']=1; mu['100']=500
+assert(__jy_battle_browser_pump())
+local player_status=tostring(web.statusTexts['team1'] or '')
+for _,row in ipairs(matrix_statuses) do
+    assert(player_status:find(row[2],1,true),'player status projection missing '..row[2])
+end
+assert(player_status:find('强伤',1,true),'player strong-injury status projection missing')
+assert(tostring(web.statusTexts['team2'] or ''):find('中毒',1,true),'team2 status projection missing')
+assert(tostring(web.statusTexts['enemy1'] or ''):find('混乱',1,true),'enemy1 confusion status projection missing')
+
+for _,row in ipairs(matrix_statuses) do
+    body[tostring(row[1]+10)]=1
+end
+body['251']=1
+ally['91']=1; ally['93']=1; ally['96']=1
+mu['92']=1; mu['94']=1; mu['95']=1; mu['97']=1; mu['100']=1
+local clear_pumps=0
+local function any_matrix_status()
+    for _,row in ipairs(matrix_statuses) do
+        if (tonumber(body[tostring(row[1])]) or 0)>0 then return true end
+    end
+    if (tonumber(body['241']) or 0)>0 then return true end
+    if (tonumber(ally['81']) or 0)>0 or (tonumber(ally['83']) or 0)>0 or (tonumber(ally['86']) or 0)>0 then return true end
+    if (tonumber(mu['82']) or 0)>0 or (tonumber(mu['84']) or 0)>0 or (tonumber(mu['85']) or 0)>0
+        or (tonumber(mu['87']) or 0)>0 or (tonumber(mu['90']) or 0)>0 then return true end
+    return false
+end
+while web.browserResult==nil and any_matrix_status() and clear_pumps<160 do
+    clear_pumps=clear_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==nil,'2v2 ended before abnormal-state lifetime check completed')
+assert(not any_matrix_status(),'original battle time logic did not clear representative abnormal states')
+
+mu['生命']=220
+cheng['生命']=220
+local finish_pumps=0
+while web.browserResult==nil and finish_pumps<3000 do
+    finish_pumps=finish_pumps+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==1,'original 2v2 matrix did not finish with victory')
+assert((tonumber(body['3']) or 0)>player_exp_before,'2v2 victory did not award player EXP')
+assert((tonumber(ally['经验值']) or 0)>ally_exp_before,'2v2 victory did not award surviving teammate EXP')
+assert(tonumber(mu['生命'])==1 and tonumber(cheng['生命'])==1,'2v2 cleanup did not restore defeated enemies to 1 HP')
+
+assert(__jy_person_refresh()==true,'person refresh failed after C4 2v2')
+local saw_huang=false
+for _,row in ipairs(bridge.team) do
+    if tonumber(row.header[2])==12 then
+        saw_huang=true
+        assert(tonumber(row.header[11])==tonumber(ally['经验值']),'person panel teammate EXP diverged from o_role')
+    end
+end
+assert(saw_huang,'person panel did not read Huang Rong from original o_teammate')
+
+body['44']=8000; body['46']=8000; body['235']=0
+body['87']=1; body['97']=999
+prep_matrix_role(mu,12000,6000,40,15)
+reset_matrix_web()
+math.randomseed(20260945)
+assert(__jy_battle_browser_start(1,10,1,0,130,0,0,0,0,0,0,0,0))
+local confuse_pumps=0
+local saw_confused_attack=false
+while web.browserResult==nil and not saw_confused_attack and confuse_pumps<1800 do
+    confuse_pumps=confuse_pumps+1
+    assert(__jy_battle_browser_pump())
+    for _,event in ipairs(web.skillEvents) do
+        if tostring(event[2])=='team1' and tonumber(event[4])==207 then saw_confused_attack=true break end
+    end
+end
+assert(saw_confused_attack,'player confusion did not force original normal-attack code 207')
+assert(__jy_battle_browser_escape())
+local confuse_escape=0
+while web.browserResult==nil and confuse_escape<1000 do
+    confuse_escape=confuse_escape+1
+    assert(__jy_battle_browser_pump())
+end
+assert(web.browserResult==2,'confusion fixture could not exit through original escape path')
+body['87']=0; body['97']=0
+
+local function run_multi_target(slot,label,e2_slot)
+    body['44']=8000; body['46']=8000; body['235']=0
+    prep_matrix_role(mu,12000,6000,20,15)
+    prep_matrix_role(cheng,12000,6000,20,15)
+    reset_matrix_web()
+    local args={1,10,1,0,130,0,0,0,0,0,0,0,0}
+    if e2_slot==2 then args[6]=131
+    elseif e2_slot==4 then args[8]=131
+    elseif e2_slot==6 then args[10]=131
+    else error('bad second enemy slot') end
+    math.randomseed(20261000+slot+e2_slot)
+    assert(__jy_battle_browser_start(table.unpack(args)))
+    assert(__jy_battle_browser_set_auto(false))
+    local hp1=tonumber(mu['生命']) or 0
+    local hp2=tonumber(cheng['生命']) or 0
+    assert(__jy_battle_browser_select_skill(slot),label..' skill selection rejected')
+    if slot~=4 then assert(__jy_battle_browser_select_target('enemy1'),label..' target selection rejected') end
+    local p=0
+    while web.browserResult==nil and ((tonumber(mu['生命']) or hp1)>=hp1 or (tonumber(cheng['生命']) or hp2)>=hp2) and p<1200 do
+        p=p+1
+        assert(__jy_battle_browser_pump())
+    end
+    assert((tonumber(mu['生命']) or hp1)<hp1,label..' did not damage enemy1')
+    assert((tonumber(cheng['生命']) or hp2)<hp2,label..' did not damage second formation target')
+    assert(__jy_battle_browser_escape())
+    local e=0
+    while web.browserResult==nil and e<1000 do e=e+1; assert(__jy_battle_browser_pump()) end
+    assert(web.browserResult==2,label..' cleanup escape failed')
+end
+run_multi_target(2,'range-3 row',4)
+run_multi_target(3,'range-4 column',6)
+run_multi_target(4,'range-5 all',2)
+
+body['44']=8000; body['46']=8000; body['235']=0
+prep_matrix_role(mu,250,2000,20,10)
+reset_matrix_web()
+math.randomseed(20260946)
+assert(__jy_battle_browser_start(0,10,1,0,130,0,0,0,0,0,0,0,0))
+assert(__jy_battle_browser_set_auto(false))
+assert(__jy_battle_browser_escape())
+for _=1,24 do assert(__jy_battle_browser_pump()) end
+assert(web.browserResult==nil and tonumber(body['235'])~=2,'escape succeeded in an original non-escapable battle')
+assert(__jy_battle_browser_set_auto(true))
+local locked_finish=0
+while web.browserResult==nil and locked_finish<3000 do locked_finish=locked_finish+1; assert(__jy_battle_browser_pump()) end
+assert(web.browserResult==1,'non-escapable battle did not resume and finish normally')
+
+G.api['get_drop']=original_get_drop
+teammate['1']=nil
+ally['拥有']=1
+assert(tonumber(ally['死亡掉落道具'])==0x100b004a,'Huang Rong fixture no longer has the pinned original drop')
+prep_matrix_role(ally,90,1500,20,10)
+local drop_before=tonumber(G.call('get_item',75)) or 0
+body['44']=8000; body['46']=8000; body['235']=0
+reset_matrix_web()
+math.randomseed(20260947)
+assert(__jy_battle_browser_start(1,10,1,0,12,0,0,0,0,0,0,0,0))
+local drop_pumps=0
+while web.browserResult==nil and drop_pumps<3000 do drop_pumps=drop_pumps+1; assert(__jy_battle_browser_pump()) end
+assert(web.browserResult==1,'drop fixture did not finish with victory')
+assert((tonumber(G.call('get_item',75)) or 0)==drop_before+1,'original get_drop did not add Huang Rong death item')
+assert(tonumber(ally['拥有'])==0,'original get_drop did not consume role drop ownership flag')
+
+assert(dofile('${root}/lua/inventory_web.lua') == nil)
+assert(__jy_inventory_refresh()==true,'inventory refresh failed after battle drop')
+local dropped_item=G.QueryName(0x100b004a)
+local inventory_row=inventory_bridge.items[0x100b004a]
+assert(inventory_row and tonumber(inventory_row.count)==tonumber(dropped_item['数量']),'inventory panel did not read post-battle drop from original o_item')
+
+teammate['1']=12
+local c4_saved=__jy_export_state()
+local ally_ref=ally
+local drop_ref=dropped_item
+local saved_ally_exp=tonumber(ally['经验值']) or 0
+local saved_drop_count=tonumber(dropped_item['数量']) or 0
+ally['经验值']=-777
+dropped_item['数量']=-777
+local c4_ok,c4_err=__jy_import_state(c4_saved)
+assert(c4_ok,tostring(c4_err))
+assert(G.QueryName(0x1004000c)==ally_ref and G.QueryName(0x100b004a)==drop_ref,'C4 save import replaced original object identity')
+assert(tonumber(ally['经验值'])==saved_ally_exp,'C4 save did not restore teammate EXP')
+assert(tonumber(dropped_item['数量'])==saved_drop_count,'C4 save did not restore battle drop count')
+
+local niu_file=assert(io.open('${temp}/p_niujiacun.lua','r'))
+local niu_source=niu_file:read('*a')
+niu_file:close()
+assert(niu_source:find("G.call('call_battle',1,10,1,130,130,0,0,0,0,0)",1,true),'pinned Mu Nianci story battle signature changed')
+prep_matrix_role(mu,120,1000,25,12)
+body['44']=8000; body['46']=8000; body['235']=0
+reset_matrix_web()
+math.randomseed(20260948)
+assert(__jy_battle_browser_start(1,10,1,130,130,0,0,0,0,0,0,0,0))
+local mu_pumps=0
+while web.browserResult==nil and mu_pumps<3000 do mu_pumps=mu_pumps+1; assert(__jy_battle_browser_pump()) end
+assert(web.browserResult==1,'real Mu Nianci story battle parameters did not complete')
+assert(tonumber(battle['背景'])==10 and tonumber(battle['模式'])==1 and tonumber(battle['enemy1'])==130,'Mu Nianci battle did not preserve pinned story configuration')
+
+G.api['select']=original_select
+
 print(string.format(
-    'original battle 1v1 + browser auto/manual/escape PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
+    'original battle C2/C3/C4 matrix PASS: attacks=%d damage=%d exp=%d->%d mp=%d->%d proficiency=%d->%d scheduler_steps=%d',
     attacks,damage,exp_before,exp_after,mp_before,mp_after,prof_before,prof_after,steps
 ))
 `;
