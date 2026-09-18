@@ -45,6 +45,7 @@ jobs:
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/smoke-shop-runtime.mjs
+          node --check tools/smoke-team-management.mjs
           node --check tools/test-input.mjs
           node --check tools/test-map-scene.mjs
           node --check tools/test-renderer.mjs
@@ -98,6 +99,9 @@ jobs:
 
       - name: Original team and martial arts state
         run: node tools/smoke-person-growth.mjs
+
+      - name: Original team join/leave behavior
+        run: node tools/smoke-team-management.mjs
 
       - name: Original shop settlement behavior
         run: node tools/smoke-shop-runtime.mjs
