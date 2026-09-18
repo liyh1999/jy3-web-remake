@@ -355,3 +355,167 @@ load resource id
 ```
 
 首先接到现有 renderer/gcore node，再替换 #43 里战斗 `frameActionID` 的最低 CSS 动作反馈。
+
+
+## 11. D1-2 补充：master framelist / DA 动作容器
+
+继续接入真实 `frameActionID` 后确认，固定上游还存在第二种 framelist 格式。典型文件：
+
+- `framelist/body/9997.swf`
+- `framelist/body/9998.swf`
+- `framelist/enemy/9998.swf`
+- `framelist/friendly/9999.swf`
+- `framelist/skill/9999.swf`
+
+这类文件不是简单的：
+
+```text
+520683530
+rate,loop
+frame
+frame
+...
+```
+
+而是 master action-set：
+
+```text
+1
+15, 100, 100
+DA=0001
+52040001, 1, -72, -62
+52040002, 1, -72, -62
+...
+DA=1001
+52040009, 1, -72, -62
+...
+52040033, -1, -72, -62
+```
+
+字段含义目前固定为：
+
+```text
+line 1          action-set version，目前固定为 1
+line 2          rate,width,height
+DA=<hex>        frameActionID 对应的动作编号
+frame row       resourceId, flag, x, y
+flag < 0        该动作最后一帧
+x / y           原帧位置偏移
+```
+
+`DA` 编号按十六进制解析。例如：
+
+```text
+DA=0082 -> action id 0x82 -> decimal 130
+DA=061  -> action id 0x61 -> decimal 97
+```
+
+这与原 Lua 的调用完全对应：
+
+- NPC `frameActionID(roleId)` -> master 内 `DA=<roleId>`
+- NPC 攻击 `frameActionID(0x1000 + roleId)`
+- skill `frameActionID(skillCode)`
+- 主角 `frameActionID(0)` -> body master 的 `DA=0000`
+
+因此之前“把低 16 位替换成 actionId 后加载另一份 framelist”只能作为普通线性资源的回退规则，不能用于 `9997/9998/9999` master 文件。
+
+### 战斗 master 基址
+
+原 `v_battle.lua` 的节点：
+
+```text
+team1               0x33039998
+team1 性别==0       0x33039997
+team2..team5         0x33079999
+enemy1..enemy6       0x33069998
+flash.*              0x33049999
+```
+
+Web 端现在保持这些 base resource id，不修改原 `img`，只选择其中的 `DA` action。
+
+### 原 onFrameEnd 语义
+
+原 `c_battle:onFrameEnd`：
+
+- NPC action > 1000：结束后切回 `action - 1000` 的待机动作；
+- team1：除 9001/9002 外，结束后 `frameActionID(0)`；
+- 待机动作保持循环；
+- 攻击与 skill/effect 按一次性动作处理。
+
+Web bridge 已按这一规则处理，动画成功与否都不承担战斗规则权威状态。
+
+## 12. D1-2 Web 播放层
+
+新增：
+
+`src/animation-player.js`
+
+统一接口：
+
+```text
+play(channel, request)
+stop(channel)
+stopAll()
+state(channel)
+```
+
+request 支持：
+
+```text
+resourceId
+baseResourceId + actionId
+rate override
+loop override
+onFrame
+onFrameEnd
+onComplete
+onError
+onStop
+```
+
+行为：
+
+- 同一 channel 新动画会取消旧动画；
+- 异步旧加载完成后不能覆盖新动画；
+- 图片按 resource id 复用预加载；
+- 页面隐藏时不累计数秒钟的“追帧”；
+- 单次 tick 有 delta/循环上限，避免恢复标签页后失控；
+- 资源缺失只降级表现，不阻塞 Lua 战斗状态机。
+
+renderer/gcore 已提供：
+
+```text
+frameActionID(id)
+stopFrameAction()
+popFrameEnd()
+```
+
+战斗 DOM 同时保留原 C3 CSS 动作反馈作为资源失败时的视觉降级。
+
+## 13. 文件名序号注意事项
+
+资源 ID 中的文件 index 仍按十六进制解析，但原资源并不是“所有十六进制整数都连续存在”。
+
+例如原角色帧实际可能是：
+
+```text
+0009.png
+0010.png
+0011.png
+...
+```
+
+并不存在自动推导出的：
+
+```text
+000a.png
+000b.png
+...
+```
+
+因此离线资产必须来自：
+
+1. master/simple framelist 实际引用；
+2. 固定 upstream 文件树存在性校验。
+
+不能用数值范围生成文件名。
