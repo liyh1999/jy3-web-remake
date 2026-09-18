@@ -6,6 +6,7 @@
   let controlsState = { autoEnabled: true, canInput: false, targetPending: false, canEscape: false };
 
   const $ = id => document.getElementById(id);
+  const BattleEffects = window.JYBattleEffects;
   const pct = (value, max) => {
     const n = Number(value) || 0;
     const m = Math.max(1, Number(max) || 1);
@@ -14,6 +15,17 @@
 
   const battleAnimationPositions = [...positions, 'all1', 'all2', 'all3', 'all'];
   const animationKey = (kind, position) => `battle:${kind}:${position}`;
+
+  function ensureEffectLayer() {
+    const layer = ensureEffectLayer();
+    const board = document.querySelector('.battle-board');
+    if (!layer || !board) return layer;
+    if (layer.parentElement !== board) board.appendChild(layer);
+    const rect = board.getBoundingClientRect?.() || { width:board.clientWidth || 640, height:board.clientHeight || 480 };
+    const scale = BattleEffects?.sceneScale?.(rect.width || board.clientWidth, rect.height || board.clientHeight) || 1;
+    layer.style.setProperty('--battle-scene-scale', String(scale));
+    return layer;
+  }
 
   function stopBattleAnimations() {
     for (const position of battleAnimationPositions) {
@@ -63,6 +75,22 @@
       onFrame(frame, meta) {
         const url = frame.url || window.JYResources?.url?.(frame.id);
         if (url) image.src = url;
+        const placement = BattleEffects?.framePlacement?.(position, frame, {
+          master: meta.format === 'action'
+        });
+        if (placement) {
+          image.style.left = `${placement.left}px`;
+          image.style.bottom = `${placement.bottom}px`;
+          if (placement.width) image.style.width = `${placement.width}px`;
+          else image.style.removeProperty('width');
+          if (placement.height) image.style.height = `${placement.height}px`;
+          else image.style.removeProperty('height');
+          image.classList.toggle('additive', placement.blend === 1);
+          image.dataset.frameX = String(placement.frameX);
+          image.dataset.frameY = String(placement.frameY);
+          image.dataset.flashX = String(placement.nodeX);
+          image.dataset.flashY = String(placement.nodeY);
+        }
         image.dataset.frameId = `0x${(Number(frame.id) >>> 0).toString(16).padStart(8, '0')}`;
         image.dataset.frameIndex = String(meta.index);
         image.dataset.cycle = String(meta.cycle);
@@ -160,6 +188,7 @@
     slotState.clear();
     skillState.clear();
     itemState.clear();
+    ensureEffectLayer();
     const panel = $('battle');
     panel?.classList.remove('hidden');
     if ($('battleTitle')) $('battleTitle').textContent = Number(mode) === 1 ? '单挑战斗' : '战斗';
