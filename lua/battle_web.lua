@@ -374,8 +374,9 @@ function G.start_program(name, ...)
     if type(fn) ~= "function" then return false end
     if programs[name] and not programs[name].removed then return true end
 
+    local args = {...}
     local meta = { name = name, cases = {}, removed = false, queued = false }
-    meta.co = coroutine.create(function() return fn(...) end)
+    meta.co = coroutine.create(function() return fn(table.unpack(args)) end)
     programs[name] = meta
     co_meta[meta.co] = meta
     resume_program(meta)
