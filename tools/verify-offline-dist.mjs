@@ -116,6 +116,26 @@ if (offlineAnimation.frames[0]?.relativePath !== 'image/body/0499.png') {
 if (!fs.existsSync(localPath(offlineAnimation.frames[0].url))) {
   throw new Error('offline animation representative frame is not cached');
 }
+
+const offlineEnemyAction = await animationResources.loadFrameAction(0x33069998, 1);
+if (offlineEnemyAction.format !== 'action' || offlineEnemyAction.frameCount !== 8) {
+  throw new Error('offline enemy master framelist DA=0001 selection failed');
+}
+for (const frame of offlineEnemyAction.frames) {
+  if (!fs.existsSync(localPath(frame.url))) {
+    throw new Error(`offline enemy action frame missing: ${frame.relativePath}`);
+  }
+}
+
+const offlineSkillAction = await animationResources.loadFrameAction(0x33049999, 0x61);
+if (offlineSkillAction.format !== 'action' || offlineSkillAction.frameCount !== 0x27) {
+  throw new Error('offline skill master framelist DA=061 selection failed');
+}
+for (const frame of offlineSkillAction.frames) {
+  if (!fs.existsSync(localPath(frame.url))) {
+    throw new Error(`offline skill action frame missing: ${frame.relativePath}`);
+  }
+}
 if (externalFetchAttempts !== 0) {
   throw new Error(`offline animation loader attempted ${externalFetchAttempts} external fetch(es)`);
 }
