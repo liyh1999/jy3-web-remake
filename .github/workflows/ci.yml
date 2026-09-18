@@ -184,9 +184,6 @@ jobs:
       - name: C3 battle presentation and audio bridge
         run: node tools/check-c3-battle-presentation.mjs
 
-      - name: Audit original five mini-game contracts
-        run: node tools/audit-minigames.mjs
-
       - name: Audit original opening API coverage
         run: node tools/audit-newgame.mjs
 
@@ -235,6 +232,9 @@ jobs:
 
       - name: Cache pinned offline inputs
         run: npm run cache:offline
+
+      - name: Audit original five mini-game contracts
+        run: node tools/audit-minigames.mjs
 
       - name: Audit pinned original audio protocol
         run: node tools/audit-audio.mjs
