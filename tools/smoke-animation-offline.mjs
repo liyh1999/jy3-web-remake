@@ -18,10 +18,11 @@ globalThis.fetch = async url => {
   };
 };
 
-for (const file of ['src/resource-catalog.js','src/resources.js','src/animation-resources.js']) {
+for (const file of ['src/resource-catalog.js','src/resources.js','src/animation-resources.js','src/battle-effects.js']) {
   vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename:file });
 }
 const A = window.JYAnimationResources;
+const B = window.JYBattleEffects;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -58,10 +59,17 @@ await check(0x33079999, 1, 'action', 8, 'fonts/role/1/1/0001.png', 'friendly rol
 await check(0x33079999, 0x1001, 'action', 25, 'fonts/role/1/1/0009.png', 'friendly role1 attack');
 
 const skill = await check(0x33049999, 0x61, 'action', 27, 'spine/skill/61/0001.png', 'skill DA=061');
+assert(skill.frames[0]?.x === -98 && skill.frames[0]?.y === -174, 'skill master frame offsets changed');
 assert(skill.frames.at(-1)?.end === true, 'skill action end marker missing');
+const enemySkillPlacement = B.framePlacement('enemy1', skill.frames[0], { master:true });
+assert(enemySkillPlacement.left === 111 && enemySkillPlacement.bottom === 194, 'enemy1 skill offset placement changed');
+const allSkillPlacement = B.framePlacement('all3', skill.frames[0], { master:true });
+assert(allSkillPlacement.left === 88 && allSkillPlacement.bottom === 228 && allSkillPlacement.blend === 1, 'all3 skill placement/blend changed');
 
 const simple = await A.loadFrameAction(0x33010001, 0);
 assert(simple.format === 'simple' && simple.frameCount === 4, 'simple effect framelist fallback changed');
 for (const frame of simple.frames) assert(localExists(frame.url), `simple effect cached frame missing ${frame.relativePath}`);
+const simplePlacement = B.framePlacement('all1', simple.frames[0], { master:false });
+assert(simplePlacement.width === 100 && simplePlacement.height === 100 && simplePlacement.blend === 1, 'simple effect fallback placement changed');
 
 console.log('offline animation master PASS: body/enemy/friendly/skill DA actions + simple effect, all frames cached');
