@@ -87,6 +87,17 @@ assert(clone.c_root.init_count==1,'root init failed')
 assert(clone_child.c_child and clone_child.c_child.value==9 and clone_child.c_child.obj==clone_child,'child component binding failed')
 clone.c_root.value=99
 assert(root.c_root.value==7,'component state leaked into template')
+local outer=G.Entity(); G.cacheUI(outer); outer.name='v_nested'
+do
+  local inner=G.loadUI('v_test')
+  inner.name='inner'
+  outer.addChild(inner)
+end
+collectgarbage('collect')
+local outer_clone=G.loadUI('v_nested')
+local inner_clone=outer_clone.getChildByName('inner')
+assert(inner_clone and inner_clone.c_root and inner_clone.c_root.value==7,'nested component metadata was lost after proxy GC')
+assert(inner_clone.c_root.obj==inner_clone,'nested component obj was not rebound after proxy GC')
 function Component:start() self.start_count=(self.start_count or 0)+1 end
 local mounted=G.addUI('v_test')
 assert(mounted and G.getUI('v_test')==mounted,'addUI/getUI lifecycle failed')
