@@ -89,6 +89,27 @@ function web:battleItemOption(...)
 end
 function web:battleControls(...) self.browserControls=(self.browserControls or 0)+1; self.lastControls={...} end
 function web:battleTargetPrompt(range) self.browserTargetPrompt=tonumber(range) or 0 end
+function web:battleDialogue(position,text,visible)
+    self.browserDialogues=(self.browserDialogues or 0)+1
+    if visible and tostring(text or '') ~= '' then self.visibleDialogue=tostring(text) end
+end
+function web:battleSlotStatus(position,text,mask)
+    self.browserSlotStatuses=(self.browserSlotStatuses or 0)+1
+    if tostring(text or '') ~= '' then self.lastNonEmptyStatus={position,text,mask} end
+end
+function web:battleAction(position,action,kind)
+    self.browserActions=(self.browserActions or 0)+1
+    self.lastAction={position,action,kind}
+end
+function web:battleSkillEffect(name,position,target,code)
+    self.browserSkillEffects=(self.browserSkillEffects or 0)+1
+    self.lastSkillEffect={name,position,target,code}
+end
+function web:battleAudio(id,channel,loop,volume,routed)
+    self.browserAudio=(self.browserAudio or 0)+1
+    self.lastAudio={id,channel,loop,volume,routed}
+end
+function web:battleAudioStop(channel) self.browserAudioStops=(self.browserAudioStops or 0)+1; self.lastAudioStop=channel end
 
 local bridge={vitals={},skills={},team={}}
 local active_team=nil
@@ -396,6 +417,15 @@ web.browserEnd=0
 web.browserSlots=0
 web.browserStatuses=0
 web.browserEffects=0
+web.browserDialogues=0
+web.browserSlotStatuses=0
+web.browserActions=0
+web.browserSkillEffects=0
+web.browserAudio=0
+web.browserAudioStops=0
+web.lastNonEmptyStatus=nil
+body['81']=1
+body['91']=5000
 math.randomseed(20260918)
 
 assert(__jy_battle_browser_start(1,10,1,0,1,0,0,0,0,0,0,0,0))
@@ -409,6 +439,13 @@ assert(web.browserBegin==1,'browser v_battle was not opened exactly once')
 assert(web.browserEnd>=1 and web.browserEndResult==1,'browser v_battle did not receive victory end state')
 assert(web.browserSlots>0 and web.browserStatuses>0,'browser battle state was not projected to Web')
 assert(web.browserEffects>0,'browser battle effect bridge never fired')
+assert(web.browserDialogues>0,'browser battle dialogue projection never ran')
+assert(web.browserSlotStatuses>0,'browser battle slot-status projection never ran')
+assert(web.lastNonEmptyStatus and tostring(web.lastNonEmptyStatus[2]):find('中毒',1,true),'authoritative player abnormal status was not projected')
+assert(web.browserActions>0,'browser battle action presentation never fired')
+assert(web.browserSkillEffects>0,'browser battle skill-effect presentation never fired')
+assert(web.browserAudio>0,'original battle G.Play was not routed through browser audio')
+assert(web.browserAudioStops>0,'original battle G.Stop was not observed by browser audio bridge')
 assert(browser_pumps<3000,'browser battle scheduler exceeded pump budget')
 assert((tonumber(body['3']) or 0)>0,'browser original victory monitor did not award EXP')
 assert((tonumber(body['46']) or 0)<5000,'browser original battle did not spend MP')
@@ -419,6 +456,8 @@ assert((tonumber(skill['当前熟练度']) or 0)>100,'browser original battle di
 body['3']=0
 body['44']=5000
 body['46']=5000
+body['81']=0
+body['91']=0
 body['235']=0
 skill['当前熟练度']=100
 enemy['生命']=80
