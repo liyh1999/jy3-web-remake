@@ -25,6 +25,13 @@
     '01_data/o_citymap_system_city.lua'
   ];
 
+  // Battle-only data cached for C2, but not registered during normal boot.
+  const ON_DEMAND_DATA = [
+    '01_data/o_battle.lua',
+    '01_data/o_notebook.lua'
+  ];
+  const CACHED_DATA = [...new Set([...CORE_DATA, ...ON_DEMAND_DATA])];
+
   const CORE_PROGRAMS = [
     '04_program/p_order.lua',
     '04_program/p_init.lua',
@@ -214,6 +221,8 @@
     LOCAL_BASE,
     OFFLINE,
     CORE_DATA,
+    ON_DEMAND_DATA,
+    CACHED_DATA,
     CORE_PROGRAMS,
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
