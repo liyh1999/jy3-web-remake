@@ -21,7 +21,7 @@ local mutation_calls = {
     learn_magic=true, set_magic=true, learnmagic=true,
     add_magicexp=true, set_magicexp=true, set_magic_lv=true,
     ["逻辑读取-武功等级"]=true, ["逻辑整理-武功等级"]=true,
-    add_love=true, add_maxhpmp=true,
+    add_love=true, set_love=true, add_maxhpmp=true,
     add_exp=true, add_role=true, set_role=true, ["指令_存储属性"]=true,
     rest=true, set_note=true, join=true, leave=true,
 }
@@ -51,10 +51,15 @@ local function first_array_arg(args, start_index)
     return {}
 end
 
+local function notify_event_finished()
+    pcall(function() web:relationshipChanged() end)
+end
+
 local function resume_after_ui(value)
     if not active or coroutine.status(active) == "dead" then return end
     local ok, err = coroutine.resume(active, value)
     if not ok then error(err) end
+    if coroutine.status(active) == "dead" then notify_event_finished() end
 end
 
 local function body()
@@ -188,6 +193,9 @@ local function call_lua_api(name, args)
             pcall(function() web:skillChanged() end)
         end
         notify_growth(name, args)
+        if name == "add_love" or name == "set_love" then
+            pcall(function() web:relationshipChanged() end)
+        end
     end
     return true, result
 end
@@ -284,7 +292,14 @@ function G.call(name, ...)
     elseif name == "shop" then
         return open_web_shop(args[1])
     elseif name == "call_battle" then
-        local enemy = args[4] == 130 and "穆念慈" or "江湖对手"
+        local enemy_no = tonumber(args[5]) or 0
+        local enemy = "江湖对手"
+        if enemy_no > 0 then
+            local role = G.QueryName(0x10040000 + enemy_no)
+            if role and not role.__placeholder and role["姓名"] then enemy = tostring(role["姓名"]) end
+        elseif tonumber(args[4]) == 130 then
+            enemy = "穆念慈"
+        end
         web:startBattle(enemy, function(result) resume_after_ui(tonumber(result)) end)
         local result = coroutine.yield()
         web:setLastBattle(result)
@@ -397,6 +412,7 @@ function __jy_run(event_name)
     active = coroutine.create(function() fn() end)
     local ok, err = coroutine.resume(active)
     if not ok then error(err) end
+    if coroutine.status(active) == "dead" then notify_event_finished() end
     return true
 end
 
