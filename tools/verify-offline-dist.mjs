@@ -128,7 +128,7 @@ for (const frame of offlineEnemyAction.frames) {
 }
 
 const offlineSkillAction = await animationResources.loadFrameAction(0x33049999, 0x61);
-if (offlineSkillAction.format !== 'action' || offlineSkillAction.frameCount !== 0x27) {
+if (offlineSkillAction.format !== 'action' || offlineSkillAction.frameCount !== 27) {
   throw new Error('offline skill master framelist DA=061 selection failed');
 }
 for (const frame of offlineSkillAction.frames) {
