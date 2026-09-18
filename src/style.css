@@ -32,7 +32,8 @@ button { font: inherit; cursor: pointer; }
 .danger { background: #702b20; border-color: #42150f; }
 button:disabled { opacity: .45; cursor: wait; }
 .hud { position: absolute; left: 18px; top: 86px; width: 195px; padding: 11px; background: #d9c9a7ed; border: 1px solid #6d5735; box-shadow: 4px 4px 0 #3b2d1c66; z-index: 5; }
-.portrait { float: left; width: 54px; height: 64px; margin-right: 10px; display: grid; place-items: center; font-size: 28px; background: #3b3126; color: #d7c59e; border: 2px solid #806744; }
+.portrait { float: left; width: 54px; height: 64px; margin-right: 10px; display: grid; place-items: center; font-size: 28px; background: #3b3126; color: #d7c59e; border: 2px solid #806744; background-repeat: no-repeat; background-position: center; background-size: contain; }
+.portrait.has-image { color: transparent; background-color: #17120e; }
 .stat-grid { font: 11px/1.55 ui-monospace, Consolas, monospace; min-height: 64px; }
 .money { clear: both; border-top: 1px solid #846f4c66; padding-top: 7px; margin-top: 8px; font-size: 12px; }
 .save-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
