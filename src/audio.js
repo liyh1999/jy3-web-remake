@@ -60,7 +60,7 @@
     if (!state.longLived && state.oneShots.size === 0) groups.delete(state.key);
   }
 
-  function stopVoice(voice) {
+  function stopVoice(voice, detach = true) {
     if (!voice || voice.stopped) return false;
     voice.stopped = true;
     voice.pending = false;
@@ -68,7 +68,7 @@
       voice.media?.pause?.();
       if (voice.media && 'currentTime' in voice.media) voice.media.currentTime = 0;
     } catch (_) {}
-    removeVoice(voice);
+    if (detach) removeVoice(voice);
     return true;
   }
 
@@ -117,7 +117,11 @@
 
     // Original scripts use the same group value for BGM and SFX. Replacing a
     // long-lived voice must not tear down transient one-shots in that group.
-    if (longLived && state.longLived) stopVoice(state.longLived);
+    if (longLived && state.longLived) {
+      const previous = state.longLived;
+      state.longLived = null;
+      stopVoice(previous, false);
+    }
 
     const voice = {
       id: nextVoiceId++,
