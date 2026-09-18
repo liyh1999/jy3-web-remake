@@ -253,24 +253,30 @@ local function make_battle_ui()
 
     local c = {
         obj = root,
-        我方存活 = 1,
-        敌方存活 = 1,
+        ["我方存活"] = 1,
+        ["敌方存活"] = 1,
     }
-    function c:战场显示()
+    local function battlefield_display(self)
         local allies, enemies = battle_counts()
-        self.我方存活 = allies
-        self.敌方存活 = enemies
+        self["我方存活"] = allies
+        self["敌方存活"] = enemies
         root.getChildByName("num0").text = tostring(allies)
         root.getChildByName("num").text = tostring(enemies)
         if enemies > 0 then perform_headless_attack(self) end
         allies, enemies = battle_counts()
-        self.我方存活 = allies
-        self.敌方存活 = enemies
+        self["我方存活"] = allies
+        self["敌方存活"] = enemies
         root.getChildByName("num0").text = tostring(allies)
         root.getChildByName("num").text = tostring(enemies)
     end
-    function c:刷新显示() return self:战场显示() end
-    function c:战场_效果(actor, _, _, needmp)
+    c["战场显示"] = battlefield_display
+    c.__jy_u_6218_573a_663e_793a = battlefield_display
+
+    local function refresh_display(self) return battlefield_display(self) end
+    c["刷新显示"] = refresh_display
+    c.__jy_u_5237_65b0_663e_793a = refresh_display
+
+    c["战场_效果"] = function(self, actor, _, _, needmp)
         if tonumber(actor) == 1 and tonumber(needmp) and tonumber(needmp) > 0 then
             G.call("add_point", 46, -math.min(tonumber(needmp), tonumber(G.call("get_point", 46)) or 0))
         end
