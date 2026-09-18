@@ -116,3 +116,18 @@ button:disabled { opacity: .45; cursor: wait; }
 .battle-controls .danger { display: none; }
 @keyframes battle-impact { 0% { transform: translateX(0); } 35% { transform: translateX(4px); } 70% { transform: translateX(-3px); } 100% { transform: translateX(0); } }
 @keyframes battle-float { 0% { opacity: 0; transform: translate(-50%, 6px) scale(.8); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -30px) scale(1.08); } }
+
+.battle-input { margin-top: 6px; display: grid; gap: 5px; }
+.battle-skills { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+.battle-skill { min-width: 0; display: grid; grid-template-columns: 18px 1fr auto; gap: 4px; align-items: center; padding: 4px 5px; border: 1px solid #6a5438; background: #2b2119; color: #d9c8a4; font-size: 9px; text-align: left; }
+.battle-skill kbd { display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid #786143; background: #16110d; color: #cdb482; font: 9px ui-monospace, Consolas, monospace; }
+.battle-skill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.battle-skill small { color: #8c8069; font-size: 8px; }
+.battle-skill:disabled { opacity: .35; cursor: default; }
+.battle-skill:not(:disabled):hover { border-color: #c59b45; background: #3a2a1d; }
+.battle-command-row { display: flex; align-items: center; gap: 5px; min-height: 24px; }
+.battle-command { border: 1px solid #67523a; background: #201810; color: #c7b58f; padding: 4px 8px; font-size: 9px; }
+.battle-command.active { border-color: #b88339; color: #e4c16b; }
+.battle-target-hint { color: #8d8068; font-size: 9px; margin-left: 4px; }
+.battle-slot.targetable { cursor: crosshair; border-color: #ddb45b; box-shadow: 0 0 0 1px #ddb45b66 inset, 0 0 12px #d39c3b33; }
+.battle-slot.targetable:hover { transform: translateY(-2px); background: #493026; }
