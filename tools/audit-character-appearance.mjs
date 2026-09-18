@@ -68,8 +68,13 @@ for (const required of [
   assert(fs.existsSync(path.join(vendor, ...required.split('/'))), 'offline appearance resource not cached: ' + required);
 }
 
-const male = await A.loadFrameAction(0x33039998, 0);
-const female = await A.loadFrameAction(0x33039997, 0);
+function selectLocalAction(resourceId, relativePath, actionId) {
+  const parsed = A.parseFrameList(read(relativePath), resourceId);
+  const selected = A.selectFrameAction(parsed, actionId);
+  return A.describeFrameList(selected, dirs, './vendor/upstream/JY3');
+}
+const male = selectLocalAction(0x33039998, 'framelist/body/9998.swf', 0);
+const female = selectLocalAction(0x33039997, 'framelist/body/9997.swf', 0);
 assert(male.format === 'action' && male.frameCount === 16, 'male body master idle changed');
 assert(female.format === 'action' && female.frameCount === 8, 'female body master idle changed');
 assert(male.frames[0]?.relativePath === 'image/body/0001.png', 'male body master no longer uses complete body PNG');
