@@ -123,6 +123,22 @@
     }
   }
 
+  function leaveTeamMember(member) {
+    const roleNo = Math.trunc(Number(member?.roleNo) || 0);
+    if (!roleNo) return;
+    try {
+      const left = runLua(`return __jy_person_leave(${roleNo})`, '@web/person-leave');
+      if (!left) throw new Error(`${member.name || '队友'} 当前无法离队`);
+      const status = $('#runtimeStatus');
+      if (status) status.textContent = `${member.name || '队友'} 已离队`;
+      refresh();
+    } catch (error) {
+      console.error(error);
+      const status = $('#runtimeStatus');
+      if (status) status.textContent = `离队失败：${error.message || error}`;
+    }
+  }
+
   function renderTeam() {
     const root = $('#personTeam');
     const count = $('#personTeamCount');
@@ -136,6 +152,7 @@
     for (const member of model.team) {
       const card = document.createElement('article');
       card.className = 'person-team-card';
+      card.dataset.roleNo = String(member.roleNo);
 
       const portrait = document.createElement('div');
       portrait.className = 'person-team-portrait';
@@ -177,7 +194,17 @@
         }
       }
 
-      body.append(head, status, skills);
+      const actions = document.createElement('div');
+      actions.className = 'person-team-actions';
+      const leave = document.createElement('button');
+      leave.type = 'button';
+      leave.className = 'person-team-leave';
+      leave.textContent = '离队';
+      leave.title = '按原 p_order.lua leave 规则移出队伍';
+      leave.addEventListener('click', () => leaveTeamMember(member));
+      actions.appendChild(leave);
+
+      body.append(head, status, skills, actions);
       card.append(portrait, body);
       root.appendChild(card);
     }
@@ -308,6 +335,11 @@
   $('#personBtn')?.addEventListener('click', open);
   $('#personClose')?.addEventListener('click', close);
   $('#personBackdrop')?.addEventListener('click', close);
+  window.addEventListener('jy3:team-changed', () => {
+    const panel = $('#personPanel');
+    if (!installed || !panel || panel.classList.contains('hidden')) return;
+    setTimeout(refresh, 0);
+  });
 
   const timer = setInterval(async () => {
     if (await install()) clearInterval(timer);
