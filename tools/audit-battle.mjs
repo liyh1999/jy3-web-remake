@@ -22,7 +22,7 @@ function count(source, regex, key = (m) => m[1]) {
   return out;
 }
 function sortedEntries(object) {
-  return Object.entries(object).sort((a, b) => a[0].localeCompare(b[0], 'zh-CN'));
+  return Object.entries(object).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
 }
 function apiDefinitions(source) {
   return new Set([...source.matchAll(/t\[['"]([^'"]+)['"]\]\s*=\s*function/g)].map((m) => m[1]));
