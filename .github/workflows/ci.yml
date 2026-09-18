@@ -34,6 +34,7 @@ jobs:
           node --check tools/audit-newgame.mjs
           node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
+          node --check tools/check-b4-battle-boundary.mjs
           node --check tools/scan-resources.mjs
           node --check tools/smoke-inventory.mjs
           node --check tools/smoke-map-runtime.mjs
@@ -114,6 +115,9 @@ jobs:
 
       - name: Original teammate relationship interactions
         run: node tools/smoke-teammate-interactions.mjs
+
+      - name: B4 battle shared-state boundary
+        run: node tools/check-b4-battle-boundary.mjs
 
       - name: Original shop settlement behavior
         run: node tools/smoke-shop-runtime.mjs
