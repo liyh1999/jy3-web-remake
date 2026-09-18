@@ -67,6 +67,14 @@ function isDynamicExpression(source, start, end) {
   return startsWithOperator || endsWithOperator;
 }
 
+function isNonResourceLiteral(source, start) {
+  const lineStart = source.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+  const before = source.slice(lineStart, start);
+  // Original generated UI Lua stores packed layout/colors as hex too. They
+  // share the same numeric shape as resource ids but are not routed by dir.lua.
+  return /\b(?:anchor|color|shadowColor|outlineColor|shadowAlpha|alpha)\s*=\s*$/i.test(before);
+}
+
 const references = new Map();
 const hexPattern = /0x[0-9a-fA-F]{7,8}\b/g;
 for (const file of scanFiles) {
@@ -74,6 +82,8 @@ for (const file of scanFiles) {
   const sourceName = path.relative(root, file).replaceAll('\\', '/');
   for (const match of source.matchAll(hexPattern)) {
     const token = match[0];
+    const start = match.index || 0;
+    if (isNonResourceLiteral(source, start)) continue;
     const id = Number.parseInt(token.slice(2), 16) >>> 0;
     const hit = Catalog.resolve(id);
     if (!hit) continue;
@@ -91,7 +101,6 @@ for (const file of scanFiles) {
       references.set(key, ref);
     }
     ref.ids.add(`0x${id.toString(16).padStart(8, '0')}`);
-    const start = match.index || 0;
     const dynamic = isDynamicExpression(source, start, start + token.length);
     (dynamic ? ref.dynamicSources : ref.directSources).add(sourceName);
   }
