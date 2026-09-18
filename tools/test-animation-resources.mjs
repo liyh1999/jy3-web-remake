@@ -57,6 +57,36 @@ if (bodyResolved.frames[0].relativePath !== 'image/body/0499.png') {
   throw new Error(`body frame path mismatch: ${bodyResolved.frames[0].relativePath}`);
 }
 
+const masterSource = `1
+15, 100, 100
+DA=0000
+56000001, -1, 50, 50
+DA=0001
+52040001, 1, -72, -62
+52040002, -1, -72, -62
+DA=1001
+52040009, 1, -72, -62
+52040010, -1, -72, -62
+`;
+const master = A.parseFrameList(masterSource, 0x33069998);
+if (master.format !== 'action-set' || master.actionCount !== 3 || master.rate !== 15) {
+  throw new Error('DA action-set header parse mismatch');
+}
+const idleAction = A.selectFrameAction(master, 1);
+if (idleAction.frameCount !== 2 || idleAction.frames[0].id !== 0x52040001) {
+  throw new Error('DA idle action selection mismatch');
+}
+if (idleAction.frames[0].x !== -72 || idleAction.frames[1].end !== true) {
+  throw new Error('DA frame metadata/end marker mismatch');
+}
+const attackAction = A.describeFrameList(A.selectFrameAction(master, 0x1001), dirs, './vendor/upstream/JY3');
+if (attackAction.frames[0].relativePath !== 'fonts/role/1/2/0009.png') {
+  throw new Error(`DA attack frame path mismatch: ${attackAction.frames[0].relativePath}`);
+}
+let missingAction = false;
+try { A.selectFrameAction(master, 0x7777); } catch { missingAction = true; }
+if (!missingAction) throw new Error('missing DA action was silently accepted');
+
 const friendly = A.resolveWithDirectoryMap(0x52030001, dirs, './vendor/upstream/JY3');
 if (!friendly || friendly.kind !== 'image' || friendly.relativePath !== 'fonts/role/1/1/0001.png') {
   throw new Error('friendly role PNG must use type tag 0x5 with fonts/role directory id');
@@ -94,4 +124,4 @@ let badMarker = false;
 try { A.parseFrameList('123\n15,1\n56130499'); } catch { badMarker = true; }
 if (!badMarker) throw new Error('invalid framelist marker was accepted');
 
-console.log('animation resource parser PASS: dir.lua map + tagged PNG ids + framelist marker/rate/loop/hex frames');
+console.log('animation resource parser PASS: simple + DA action-set framelists, tagged PNG ids and action metadata');
