@@ -4,6 +4,23 @@ local js = require "js"
 local bridge = js.global.JYPersonBridge
 local G = require "gf"
 
+-- p_init.lua teammate actions still expect a v_teammate component for a final
+-- UI refresh. The Web panel owns that UI, so provide only the tiny surface the
+-- original interaction code touches and delegate real rendering back to JS.
+local original_get_ui = G.getUI
+local teammate_component = { ["副按钮"] = { visible = true } }
+function teammate_component:显示更新(_slot)
+    if type(__jy_person_refresh) == "function" then pcall(__jy_person_refresh) end
+end
+local teammate_ui = { c_teammate = teammate_component }
+
+G.getUI = function(name, ...)
+    local ui = original_get_ui and original_get_ui(name, ...) or nil
+    if ui ~= nil then return ui end
+    if tostring(name or "") == "v_teammate" then return teammate_ui end
+    return nil
+end
+
 local schools = {
     [0] = "无门派", [1] = "武当派", [2] = "少林派", [3] = "华山派",
     [4] = "全真教", [5] = "古墓派", [6] = "逍遥派", [7] = "血刀门",
@@ -195,6 +212,17 @@ function __jy_person_skill_level(skill_id, exp, strict)
     return skill_level(skill, exp, strict and true or false)
 end
 
+local function team_slot(role_no)
+    role_no = tonumber(role_no) or 0
+    if role_no <= 0 then return 0 end
+    local team = G.QueryName(0x10110001)
+    local role_id = 0x10040000 + role_no
+    for slot = 1, 12 do
+        if tonumber(team[tostring(slot)]) == role_id then return slot end
+    end
+    return 0
+end
+
 local function team_contains(role_no)
     role_no = tonumber(role_no) or 0
     if role_no <= 0 then return false end
@@ -208,6 +236,15 @@ local function team_contains(role_no)
         if tonumber(team[tostring(slot)]) == role_id then return true end
     end
     return false
+end
+
+function __jy_person_select_team(role_no)
+    role_no = tonumber(role_no) or 0
+    local slot = team_slot(role_no)
+    if slot <= 0 then return false end
+    body()["189"] = 0x10040000 + role_no
+    G.misc()["队友"] = slot
+    return true
 end
 
 function __jy_person_leave(role_no)
