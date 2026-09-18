@@ -19,7 +19,7 @@ local mutation_calls = {
     set_point=true, add_point=true, set_newpoint=true,
     add_money=true, add_item=true, set_item=true,
     learnmagic=true, add_love=true, add_maxhpmp=true,
-    rest=true, set_note=true, join=true,
+    rest=true, set_note=true, join=true, leave=true,
 }
 
 local function deep_copy(value, seen)
