@@ -68,6 +68,11 @@ DA=1001
 52040009, 1, -72, -62
 52040010, -1, -72, -62
 `;
+const spacedEnd = A.parseActionFrame('521d0016,- 1, -36, -48');
+if (spacedEnd.flag !== -1 || spacedEnd.end !== true || spacedEnd.x !== -36 || spacedEnd.y !== -48) {
+  throw new Error('spaced negative action metadata was not normalized');
+}
+
 const master = A.parseFrameList(masterSource, 0x33069998);
 if (master.format !== 'action-set' || master.actionCount !== 3 || master.rate !== 15) {
   throw new Error('DA action-set header parse mismatch');
