@@ -1,12 +1,24 @@
 [
+  "audio/01/1003.mp3",
+  "fonts/role/1/1/0001.png",
+  "fonts/role/1/2/0001.png",
+  "framelist/body/0001.swf",
+  "framelist/effect/0001.swf",
+  "framelist/enemy/0001.swf",
+  "framelist/friendly/0001.swf",
+  "framelist/hunting/0001.swf",
+  "framelist/skill/0061.swf",
   "image/bjmap/0001.png",
   "image/bjmap/0028.png",
   "image/bjmap/0029.png",
+  "image/body/0499.png",
   "image/dump/0001.png",
   "image/dump/0003.png",
   "image/dump/0004.png",
   "image/dump/0005.png",
   "image/dump/0006.png",
+  "image/frame/a001.png",
+  "image/frameshunting/1001.png",
   "image/head/0031.png",
   "image/head/0043.png",
   "image/head/005b.png",
@@ -44,5 +56,6 @@
   "image/worldmap/101a.png",
   "image/worldmap/101b.png",
   "image/worldmap/101c.png",
-  "audio/01/1003.mp3"
+  "script/dir.lua",
+  "spine/skill/97/0001.png"
 ]
