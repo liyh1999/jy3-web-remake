@@ -43,6 +43,15 @@
     setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:relationship-changed')), 0);
   }
 
+  function replaceSceneMarkup(markup) {
+    const existingCanvas = ui.scene.querySelector('#gcoreCanvas');
+    if (existingCanvas) existingCanvas.remove();
+    ui.scene.innerHTML = markup;
+    if (existingCanvas) ui.scene.prepend(existingCanvas);
+    const canvas = window.JYRenderer?.ensureCanvas?.();
+    window.JYRenderer?.resizeCanvas?.();
+    return canvas;
+  }
   function setScene(kind) {
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -52,13 +61,9 @@
         : '';
       ui.scene.style.backgroundSize = 'cover';
       ui.scene.style.backgroundPosition = 'center';
-      ui.scene.innerHTML = `<div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>背景已通过原资源 ID <code>0x56050001</code> 解析；NPC 按钮直接触发原版 <code>p_niujiacun.lua</code>。</p></div>`;
+      replaceSceneMarkup(`<div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>背景已通过原资源 ID <code>0x56050001</code> 解析；NPC 按钮直接触发原版 <code>p_niujiacun.lua</code>。</p></div>`);
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
-      // setScene replaces #scene children, so the gcore canvas may have been detached.
-      // Recreate/reattach it immediately; otherwise original Lua UI renders off-DOM.
-      window.JYRenderer?.ensureCanvas?.();
-      window.JYRenderer?.resizeCanvas?.();
     } else {
       ui.scene.style.backgroundImage = '';
       ui.scene.style.backgroundSize = '';
