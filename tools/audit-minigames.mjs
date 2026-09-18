@@ -107,7 +107,7 @@ for (const check of [
 ]) {
   must(init, check[0], `original reward write changed: ${check[1]}`);
 }
-must(init, "G.call('add_money',-5)", 'gambling bet debit moved away from original component/logic');
+must(games.gambling.component, "G.call('add_money',-5)", 'gambling bet debit moved away from original component');
 
 // Achievement ownership remains original Lua.
 for (const achievement of ['小赌怡情','一掷万金','木秀于林','千锤百炼','钓胜于鱼','钓鱼能手','万金于钓','一身是胆','与虎谋皮']) {
