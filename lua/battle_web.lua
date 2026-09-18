@@ -322,34 +322,47 @@ local function make_battle_ui()
             end
             local battle = G.QueryName(0x10150001)
             local total = 0
-            local function damage_at(index)
-                if index < 1 or index > 11 then return 0 end
+            -- The original 通用_战斗飘字 does not trust int_动画位置 to decide
+            -- who takes damage. It scans all 11 hurt nodes and applies every
+            -- visible 减生命 flag. This is required for row/column/all attacks,
+            -- whose animation target can be 12/14 rather than a character slot.
+            for index = 1, 11 do
                 local hurt = root.getChildByName("hurt").getChildByName(positions[index])
-                local damage = tonumber(hurt.getChildByName("减生命").text)
-                    or tonumber(hurt.getChildByName("生命").text) or 0
-                if damage <= 0 then return 0 end
-                if index == 1 then
-                    G.call("add_point", 44, -damage)
-                else
-                    local role_id = tonumber(battle[positions[index]]) or 0
-                    if role_id > 0 then G.call("add_role", role_id, 15, -damage) end
+                local damage_node = hurt.getChildByName("减生命")
+                local heal_node = hurt.getChildByName("加生命")
+                if damage_node.visible == true then
+                    local damage = tonumber(hurt.getChildByName("生命").text)
+                        or tonumber(damage_node.text) or 0
+                    damage = math.max(0, damage)
+                    if damage > 0 then
+                        if index == 1 then
+                            G.call("add_point", 44, -damage)
+                        else
+                            local role_id = tonumber(battle[positions[index]]) or 0
+                            if role_id > 0 then
+                                G.call("add_role", role_id, 15, -damage)
+                                if actor == 1 and config.last_enemy == 0 then
+                                    config.last_enemy = role_id
+                                end
+                            end
+                        end
+                        total = total + damage
+                    end
                 end
-                return damage
-            end
 
-            if target >= 1 and target <= 11 then
-                total = damage_at(target)
-            elseif target == 12 then
-                for i = 6, 11 do total = total + damage_at(i) end
-            elseif target == 13 then
-                for i = 1, 5 do total = total + damage_at(i) end
+                local heal = math.max(0, tonumber(heal_node.text) or 0)
+                if heal > 0 then
+                    if index == 1 then
+                        G.call("add_point", 44, heal)
+                    else
+                        local role_id = tonumber(battle[positions[index]]) or 0
+                        if role_id > 0 then G.call("add_role", role_id, 15, heal) end
+                    end
+                end
             end
 
             config.attack_count = config.attack_count + 1
             config.damage = config.damage + total
-            if actor == 1 and target >= 6 and target <= 11 then
-                config.last_enemy = tonumber(battle[positions[target]]) or 0
-            end
             if browser then
                 pcall(function() web:battleEffect(actor, target, total) end)
             end
