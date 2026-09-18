@@ -54,9 +54,10 @@
 .person-team-status { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .person-team-skills { display:flex; flex-wrap:wrap; gap:3px; font-size:9px; color:#765f41; }
 .person-team-skill { padding:2px 4px; border:1px solid #a18a68; background:#f3e5c3; color:#3b2b1c; }
-.person-team-actions { display:flex; justify-content:flex-end; margin-top:2px; }
-.person-team-leave { border:1px solid #7b523e; background:#efe0bd; color:#6d2e22; padding:2px 8px; font-size:9px; cursor:pointer; }
-.person-team-leave:hover { background:#d9b99a; }
+.person-team-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:3px; margin-top:2px; }
+.person-team-action, .person-team-leave { border:1px solid #7b523e; background:#efe0bd; color:#4a321e; padding:2px 7px; font-size:9px; cursor:pointer; }
+.person-team-action:hover, .person-team-leave:hover { background:#d9b99a; }
+.person-team-leave { color:#6d2e22; }
 .person-empty { grid-column:1/-1; padding:10px; border:1px dashed #9a825e; color:#765f41; text-align:center; font-size:11px; }
 @media (max-width: 760px) {
   .save-actions { grid-template-columns: repeat(2, 1fr); }
