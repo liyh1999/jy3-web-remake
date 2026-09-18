@@ -86,6 +86,17 @@
     return String(exp);
   }
 
+  function trainSkill(skill) {
+    try {
+      const trained = runLua(`return __jy_person_train_skill(${Math.trunc(Number(skill.id) || 0)})`, '@web/person-train-skill');
+      if (trained) refresh();
+    } catch (error) {
+      console.error(error);
+      const status = $('#runtimeStatus');
+      if (status) status.textContent = `武功修为提升失败：${error.message || error}`;
+    }
+  }
+
   function renderSkills() {
     const root = $('#personSkills');
     if (!root) return;
@@ -118,6 +129,21 @@
       const exp = document.createElement('small');
       exp.textContent = `熟练度 ${progressText(skill.exp, skill.full)}`;
       main.append(title, meta, exp);
+
+      if (skill.trainable) {
+        const actions = document.createElement('div');
+        actions.className = 'person-skill-actions';
+        const train = document.createElement('button');
+        train.type = 'button';
+        train.className = 'person-skill-train';
+        train.textContent = skill.cultivation >= 5 ? '修为已满' : '提升修为';
+        train.disabled = skill.cultivation >= 5;
+        train.title = '按原 c_skill.lua 规则消耗 1 点修为';
+        train.addEventListener('click', () => trainSkill(skill));
+        actions.appendChild(train);
+        main.appendChild(actions);
+      }
+
       row.append(icon, main);
       root.appendChild(row);
     }
@@ -246,7 +272,7 @@
         icon: Number(icon) || 0, point: String(point || '')
       });
     },
-    skill(id, name, category, categoryName, level, cultivation, exp, full, icon) {
+    skill(id, name, category, categoryName, level, cultivation, exp, full, icon, trainable) {
       model.skills.push({
         id: Number(id) || 0,
         name: String(name || ''),
@@ -256,7 +282,8 @@
         cultivation: Number(cultivation) || 0,
         exp: Number(exp) || 0,
         full: Number(full) || 0,
-        icon: Number(icon) || 0
+        icon: Number(icon) || 0,
+        trainable: Boolean(trainable)
       });
     },
     teamBegin(slot, roleNo, roleId, name, portrait, hp, maxHp, mp, maxMp, affection, exp) {
@@ -290,6 +317,10 @@
       });
     },
     teamEnd() { activeTeamMember = null; },
+    status(message) {
+      const status = $('#runtimeStatus');
+      if (status) status.textContent = String(message || '');
+    },
     finish() { render(); }
   };
 
@@ -335,11 +366,13 @@
   $('#personBtn')?.addEventListener('click', open);
   $('#personClose')?.addEventListener('click', close);
   $('#personBackdrop')?.addEventListener('click', close);
-  window.addEventListener('jy3:team-changed', () => {
+  const refreshIfOpen = () => {
     const panel = $('#personPanel');
     if (!installed || !panel || panel.classList.contains('hidden')) return;
     setTimeout(refresh, 0);
-  });
+  };
+  window.addEventListener('jy3:team-changed', refreshIfOpen);
+  window.addEventListener('jy3:skill-changed', refreshIfOpen);
 
   const timer = setInterval(async () => {
     if (await install()) clearInterval(timer);
