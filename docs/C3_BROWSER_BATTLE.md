@@ -194,10 +194,88 @@ C3-2 回归发现横排动画目标可能使用 12/14 等“动画位置”，�
 
 ## C3 后续
 
-C3-3：
+## C3-3 表现桥
 
-- 原战斗对话可视化深化
-- 异常状态图标
-- 动作 / 武功动画
-- BGM / SFX
-- 更接近原 Flash 的战斗布局与资源
+C3-3 不改变战斗规则，只把原 Lua 已经产生的表现字段投影到浏览器。
+
+### 战斗对话
+
+原 `战斗对话1 / 战斗对话2` 继续运行，写：
+
+```text
+talk.<position>.text
+talk.<position>.visible
+```
+
+`battle_web.lua` 在每次 browser pump 后读取这些节点并发送 `battleDialogue`。Web 在对应战位上方显示短对白气泡；隐藏时只隐藏气泡，不改变原程序。
+
+### 异常状态
+
+原 `异常显示` 的 `yc.y1..y4` 仍按原时序运行。
+
+Web 同时只读投影原权威对象里的状态字段：
+
+- 81 中毒
+- 82 麻痹
+- 83 晕眩
+- 84 内伤
+- 85 受伤
+- 86 减速
+- 87 混乱
+- 88 致盲
+- 89 御风
+- 90 剧毒
+- 241 强伤
+
+主角读取 `o_body`，NPC/队友读取对应 `o_role`。持续时间继续来自 91..100 / 251 等原字段。Web 只显示，不写回状态。
+
+### 动作与武功效果
+
+原 `tab.<position>.frameActionID(...)` 映射为战位动作反馈：
+
+- 出手：短位移动画
+- 受击：已有 impact 动画
+- 9001 / 9002：逃跑/失败等 down 状态
+
+原 `flash.<position>.frameActionID(...)` 映射为最低可用武功闪光反馈；`all1/all2/all3` 和全局图标节点也不会阻塞。
+
+`G.noti_call("战场_效果", ...)` 进入 Web 时还会读取当前 `代码.<position>.text` 对应的原 `o_skill.名称`，同步 `图表.文字` 并显示短暂武功名。伤害仍只使用原 hurt-node 结果，表现回调不重新计算伤害。
+
+### 战斗音频
+
+通用音频底层已经由 `runtime_shims.lua -> JYResources.play/stop` 实现。
+
+C3-3 的 `G.Play / G.Stop` 包装只做两件事：
+
+1. 委托原有资源音频实现真实播放。
+2. 额外通知战斗表现层当前 resource id / channel / loop，便于战斗 UI 和回归观察。
+
+资源 ID 仍按原规则 canonicalize，例如 `0x4901xxxx` 会映射到 `audio/01/*.mp3`。浏览器 autoplay 拒绝由 `resources.js` 捕获 Promise rejection，只记 debug，不阻塞 Lua 战斗状态机。
+
+### 状态边界
+
+C3-3 Web JS 不允许调用：
+
+- `add_point / set_point`
+- `add_role / set_role`
+- `magic_power*`
+
+因此对白、状态标签、动作、武功名和音频都只是表现，不会重复应用战斗 mutation。
+
+## C3-3 回归
+
+`tools/smoke-battle-1v1.mjs` 在已有 C2/C3-1/C3-2 回归之外验证：
+
+- battle dialogue projection 实际执行
+- per-slot abnormal projection 实际执行
+- 固定中毒状态能从原 `o_body` 投影到 Web
+- actor action callback 实际触发
+- skill effect/name callback 实际触发
+- 原战斗 `G.Play` 实际经过 browser audio bridge
+- 原战斗结束 `G.Stop` 实际经过 browser audio bridge
+
+静态边界由 `tools/check-c3-battle-presentation.mjs` 固定。
+
+## C3 后续
+
+C3-3 完成后，#40 / C3 可进入总验收；更完整的帧动画/Spine 与通用音频深化继续分别归 #11 / #12。
