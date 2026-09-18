@@ -67,12 +67,12 @@ if (spinePng.length !== spineFiles.length) {
 }
 
 const samples = [
-  { id:0x53030001, file:'framelist/body/0001.swf', rate:15, frames:34, first:'image/body/0499.png' },
-  { id:0x53010001, file:'framelist/effect/0001.swf', rate:20, frames:4, first:'image/frame/a001.png' },
-  { id:0x53060001, file:'framelist/enemy/0001.swf', rate:4, frames:8, first:'fonts/role/1/2/0001.png' },
-  { id:0x53070001, file:'framelist/friendly/0001.swf', rate:4, frames:8, first:'fonts/role/1/1/0001.png' },
-  { id:0x53020001, file:'framelist/hunting/0001.swf', rate:46, frames:23, first:'image/frameshunting/1001.png' },
-  { id:0x53040061, file:'framelist/skill/0061.swf', rate:6, frames:12, first:'spine/skill/97/0001.png' },
+  { id:0x33030001, file:'framelist/body/0001.swf', rate:15, frames:34, first:'image/body/0499.png' },
+  { id:0x33010001, file:'framelist/effect/0001.swf', rate:20, frames:4, first:'image/frame/a001.png' },
+  { id:0x33060001, file:'framelist/enemy/0001.swf', rate:4, frames:8, first:'fonts/role/1/2/0001.png' },
+  { id:0x33070001, file:'framelist/friendly/0001.swf', rate:4, frames:8, first:'fonts/role/1/1/0001.png' },
+  { id:0x33020001, file:'framelist/hunting/0001.swf', rate:46, frames:23, first:'image/frameshunting/1001.png' },
+  { id:0x33040061, file:'framelist/skill/0061.swf', rate:6, frames:12, first:'spine/skill/97/0001.png' },
 ];
 
 const sampleReport=[];
