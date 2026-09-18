@@ -350,6 +350,9 @@ local function make_battle_ui()
             if actor == 1 and target >= 6 and target <= 11 then
                 config.last_enemy = tonumber(battle[positions[target]]) or 0
             end
+            if browser then
+                pcall(function() web:battleEffect(actor, target, total) end)
+            end
             for i = 1, 11 do
                 local hurt = root.getChildByName("hurt").getChildByName(positions[i])
                 hurt.getChildByName("减生命").visible = false
@@ -370,6 +373,69 @@ local function make_map_ui()
     root.visible = true
     root.c_citymap_system_map = { obj = root }
     return root
+end
+
+local function safe_web(method, ...)
+    if not browser then return end
+    local args = {...}
+    pcall(function()
+        local fn = web[method]
+        if fn then fn(web, table.unpack(args)) end
+    end)
+end
+
+sync_browser_view = function()
+    if not browser then return end
+    local ui = ui_by_name["v_battle"]
+    if not ui then return end
+    local battle = G.QueryName(0x10150001)
+    local body = G.QueryName(0x10030001)
+    local map = ui.getChildByName("map")
+
+    for i = 1, 11 do
+        local position = positions[i]
+        local map_node = map.getChildByName(position)
+        local id, name, hp, maxhp, mp, maxmp
+        if i == 1 then
+            id = 0
+            name = tostring(body["1"] or "") .. tostring(body["2"] or "")
+            if name == "" then name = "主角" end
+            hp = tonumber(body["44"]) or 0
+            maxhp = tonumber(body["217"]) or math.max(1, hp)
+            mp = tonumber(body["46"]) or 0
+            maxmp = tonumber(body["218"]) or math.max(1, mp)
+        else
+            id = tonumber(battle[position]) or 0
+            local role = id > 0 and G.QueryName(0x10040000 + id) or nil
+            name = role and tostring(role["姓名"] or ("角色" .. tostring(id))) or ""
+            hp = role and (tonumber(role["生命"]) or 0) or 0
+            maxhp = role and (tonumber(role["1"]) or math.max(1, hp)) or 1
+            mp = role and (tonumber(role["内力"]) or 0) or 0
+            maxmp = role and (tonumber(role["2"]) or math.max(1, mp)) or 1
+        end
+        safe_web("battleSlot", position, id, name, hp, maxhp, mp, maxmp,
+            tonumber(map_node.x) or 0, map_node.visible == true, i >= 6)
+    end
+
+    local abnormal = ""
+    local abnormal_node = ui.getChildByName("异常")
+    if abnormal_node.visible == true then
+        abnormal = tostring(abnormal_node.getChildByName("状态").text or "")
+    end
+    safe_web(
+        "battleStatus",
+        tostring(ui.getChildByName("时间").text or "00:00:00"),
+        tonumber(body["48"]) or 0,
+        tonumber(body["49"]) or 100,
+        tostring(ui.getChildByName("图表").getChildByName("文字").text or ""),
+        abnormal,
+        tonumber(G.misc()["战斗结果"]) or 0
+    )
+end
+
+schedule_browser_pump = function(delay)
+    if not browser then return end
+    safe_web("scheduleBattlePump", math.max(0, tonumber(delay) or 0))
 end
 
 function G.case(index, event_name)
@@ -509,6 +575,11 @@ function G.addUI(name, ...)
     name = tostring(name)
     if name == "v_battle" then
         ui_by_name[name] = make_battle_ui()
+        if browser then
+            local battle = G.QueryName(0x10150001)
+            safe_web("battleBegin", tonumber(battle["背景"]) or 0, tonumber(battle["模式"]) or 0)
+            sync_browser_view()
+        end
     elseif name == "v_citymap_system_map" then
         ui_by_name[name] = make_map_ui()
     else
@@ -519,7 +590,11 @@ end
 
 function G.removeUI(name, ...)
     if not headless and not browser then return raw.removeUI(name, ...) end
-    ui_by_name[tostring(name)] = nil
+    name = tostring(name)
+    if browser and name == "v_battle" then
+        safe_web("battleEnd", tonumber(G.QueryName(0x10030001)["235"]) or tonumber(G.misc()["战斗结果"]) or 0)
+    end
+    ui_by_name[name] = nil
     return true
 end
 
