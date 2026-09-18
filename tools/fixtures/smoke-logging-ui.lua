@@ -140,6 +140,7 @@ local body = {
 }
 local G = { api = {} }
 package.preload['gf'] = function() return G end
+package.preload['gfbase'] = function() return G end
 function G.QueryName(id)
     if tonumber(id) == 0x10030001 then return body end
     return { name = id, __placeholder = true }
