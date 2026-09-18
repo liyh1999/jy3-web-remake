@@ -113,23 +113,60 @@
         </div>
       </section>
 
-      <section id="battle" class="battle hidden">
-        <div class="battle-title" id="battleTitle">比武</div>
-        <div class="fighters">
+      <section id="battle" class="battle hidden" aria-label="原版战斗">
+        <header class="battle-header">
+          <div>
+            <div class="battle-title" id="battleTitle">战斗</div>
+            <div class="battle-meta" id="battleMeta">原 p_battle.lua</div>
+          </div>
+          <div class="battle-clock"><span>战斗时间</span><b id="battleTime">00:00:00</b></div>
+          <div class="battle-result" id="battleResult"></div>
+        </header>
+
+        <div class="battle-board">
+          <section class="battle-side battle-allies">
+            <h3>我方</h3>
+            <div id="battleAllies" class="battle-slots"></div>
+          </section>
+          <div class="battle-center">
+            <div class="battle-versus">战</div>
+            <div id="battleEffectLayer" class="battle-effect-layer"></div>
+          </div>
+          <section class="battle-side battle-enemies">
+            <h3>敌方</h3>
+            <div id="battleEnemies" class="battle-slots"></div>
+          </section>
+        </div>
+
+        <div class="battle-runtime-panel">
+          <div class="battle-runtime-item">
+            <span>怒气</span>
+            <div class="battle-rage"><i id="battleRageBar"></i></div>
+            <b id="battleRageText">0 / 100</b>
+          </div>
+          <div class="battle-runtime-item"><span>当前武功</span><b id="battleSkillName">等待集气</b></div>
+          <div class="battle-runtime-item"><span>异常</span><b id="battleAbnormal">无</b></div>
+        </div>
+
+        <div class="fighters battle-legacy-summary">
           <div class="fighter">
-            <span>你</span>
+            <span>主角</span>
             <div class="hp"><i id="playerHpBar"></i></div>
-            <b id="playerHpText">100 / 100</b>
+            <b id="playerHpText">0 / 0</b>
           </div>
           <div class="versus">VS</div>
           <div class="fighter">
-            <span id="enemyName">穆念慈</span>
+            <span id="enemyName">敌人</span>
             <div class="hp"><i id="enemyHpBar"></i></div>
-            <b id="enemyHpText">100 / 100</b>
+            <b id="enemyHpText">0 / 0</b>
           </div>
         </div>
-        <div class="battle-log" id="battleLog">战斗开始。</div>
-        <button id="attackBtn" class="danger">普通攻击</button>
+
+        <div class="battle-log" id="battleLog">等待原战斗状态机。</div>
+        <div class="battle-controls">
+          <button id="attackBtn" class="danger">旧兼容攻击</button>
+          <span>C3-1：当前由原版自动战斗驱动；手动武功/目标输入将在 C3-2 接入。</span>
+        </div>
       </section>
 
       <!-- Compatibility mount point only. Village/NPC interaction is driven by
@@ -157,6 +194,7 @@
   <script src="./src/map-scene.js"></script>
   <script src="./src/upstream.js"></script>
   <script src="./src/shop.js"></script>
+  <script src="./src/battle.js"></script>
   <script src="./src/app.js"></script>
   <script src="./src/gcore-scene.js"></script>
   <script src="./src/inventory.js"></script>
