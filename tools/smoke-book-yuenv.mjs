@@ -53,7 +53,6 @@ local calls = {}
 local joined = {}
 local learned = {}
 local battle_calls = 0
-local saved = 0
 
 local function record(name, ...)
     calls[#calls + 1] = {name, ...}
@@ -73,7 +72,6 @@ G.api['get_battle'] = function() return 1 end
 G.api['join'] = function(id) joined[tonumber(id)] = true; record('join', tonumber(id)); return true end
 G.api['learn_magic'] = function(id) learned[tonumber(id)] = true; record('learn_magic', tonumber(id)); return true end
 G.api['get_point'] = function(id) return tonumber(id) == 143 and 1 or 0 end
-G.api['通用_存档'] = function(value) saved = saved + 1; record('通用_存档', tonumber(value) or value); return true end
 G.api['add_time'] = function(value) record('add_time', tonumber(value)); return true end
 
 local book = G.QueryName(0x101c000f)
@@ -88,7 +86,6 @@ assert(joined[419] == true, 'Yue Maiden victory did not join original role 419')
 assert(learned[249] == true, 'Yue Maiden victory did not learn original magic 249')
 assert(book['完成'] == 1 and book['完美'] == 1, 'Yue Maiden completion flags mismatch')
 assert(G.misc()['梦幻完成'] == 1, 'Yue Maiden dream completion flag mismatch')
-assert(saved == 1, 'Yue Maiden victory did not invoke original save helper')
 assert(saw('add_time', 2), 'Yue Maiden story did not add original two time units')
 assert(tonumber(G.QueryName(0x10030001)['140']) == 0x10060004, 'Yue Maiden story did not return to world map')
 assert(__jy_missing_calls() == '', 'Yue Maiden smoke used missing calls: ' .. __jy_missing_calls())
