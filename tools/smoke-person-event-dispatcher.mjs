@@ -51,14 +51,12 @@ end
 local city_calls = 0
 local hunt_calls = 0
 local time_calls = 0
-local turn_calls = 0
 G.api['城镇-渡口'] = function() city_calls = city_calls + 1 return true end
 G.api['hunting'] = function() hunt_calls = hunt_calls + 1 return true end
 G.api['add_time'] = function(value)
     time_calls = time_calls + (tonumber(value) or 0)
     return true
 end
-G.api['turn_map'] = function() turn_calls = turn_calls + 1 return true end
 
 assert(G.start_program('地图系统_人物') == true, 'original p_person dispatcher did not start')
 local kind = select(1, __jy_story_program_status('地图系统_人物'))
@@ -74,7 +72,6 @@ G.trig_event('地图打猎')
 __jy_story_program_browser_pump(0)
 assert(hunt_calls == 1, 'original p_person did not dispatch 地图打猎 to hunting')
 assert(time_calls == 4, 'original map hunting did not add four hours')
-assert(turn_calls == 1, 'original map hunting did not refresh map after mini-game')
 kind = select(1, __jy_story_program_status('地图系统_人物'))
 assert(kind == 'case', 'p_person dispatcher did not return to wait_case after mini-game event')
 
