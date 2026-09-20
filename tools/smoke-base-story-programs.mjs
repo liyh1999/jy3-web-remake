@@ -42,6 +42,7 @@ package.preload['js'] = function()
 end
 
 assert(loadfile('lua/gf_web.lua'))()
+assert(__jy_dialogue_enable_original(true) == true)
 assert(loadfile(temp .. '/p_task.lua'))()
 assert(loadfile(temp .. '/p_story-town or city.lua'))()
 
