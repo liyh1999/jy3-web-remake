@@ -41,6 +41,19 @@ assert(loadfile('lua/gf_web.lua'))()
 package.preload['program_runtime'] = function()
     return assert(loadfile('lua/program_runtime.lua'))()
 end
+package.preload['co'] = function()
+    return {
+        create = coroutine.create,
+        resume = coroutine.resume,
+        yield = coroutine.yield,
+        running = coroutine.running,
+        status = coroutine.status,
+        wrap = coroutine.wrap,
+        weak_meta = { __mode = 'kv' },
+        error = function(err) error(err, 2) end,
+        wait_time = function() return true end,
+    }
+end
 assert(loadfile('lua/story_program_web.lua'))()
 assert(loadfile(temp .. '/p_citymap_system.lua'))()
 assert(loadfile(temp .. '/p_init.lua'))()
