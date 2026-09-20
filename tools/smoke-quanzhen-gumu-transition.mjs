@@ -59,6 +59,10 @@ body['1'] = '测'
 body['2'] = '试'
 body['性别'] = 1
 body['200'] = 100
+body['120'] = 1
+body['121'] = 1
+body['122'] = 1
+body['123'] = 0
 
 local calls = {}
 local menu_queue = {}
@@ -102,17 +106,26 @@ G.api['地图_进入地图'] = function(name, map, family)
     record('地图_进入地图', name, tonumber(map) or map, tonumber(family) or family)
     return true
 end
-G.api['get_point'] = function(id) return points[tonumber(id) or 0] or 0 end
+G.api['get_point'] = function(id)
+    id = tonumber(id) or 0
+    if points[id] ~= nil then return points[id] end
+    return tonumber(body[tostring(id)]) or 0
+end
 G.api['set_point'] = function(id, value)
-    points[tonumber(id) or 0] = tonumber(value) or value
-    record('set_point', tonumber(id) or 0, tonumber(value) or value)
+    id = tonumber(id) or 0
+    value = tonumber(value) or value
+    points[id] = value
+    body[tostring(id)] = value
+    record('set_point', id, value)
     return value
 end
 G.api['add_point'] = function(id, delta)
     id = tonumber(id) or 0
-    points[id] = (tonumber(points[id]) or 0) + (tonumber(delta) or 0)
+    local value = (tonumber(G.api['get_point'](id)) or 0) + (tonumber(delta) or 0)
+    points[id] = value
+    body[tostring(id)] = value
     record('add_point', id, tonumber(delta) or 0)
-    return points[id]
+    return value
 end
 G.api['get_magicexp'] = function(id)
     id = tonumber(id) or 0
