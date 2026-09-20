@@ -73,6 +73,14 @@
   const ON_DEMAND_PROGRAMS = ALL_PROGRAMS.filter(path => !CORE_PROGRAM_SET.has(path));
   const CACHED_PROGRAMS = [...ALL_PROGRAMS];
 
+  const BASE_STORY_PROGRAMS = [
+    '04_program/p_event.lua',
+    '04_program/p_dialogue_system.lua',
+    '04_program/p_citymap_system.lua',
+    '04_program/p_task.lua',
+    '04_program/p_story-town or city.lua',
+  ];
+
   const CORE_NOTIFY = [
     '06_notify/n_common.lua',
     '06_notify/n_citymap_system.lua',
@@ -466,6 +474,30 @@ return true
     return dialogueRuntimePromise;
   }
 
+  let storyRuntimePromise = null;
+  async function prepareStoryRuntime(onProgress) {
+    if (!storyRuntimePromise) {
+      storyRuntimePromise = (async () => {
+        const dialogue = await prepareDialogueRuntime(onProgress);
+        const pendingPrograms = BASE_STORY_PROGRAMS.filter(path =>
+          path !== '04_program/p_dialogue_system.lua' &&
+          !CORE_PROGRAM_SET.has(path)
+        );
+        const loadedPrograms = await loadPrograms(pendingPrograms, onProgress);
+        return {
+          loadedModules: dialogue.loadedModules,
+          loadedViews: dialogue.loadedViews,
+          loadedPrograms: dialogue.loadedPrograms + loadedPrograms,
+          programs: [...BASE_STORY_PROGRAMS],
+        };
+      })().catch((error) => {
+        storyRuntimePromise = null;
+        throw error;
+      });
+    }
+    return storyRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -492,6 +524,7 @@ return true
     CORE_PROGRAMS,
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
+    BASE_STORY_PROGRAMS,
     CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
@@ -521,6 +554,7 @@ return true
     prepareHuntingUI,
     prepareGamblingUI,
     prepareDialogueRuntime,
+    prepareStoryRuntime,
     bootstrapData,
   };
 })();
