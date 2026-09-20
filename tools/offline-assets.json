@@ -251,7 +251,6 @@
   "audio/01/0038.mp3",
   "audio/02/000a.mp3",
   "script/03_ui_component/c_button.lua",
-  "script/06_notify/n_common.lua",
   "script/03_ui_component/c_book.lua",
   "script/02_ui_view/v_hunting.lua",
   "script/02_ui_view/v_logging.lua",
