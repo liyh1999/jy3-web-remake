@@ -174,6 +174,28 @@ function G.loadUI(name)
     return nil
 end
 
+function G.Clone(node)
+    if not node then return nil end
+    local handle = tonumber(renderer:cloneNodeHandle(handle_of(node))) or 0
+    if handle == 0 then return nil end
+    local clone = wrap_node(handle)
+    bind_component_tree(node, clone)
+    return clone
+end
+
+function G.NewTab() return {} end
+function G.ReleaseTab(_) return true end
+function G.GetObjRealWidth(node)
+    if not node then return 0 end
+    if type(node.real_width) == "function" then return tonumber(node.real_width()) or 0 end
+    return tonumber(node.width) or 0
+end
+function G.GetObjRealHeight(node)
+    if not node then return 0 end
+    if type(node.real_height) == "function" then return tonumber(node.real_height()) or 0 end
+    return tonumber(node.height) or 0
+end
+
 local function start_component_tree(node)
     if not node then return end
     for key, component in pairs(node_components[handle_of(node)] or {}) do
