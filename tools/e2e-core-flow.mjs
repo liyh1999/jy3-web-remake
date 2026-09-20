@@ -71,9 +71,9 @@ try {
 
   // 1) Real page new-game button + original questionnaire menus.
   await click('#startBtn');
-  const openingAnswers = [5,5,1,1,1,1,1,1,1,1,1,1,1,1,6];
+  const openingAnswers = [5,5,1,1,1,1,1,1,1,1,1,1,1,1];
   await drainDialogueUntil(
-    "document.querySelector('#scene')?.classList.contains('village-scene') || (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === 0x10060002; } catch (_) { return false; } })()",
+    "document.querySelector('#scene')?.classList.contains('village-scene') && document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0 && (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === 0x10060002; } catch (_) { return false; } })()",
     openingAnswers,
     30000
   );
