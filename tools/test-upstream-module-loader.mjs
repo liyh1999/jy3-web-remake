@@ -20,6 +20,9 @@ if (typeof U.prepareDigUI !== 'function') throw new Error('prepareDigUI API miss
 if (U.FISHING_UI_MODULES.map(x => x.module).join(',') !== 'c_button,c_fishing') throw new Error('fishing component module list mismatch');
 if (U.FISHING_UI_VIEWS.join(',') !== '02_ui_view/v_empty.lua,02_ui_view/v_button.lua,02_ui_view/v_fishing.lua') throw new Error('fishing view load order mismatch');
 if (typeof U.prepareFishingUI !== 'function') throw new Error('prepareFishingUI API missing');
+if (U.HUNTING_UI_MODULES.map(x => x.module).join(',') !== 'c_button,c_hunting') throw new Error('hunting component module list mismatch');
+if (U.HUNTING_UI_VIEWS.join(',') !== '02_ui_view/v_empty.lua,02_ui_view/v_button.lua,02_ui_view/v_hunting.lua') throw new Error('hunting view load order mismatch');
+if (typeof U.prepareHuntingUI !== 'function') throw new Error('prepareHuntingUI API missing');
 if (typeof U.registerModuleSource !== 'function' || typeof U.loadModule !== 'function') throw new Error('module loader API missing');
 U.registerModuleSource('c_demo', "local t={}\nt.测试=1\nreturn t", '03_ui_component/c_demo.lua');
 if (!captured.includes('package.preload["c_demo"]')) throw new Error('package.preload registration missing');
