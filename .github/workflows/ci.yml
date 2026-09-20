@@ -103,6 +103,8 @@ jobs:
           node --check tools/smoke-lakes-bone-claw.mjs
           node --check tools/smoke-book-second-batch.mjs
           node --check tools/smoke-lakes-second-batch.mjs
+          node --check tools/smoke-book-continuous.mjs
+          node --check tools/smoke-lakes-third-batch.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -394,6 +396,12 @@ jobs:
       - name: Execute second-batch original lakes tasks
         run: node tools/smoke-lakes-second-batch.mjs
 
+      - name: Execute continuous multi-stage original book stories
+        run: node tools/smoke-book-continuous.mjs
+
+      - name: Execute third-batch original lakes task
+        run: node tools/smoke-lakes-third-batch.mjs
+
       - name: Audit full original program API coverage
         run: |
           node tools/audit-program-api-coverage.mjs
@@ -571,6 +579,12 @@ jobs:
 
       - name: Smoke second-batch lakes tasks from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_LAKES_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-lakes-second-batch.mjs
+
+      - name: Smoke continuous book stories from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_BOOK_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-book-continuous.mjs
+
+      - name: Smoke third-batch lakes task from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_LAKES_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-lakes-third-batch.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
