@@ -77,6 +77,13 @@ body['120'] = 1
 body['121'] = 1
 body['122'] = 1
 body['123'] = 0
+body['124'] = 0
+local newbody = G.QueryName(0x101b0001)
+newbody['120'] = -1
+newbody['121'] = -1
+newbody['122'] = -1
+newbody['123'] = 0
+newbody['124'] = 0
 
 local calls = {}
 local menu_queue = {}
