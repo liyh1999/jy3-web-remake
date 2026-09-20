@@ -212,9 +212,9 @@ loves[84] = 50
 items = {}
 learned = {}
 magic_owned = {}
-G.misc().丐帮弟子 = nil
+G.misc()['丐帮弟子'] = nil
 assert(__jy_run('初入丐帮') == true, 'Gaibang admission did not start')
-assert(G.misc().丐帮弟子 == 1, 'Gaibang admission did not initialize one-bag rank')
+assert(G.misc()['丐帮弟子'] == 1, 'Gaibang admission did not initialize one-bag rank')
 assert(body['9'] == '一袋弟子', 'Gaibang admission title mismatch')
 assert(tonumber(body['11']) == 1 and tonumber(body['107']) == 1, 'Gaibang admission base state mismatch')
 assert(body['12'] == '洪七公' and tonumber(body['8']) == 9, 'Gaibang admission master/school state mismatch')
@@ -256,13 +256,13 @@ assert(saw('add_time', 4), 'Bowl elder sparring did not add original four time u
 
 -- 5) First bag-promotion contest victory.
 reset_calls()
-G.misc().丐帮弟子 = 1
+G.misc()['丐帮弟子'] = 1
 body['9'] = '一袋弟子'
 battle_result = 1
 battle_calls = 0
 assert(__jy_run('初入丐帮-升袋比试') == true, 'Gaibang bag-promotion contest did not start')
 assert(battle_calls == 1, 'Gaibang bag-promotion contest did not invoke original battle API')
-assert(G.misc().丐帮弟子 == 2, 'Gaibang bag-promotion victory did not advance rank')
+assert(G.misc()['丐帮弟子'] == 2, 'Gaibang bag-promotion victory did not advance rank')
 assert(body['9'] == '二袋弟子', 'Gaibang bag-promotion title mismatch')
 assert(saw('add_day', 1), 'Gaibang bag-promotion did not add original one day')
 
