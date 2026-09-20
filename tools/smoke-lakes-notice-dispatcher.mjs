@@ -12,11 +12,27 @@ const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const sourceBase = process.env.JY3_LAKES_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-lakes-dispatch-'));
 const normalizedSource = normalizeLuaSource(fs.readFileSync(path.join(sourceBase, 'p_lakes_notice.lua'), 'utf8'));
-const taskNames = [...normalizedSource.matchAll(/t\['(聚贤庄任务_[^']+)'\]\s*=\s*function\(\)/g)].map((match) => match[1]);
-if (taskNames.length !== 47) {
-  throw new Error(`expected 47 pinned upstream lakes tasks, found ${taskNames.length}`);
+const dispatcherEnd = normalizedSource.indexOf("t['聚贤庄任务_义结金兰']=function()");
+const dispatcherSource = normalizedSource.slice(0, dispatcherEnd);
+const waitIndex = dispatcherSource.indexOf('local r = G.wait_case()');
+const caseEntries = [...dispatcherSource.slice(0, waitIndex).matchAll(/G\.case\((\d+),\s*'([^']+)'\)/g)]
+  .map((match) => ({ id: Number(match[1]), event: match[2] }));
+const callNames = [...dispatcherSource.slice(waitIndex).matchAll(/G\.call\('(聚贤庄任务_[^']+)'\)/g)]
+  .map((match) => match[1]);
+if (caseEntries.length !== 47 || callNames.length !== 47) {
+  throw new Error(`expected 47 pinned upstream lakes dispatcher routes, found cases=${caseEntries.length} calls=${callNames.length}`);
 }
-const luaTaskNames = taskNames.map((name) => JSON.stringify(name)).join(',\n    ');
+const routes = caseEntries.map((entry, index) => {
+  if (entry.id !== index + 1) throw new Error(`unexpected lakes case id ${entry.id} at index ${index}`);
+  return { event: entry.event, call: callNames[index] };
+});
+const aliases = routes.filter((route) => route.event !== route.call);
+if (aliases.length !== 2) {
+  throw new Error(`expected 2 pinned upstream dispatcher aliases, found ${aliases.length}`);
+}
+const luaRoutes = routes
+  .map((route) => `{ event = ${JSON.stringify(route.event)}, call = ${JSON.stringify(route.call)} }`)
+  .join(',\n    ');
 fs.writeFileSync(
   path.join(temp, 'p_lakes_notice.lua'),
   normalizedSource,
@@ -64,13 +80,13 @@ G.getUI = function(name)
 end
 
 local routed = {}
-local task_names = {
-    ${luaTaskNames}
+local routes = {
+    ${luaRoutes}
 }
-for _, task_name in ipairs(task_names) do
-    local name = task_name
-    G.api[name] = function()
-        routed[name] = (routed[name] or 0) + 1
+for _, route in ipairs(routes) do
+    local call_name = route.call
+    G.api[call_name] = function()
+        routed[call_name] = (routed[call_name] or 0) + 1
         return true
     end
 end
@@ -79,25 +95,25 @@ assert(G.start_program('地图系统_聚贤庄任务') == true, 'lakes dispatche
 local kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
 assert(kind == 'case', 'lakes dispatcher did not enter wait_case')
 
-for _, task_name in ipairs(task_names) do
-    G.trig_event(task_name)
+for _, route in ipairs(routes) do
+    G.trig_event(route.event)
     __jy_story_program_browser_pump(0)
-    assert(routed[task_name] == 1, 'lakes dispatcher did not route ' .. task_name)
+    assert(routed[route.call] == 1, 'lakes dispatcher did not route ' .. route.event .. ' -> ' .. route.call)
     kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
-    assert(kind == 'case', 'lakes dispatcher stopped listening after ' .. task_name)
+    assert(kind == 'case', 'lakes dispatcher stopped listening after ' .. route.event)
 end
 
 local routed_count = 0
 for _, count in pairs(routed) do
     if count == 1 then routed_count = routed_count + 1 end
 end
-assert(routed_count == #task_names, 'lakes dispatcher routed task count mismatch')
+assert(routed_count == #routes, 'lakes dispatcher routed task count mismatch')
 
 assert(__jy_story_program_reset() == true)
 assert(not __jy_story_program_has('地图系统_聚贤庄任务'), 'lakes dispatcher leaked after reset')
 
 print('original lakes notice dispatcher PASS')
-print('  all ' .. tostring(#task_names) .. ' 聚贤庄任务 events route through the persistent original wait_case program')
+print('  all ' .. tostring(#routes) .. ' original case events route through wait_case, including the two pinned upstream event/call aliases')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
