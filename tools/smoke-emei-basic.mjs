@@ -21,7 +21,11 @@ const harness = String.raw`
 local temp = assert(os.getenv('JY3_SECT_TMP'), 'JY3_SECT_TMP missing')
 local runtime_root = assert(os.getenv('JY3_RUNTIME_ROOT'), 'JY3_RUNTIME_ROOT missing')
 
+local pending_story_callback = nil
 local web = {}
+function web:story(text, callback)
+    pending_story_callback = callback
+end
 function web:setPoint() end
 function web:setMoney() end
 function web:setItem() end
@@ -136,7 +140,6 @@ G.api['add_love'] = function(id, delta)
 end
 G.api['add_time'] = function(value) record('add_time', tonumber(value) or value); return true end
 G.api['turn_map'] = function() record('turn_map'); return true end
-G.api['story'] = function(text) record('story', tostring(text)); return true end
 G.api['set_team'] = function(...) record('set_team', ...); return true end
 G.api['join'] = function(id)
     id = tonumber(id) or 0
@@ -233,6 +236,10 @@ juxianzhuang_count = 0
 alltime = nil
 progress['进度列表'][10]['完成'] = 0
 assert(__jy_run('初入峨嵋派-出师') == true, 'Emei graduation did not start')
+assert(type(pending_story_callback) == 'function', 'Emei graduation did not yield at original story bridge')
+local resume_story = pending_story_callback
+pending_story_callback = nil
+resume_story(true)
 assert(battle_calls == 1, 'Emei graduation victory path did not execute Yang Xiao battle')
 assert(body['9'] == '峨嵋亲传弟子', 'Emei graduation did not grant direct-disciple title')
 assert(learned[48] == true, 'Emei graduation did not learn original Miejue sword when 254/255 are owned')
