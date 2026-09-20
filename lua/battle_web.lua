@@ -10,6 +10,8 @@ local raw = {
     wait_time = G.wait_time,
     trig_event = G.trig_event,
     wait1 = G.wait1,
+    case = G.case,
+    wait_case = G.wait_case,
     addUI = G.addUI,
     removeUI = G.removeUI,
     getUI = G.getUI,
@@ -707,7 +709,10 @@ schedule_browser_pump = function(delay)
 end
 
 function G.case(index, event_name)
-    if not headless and not browser then return true end
+    if not headless and not browser then
+        if raw.case then return raw.case(index, event_name) end
+        return true
+    end
     local meta = current_meta()
     if not meta then return false end
     meta.cases[tostring(event_name)] = tonumber(index) or index
@@ -715,7 +720,10 @@ function G.case(index, event_name)
 end
 
 function G.wait_case()
-    if not headless and not browser then return nil end
+    if not headless and not browser then
+        if raw.wait_case then return raw.wait_case() end
+        return nil
+    end
     local meta = current_meta()
     if not meta then return nil end
     for event_name, index in pairs(meta.cases) do
