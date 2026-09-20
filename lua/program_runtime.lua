@@ -249,6 +249,17 @@ function M.new(options)
         return meta ~= nil and not meta.removed
     end
 
+    function self:waiting(event_name)
+        local event = tostring(event_name)
+        for _, meta in pairs(self.programs) do
+            if not meta.removed and meta.wait then
+                if meta.wait.kind == "event" and meta.wait.name == event then return true end
+                if meta.wait.kind == "case" and meta.cases[event] ~= nil then return true end
+            end
+        end
+        return false
+    end
+
     function self:reset()
         for token in pairs(self.timers) do self.cancel(token) end
         for _, meta in pairs(self.programs) do meta.removed = true end
