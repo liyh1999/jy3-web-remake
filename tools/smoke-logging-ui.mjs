@@ -17,6 +17,7 @@ const targets = {
   c_dig: '03_ui_component/c_dig.lua',
   c_fishing: '03_ui_component/c_fishing.lua',
   c_hunting: '03_ui_component/c_hunting.lua',
+  c_gambling: '03_ui_component/c_gambling.lua',
   v_button: '02_ui_view/v_button.lua',
   v_logging: '02_ui_view/v_logging.lua',
   v_movie: '02_ui_view/v_movie.lua',
@@ -24,6 +25,7 @@ const targets = {
   v_dig: '02_ui_view/v_dig.lua',
   v_fishing: '02_ui_view/v_fishing.lua',
   v_hunting: '02_ui_view/v_hunting.lua',
+  v_gambling: '02_ui_view/v_gambling.lua',
   p_order: '04_program/p_order.lua',
   p_init: '04_program/p_init.lua',
 };
