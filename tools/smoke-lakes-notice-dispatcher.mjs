@@ -16,7 +16,7 @@ const taskNames = [...normalizedSource.matchAll(/t\['(聚贤庄任务_[^']+)'\]\
 if (taskNames.length !== 47) {
   throw new Error(`expected 47 pinned upstream lakes tasks, found ${taskNames.length}`);
 }
-const luaTaskNames = taskNames.map((name) => JSON.stringify(name)).join(',\\n    ');
+const luaTaskNames = taskNames.map((name) => JSON.stringify(name)).join(',\n    ');
 fs.writeFileSync(
   path.join(temp, 'p_lakes_notice.lua'),
   normalizedSource,
