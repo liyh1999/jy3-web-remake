@@ -265,5 +265,18 @@
   "script/02_ui_view/v_button.lua",
   "script/03_ui_component/c_movie.lua",
   "script/02_ui_view/v_movie.lua",
-  "script/02_ui_view/v_empty.lua"
+  "script/02_ui_view/v_empty.lua",
+  "script/03_ui_component/c_layout_v.lua",
+  "script/03_ui_component/c_scrollview.lua",
+  "script/03_ui_component/c_dialogue_system_story.lua",
+  "script/03_ui_component/c_dialogue_system_story1.lua",
+  "script/03_ui_component/c_dialogue_system_story3.lua",
+  "script/03_ui_component/c_dialogue_system_select.lua",
+  "script/03_ui_component/c_dialogue_system_select1.lua",
+  "script/02_ui_view/v_scrollview.lua",
+  "script/02_ui_view/v_dialogue_system_story.lua",
+  "script/02_ui_view/v_dialogue_system_story1.lua",
+  "script/02_ui_view/v_dialogue_system_story3.lua",
+  "script/02_ui_view/v_dialogue_system_select.lua",
+  "script/02_ui_view/v_dialogue_system_select1.lua"
 ]
