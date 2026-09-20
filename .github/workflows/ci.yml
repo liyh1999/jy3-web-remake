@@ -86,6 +86,7 @@ jobs:
           node --check tools/test-story-program-runtime.mjs
           node --check tools/smoke-base-story-programs.mjs
           node --check tools/smoke-init-story-programs.mjs
+          node --check tools/smoke-person-event-dispatcher.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
 
@@ -293,6 +294,9 @@ jobs:
 
       - name: Execute original p_init background startup
         run: node tools/smoke-init-story-programs.mjs
+
+      - name: Execute original p_person event dispatcher
+        run: node tools/smoke-person-event-dispatcher.mjs
 
       - name: Audit full original program API coverage
         run: |
