@@ -133,6 +133,27 @@
     '02_ui_view/v_movie.lua',
   ];
 
+  const DIALOGUE_UI_MODULES = [
+    { module: 'c_button', path: '03_ui_component/c_button.lua' },
+    { module: 'c_layout_v', path: '03_ui_component/c_layout_v.lua' },
+    { module: 'c_scrollview', path: '03_ui_component/c_scrollview.lua' },
+    { module: 'c_dialogue_system_story', path: '03_ui_component/c_dialogue_system_story.lua' },
+    { module: 'c_dialogue_system_story1', path: '03_ui_component/c_dialogue_system_story1.lua' },
+    { module: 'c_dialogue_system_story3', path: '03_ui_component/c_dialogue_system_story3.lua' },
+    { module: 'c_dialogue_system_select', path: '03_ui_component/c_dialogue_system_select.lua' },
+    { module: 'c_dialogue_system_select1', path: '03_ui_component/c_dialogue_system_select1.lua' },
+  ];
+  const DIALOGUE_UI_VIEWS = [
+    '02_ui_view/v_empty.lua',
+    '02_ui_view/v_button.lua',
+    '02_ui_view/v_scrollview.lua',
+    '02_ui_view/v_dialogue_system_story.lua',
+    '02_ui_view/v_dialogue_system_story1.lua',
+    '02_ui_view/v_dialogue_system_story3.lua',
+    '02_ui_view/v_dialogue_system_select.lua',
+    '02_ui_view/v_dialogue_system_select1.lua',
+  ];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -421,6 +442,23 @@ return true
     return gamblingUiPromise;
   }
 
+  let dialogueRuntimePromise = null;
+  async function prepareDialogueRuntime(onProgress) {
+    if (!dialogueRuntimePromise) {
+      dialogueRuntimePromise = (async () => {
+        const loadedModules = await loadModules(DIALOGUE_UI_MODULES, onProgress);
+        const loadedViews = await loadPrograms(DIALOGUE_UI_VIEWS, onProgress);
+        await loadProgram('06_notify/n_dialogue_system.lua');
+        await loadProgram('04_program/p_dialogue_system.lua');
+        return { loadedModules, loadedViews, loadedPrograms: 2 };
+      })().catch((error) => {
+        dialogueRuntimePromise = null;
+        throw error;
+      });
+    }
+    return dialogueRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -458,6 +496,8 @@ return true
     HUNTING_UI_VIEWS,
     GAMBLING_UI_MODULES,
     GAMBLING_UI_VIEWS,
+    DIALOGUE_UI_MODULES,
+    DIALOGUE_UI_VIEWS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
@@ -473,6 +513,7 @@ return true
     prepareFishingUI,
     prepareHuntingUI,
     prepareGamblingUI,
+    prepareDialogueRuntime,
     bootstrapData,
   };
 })();
