@@ -83,6 +83,7 @@ jobs:
           node --check tools/test-resource-resolver.mjs
           node --check tools/test-shop-model.mjs
           node --check tools/test-story-runtime-loader.mjs
+          node --check tools/test-quanzhen-gumu-runtime-loader.mjs
           node --check tools/test-story-program-runtime.mjs
           node --check tools/test-cross-system-story-resume.mjs
           node --check tools/smoke-base-story-programs.mjs
@@ -106,6 +107,9 @@ jobs:
 
       - name: Validate independent base story runtime loader
         run: node tools/test-story-runtime-loader.mjs
+
+      - name: Validate independent Quanzhen Gumu runtime loader
+        run: node tools/test-quanzhen-gumu-runtime-loader.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
