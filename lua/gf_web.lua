@@ -159,6 +159,73 @@ function G.ResetData()
 end
 
 function G.GetDeviceInfo(_) return "" end
+
+function G.log(...)
+    local parts = {}
+    for i = 1, select("#", ...) do
+        parts[#parts + 1] = tostring(select(i, ...))
+    end
+    print("[jy3] " .. table.concat(parts, "\t"))
+    return true
+end
+
+function G.getStrLen(value)
+    local source = tostring(value or "")
+    local ok, length = pcall(utf8.len, source)
+    if ok and length then return length end
+    return #source
+end
+
+function G.utf8sub(value, first, last)
+    local source = tostring(value or "")
+    local chars = {}
+    local ok = pcall(function()
+        for _, codepoint in utf8.codes(source) do
+            chars[#chars + 1] = utf8.char(codepoint)
+        end
+    end)
+    if not ok then return string.sub(source, tonumber(first) or 1, tonumber(last) or #source) end
+
+    local length = #chars
+    local i = tonumber(first) or 1
+    local j = tonumber(last) or length
+    if i < 0 then i = length + i + 1 end
+    if j < 0 then j = length + j + 1 end
+    if i < 1 then i = 1 end
+    if j > length then j = length end
+    if i > j or i > length then return "" end
+    return table.concat(chars, "", i, j)
+end
+
+function G.split(value, separator)
+    local source = tostring(value or "")
+    local sep = tostring(separator or "")
+    if sep == "" then
+        local result = {}
+        local ok = pcall(function()
+            for _, codepoint in utf8.codes(source) do
+                result[#result + 1] = utf8.char(codepoint)
+            end
+        end)
+        if ok then return result end
+        for i = 1, #source do result[#result + 1] = string.sub(source, i, i) end
+        return result
+    end
+
+    local result = {}
+    local start = 1
+    while true do
+        local from, to = string.find(source, sep, start, true)
+        if not from then
+            result[#result + 1] = string.sub(source, start)
+            break
+        end
+        result[#result + 1] = string.sub(source, start, from - 1)
+        start = to + 1
+    end
+    return result
+end
+
 function G.misc() return G.QueryName(0x100f0001) end
 
 -- Desktop runtime surfaces. They are intentionally thin/no-op until their Web systems land.
