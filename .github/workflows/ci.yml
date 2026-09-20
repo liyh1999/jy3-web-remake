@@ -365,6 +365,9 @@ jobs:
           test -f dist/runtime-config.js
           test -f dist/build-info.json
 
+      - name: Smoke five mini-games from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_MINIGAME_SOURCE_BASE=dist/vendor/upstream/JY3/script node tools/smoke-logging-ui.mjs
+
       - name: Simulate disconnected runtime
         run: npm run verify:offline
 
