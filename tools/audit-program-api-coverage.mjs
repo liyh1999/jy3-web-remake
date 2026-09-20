@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -201,6 +202,41 @@ for (const [name,n] of sortedMap(allCallCounts)) {
 const direct = { available: [], missing: [] };
 for (const [name,n] of sortedMap(allDirectCounts)) {
   (runtimeMethods.has(name) ? direct.available : direct.missing).push([name,n]);
+}
+
+const gapSignature = {
+  schemaVersion: 1,
+  upstreamRevision: U.UPSTREAM_REV,
+  programCount: expected.length,
+  originalDefinitionCount: originalDefs.size,
+  externalNotifyDefinitionCount: externalOriginalDefs.size,
+  uniqueNamedGCalls: allCallCounts.size,
+  categoryCounts: {
+    original: categories.original.length,
+    externalOriginal: categories.externalOriginal.length,
+    runtime: categories.runtime.length,
+    alias: categories.alias.length,
+    unresolved: categories.unresolved.length,
+  },
+  externalOriginal: categories.externalOriginal,
+  runtime: categories.runtime,
+  aliases: categories.alias,
+  dynamicCallPrefixes: sortedMap(allDynamicCounts),
+  directMissing: direct.missing,
+};
+
+const baselinePath = 'tools/program-api-baseline.json';
+if (process.argv.includes('--write-baseline')) {
+  fs.writeFileSync(baselinePath, JSON.stringify(gapSignature, null, 2) + '\n');
+} else {
+  const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+  try {
+    assert.deepStrictEqual(gapSignature, baseline);
+  } catch (error) {
+    console.error('full program API baseline changed; inspect the diff, then run: node tools/audit-program-api-coverage.mjs --write-baseline');
+    console.error(JSON.stringify(gapSignature, null, 2));
+    throw error;
+  }
 }
 
 const summary = {
