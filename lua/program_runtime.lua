@@ -7,6 +7,7 @@ function M.new(options)
         co_meta = setmetatable({}, { __mode = "k" }),
         ready = {},
         signals = {},
+        signal_payloads = {},
         timers = {},
         next_timer_token = 1,
         pumping = false,
@@ -34,9 +35,12 @@ function M.new(options)
     local function consume_signal(name)
         name = tostring(name)
         local n = self.signals[name] or 0
-        if n <= 0 then return false end
+        if n <= 0 then return false, nil end
         if n == 1 then self.signals[name] = nil else self.signals[name] = n - 1 end
-        return true
+        local queue = self.signal_payloads[name]
+        local payload = queue and table.remove(queue, 1) or table.pack()
+        if queue and #queue == 0 then self.signal_payloads[name] = nil end
+        return true, payload
     end
 
     local resume_program
@@ -103,8 +107,10 @@ function M.new(options)
         local meta = current_meta()
         if not meta then return nil end
         for event_name, index in pairs(meta.cases) do
-            if consume_signal(event_name) then
+            local consumed, payload = consume_signal(event_name)
+            if consumed then
                 meta.cases = {}
+                meta.event_info = payload
                 return index
             end
         end
@@ -118,10 +124,22 @@ function M.new(options)
 
     function self:wait1(event_name)
         local event = tostring(event_name)
-        if consume_signal(event) then return true end
         local meta = current_meta()
         if not meta then return false end
+        local consumed, payload = consume_signal(event)
+        if consumed then
+            meta.event_info = payload
+            return true
+        end
         return coroutine.yield("__jy_wait_event", event)
+    end
+
+    function self:event_info()
+        local meta = current_meta()
+        if not meta then return nil end
+        local payload = meta.event_info or table.pack()
+        meta.event_info = nil
+        return table.unpack(payload, 1, payload.n or #payload)
     end
 
     function self:wake_timer(token)
@@ -138,23 +156,30 @@ function M.new(options)
         return enqueue(meta, true)
     end
 
-    function self:trig_event(event_name)
+    function self:trig_event(event_name, ...)
         local event = tostring(event_name)
+        local payload = table.pack(...)
         local woke = 0
         for _, meta in pairs(self.programs) do
             if not meta.removed and meta.wait then
                 if meta.wait.kind == "event" and meta.wait.name == event then
                     meta.wait = nil
+                    meta.event_info = payload
                     if enqueue(meta, true) then woke = woke + 1 end
                 elseif meta.wait.kind == "case" and meta.cases[event] ~= nil then
                     local result = meta.cases[event]
                     meta.cases = {}
                     meta.wait = nil
+                    meta.event_info = payload
                     if enqueue(meta, result) then woke = woke + 1 end
                 end
             end
         end
-        if woke == 0 then self.signals[event] = (self.signals[event] or 0) + 1 end
+        if woke == 0 then
+            self.signals[event] = (self.signals[event] or 0) + 1
+            self.signal_payloads[event] = self.signal_payloads[event] or {}
+            self.signal_payloads[event][#self.signal_payloads[event] + 1] = payload
+        end
         if woke > 0 then self.schedule(0) end
         return true
     end
@@ -231,6 +256,7 @@ function M.new(options)
         self.co_meta = setmetatable({}, { __mode = "k" })
         self.ready = {}
         self.signals = {}
+        self.signal_payloads = {}
         self.timers = {}
         self.next_timer_token = 1
         self.pumping = false
