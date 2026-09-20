@@ -60,6 +60,7 @@ local emei_calls = 0
 local gaibang_calls = 0
 local taohuadao_calls = 0
 local xingxiu_calls = 0
+local xuedaomen_calls = 0
 G.api['城镇-渡口'] = function() city_calls = city_calls + 1 return true end
 G.api['初入全真-赵志敬'] = function() quanzhen_calls = quanzhen_calls + 1 return true end
 G.api['初入古墓-小龙女'] = function() gumu_calls = gumu_calls + 1 return true end
@@ -70,6 +71,7 @@ G.api['初入峨嵋派-周芷若'] = function() emei_calls = emei_calls + 1 retu
 G.api['初入丐帮-洪七公'] = function() gaibang_calls = gaibang_calls + 1 return true end
 G.api['初入桃花岛-黄药师'] = function() taohuadao_calls = taohuadao_calls + 1 return true end
 G.api['初入星宿-丁春秋'] = function() xingxiu_calls = xingxiu_calls + 1 return true end
+G.api['初入血刀门-血刀老祖'] = function() xuedaomen_calls = xuedaomen_calls + 1 return true end
 G.api['hunting'] = function() hunt_calls = hunt_calls + 1 return true end
 G.api['add_time'] = function(value)
     time_calls = time_calls + (tonumber(value) or 0)
@@ -147,6 +149,12 @@ assert(xingxiu_calls == 1, 'original p_person did not dispatch 初入星宿-丁�
 kind = select(1, __jy_story_program_status('地图系统_人物'))
 assert(kind == 'case', 'p_person dispatcher did not keep listening after Xingxiu event')
 
+G.trig_event('初入血刀门-血刀老祖')
+__jy_story_program_browser_pump(0)
+assert(xuedaomen_calls == 1, 'original p_person did not dispatch 初入血刀门-血刀老祖')
+kind = select(1, __jy_story_program_status('地图系统_人物'))
+assert(kind == 'case', 'p_person dispatcher did not keep listening after Xuedaomen event')
+
 assert(__jy_story_program_reset() == true)
 assert(not __jy_story_program_has('地图系统_人物'), 'p_person dispatcher leaked after reset')
 
@@ -159,6 +167,7 @@ print('  Shaolin/Emei NPC events route through the same persistent dispatcher')
 print('  Gaibang NPC events route through the same persistent dispatcher')
 print('  Taohuadao NPC events route through the same persistent dispatcher')
 print('  Xingxiu NPC events route through the same persistent dispatcher')
+print('  Xuedaomen NPC events route through the same persistent dispatcher')
 `;
 
 fs.writeFileSync(path.join(temp, 'smoke.lua'), harness, 'utf8');
