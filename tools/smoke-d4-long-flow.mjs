@@ -27,6 +27,7 @@ for (const name of dataNames) {
 
 const programNames = [
   'p_order.lua',
+  'p_citymap_system.lua',
   'p_newgame.lua',
   'p_niujiacun.lua',
   'p_story-town or city.lua',
@@ -123,6 +124,7 @@ end
 
 for _, name in ipairs({
     'p_order.lua',
+    'p_citymap_system.lua',
     'p_newgame.lua',
     'p_niujiacun.lua',
     'p_story-town or city.lua',
