@@ -280,6 +280,9 @@ function G.call(name, ...)
         get_ponit = "get_point",
         ser_point = "set_point",
         ser_role = "set_role",
+        add_itme = "add_item",
+        schoollove = "add_schoollove",
+        ["set,note"] = "set_note",
     }
     name = battle_alias[name] or name
 
