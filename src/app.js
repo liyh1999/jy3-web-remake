@@ -323,6 +323,13 @@
       ui.status.textContent = '全真/古墓原剧情运行时已启用';
       return loaded;
     },
+    async prepareOriginalWudangHuashan(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareWudangHuashanRuntime(progress);
+      fengari.load('return __jy_dialogue_enable_original(true)', '@web/enable-original-wudang-huashan-dialogue')();
+      ui.status.textContent = '武当/华山原剧情运行时已启用';
+      return loaded;
+    },
     disableOriginalDialogue() {
       return fengari.load('return __jy_dialogue_enable_original(false)', '@web/disable-original-dialogue')();
     },
@@ -760,8 +767,8 @@
       try {
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
         originalProgramLoaded = loaded.loadedPrograms === window.JYUpstream.CORE_PROGRAMS.length;
-        const sect = await window.JYUpstream.prepareQuanzhenGumuRuntime((message) => { ui.status.textContent = message; });
-        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${sect.storyPrograms.length} 个 / 首批门派 ${sect.sectPrograms.length} 个已就绪`;
+        const sect = await window.JYUpstream.prepareWudangHuashanRuntime((message) => { ui.status.textContent = message; });
+        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${sect.storyPrograms.length} 个 / 已接门派 ${sect.allSectPrograms.length} 个已就绪`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
         originalProgramLoaded = false;
