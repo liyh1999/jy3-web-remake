@@ -8,7 +8,8 @@ globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
 
-const sourceBase = path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
+const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
+const sourceBase = process.env.JY3_STORY_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-base-story-'));
 for (const name of ['p_task.lua', 'p_story-town or city.lua']) {
   const source = fs.readFileSync(path.join(sourceBase, name), 'utf8');
@@ -41,7 +42,8 @@ package.preload['js'] = function()
     }
 end
 
-assert(loadfile('lua/gf_web.lua'))()
+local runtime_root = assert(os.getenv('JY3_RUNTIME_ROOT'), 'JY3_RUNTIME_ROOT missing')
+assert(loadfile(runtime_root .. '/lua/gf_web.lua'))()
 assert(__jy_dialogue_enable_original(true) == true)
 assert(loadfile(temp .. '/p_task.lua'))()
 assert(loadfile(temp .. '/p_story-town or city.lua'))()
@@ -144,7 +146,7 @@ print('  Qingcheng conquered revisit + Hengshan leader revisit execute from p_ta
 const harnessPath = path.join(temp, 'smoke.lua');
 fs.writeFileSync(harnessPath, harness, 'utf8');
 const run = spawnSync('lua5.3', [harnessPath], {
-  env: { ...process.env, JY3_BASE_STORY_TMP: temp },
+  env: { ...process.env, JY3_BASE_STORY_TMP: temp, JY3_RUNTIME_ROOT: runtimeRoot },
   encoding: 'utf8',
 });
 if (run.stdout) process.stdout.write(run.stdout);
