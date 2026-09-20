@@ -47,6 +47,7 @@ end
 
 assert(loadfile(runtime_root .. '/lua/gf_web.lua'))()
 assert(__jy_dialogue_enable_original(true) == true)
+G.__original_battle_enabled = true
 assert(loadfile(temp .. '/p_school_shaolin.lua'))()
 
 local original_query = G.QueryName
