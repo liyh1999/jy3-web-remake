@@ -157,6 +157,10 @@ G.api['get_magic'] = function(id)
     return magic_owned[tonumber(id) or 0] or 0
 end
 G.api['set_note'] = function(value) record('set_note', tostring(value)); return true end
+G.api['地图_进入地图'] = function(name, map, family)
+    record('地图_进入地图', tostring(name), tonumber(map) or map, tonumber(family) or family)
+    return true
+end
 G.api['set_CH'] = function(value)
     title_calls[#title_calls + 1] = tostring(value)
     record('set_CH', tostring(value))
