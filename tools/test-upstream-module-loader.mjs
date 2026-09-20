@@ -11,6 +11,13 @@ globalThis.fengari = {
 };
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 const U = window.JYUpstream;
+if (U.ALL_PROGRAMS.length !== 24) throw new Error('04_program inventory mismatch: ' + U.ALL_PROGRAMS.length);
+if (new Set(U.ALL_PROGRAMS).size !== 24) throw new Error('04_program inventory contains duplicates');
+if (U.CACHED_PROGRAMS.join('\n') !== U.ALL_PROGRAMS.join('\n')) throw new Error('all programs must be cached/compile-gated');
+if (U.CORE_PROGRAMS.length !== 5 || U.ON_DEMAND_PROGRAMS.length !== 19) throw new Error('core/on-demand program split mismatch');
+for (const required of ['04_program/p_task.lua','04_program/p_school_shaolin.lua','04_program/p_story-town or city.lua']) {
+  if (!U.ALL_PROGRAMS.includes(required)) throw new Error('missing original program: ' + required);
+}
 if (U.LOGGING_UI_MODULES.map(x => x.module).join(',') !== 'c_button,c_logging,c_movie') throw new Error('logging component module list mismatch');
 if (U.LOGGING_UI_VIEWS.join(',') !== '02_ui_view/v_button.lua,02_ui_view/v_logging.lua,02_ui_view/v_movie.lua') throw new Error('logging view load order mismatch');
 if (typeof U.prepareLoggingUI !== 'function') throw new Error('prepareLoggingUI API missing');
