@@ -3,7 +3,7 @@
   const $$ = (s) => [...document.querySelectorAll(s)];
   const SAVE_KEY = 'jy3-web-remake:save:v1';
   const ui = {
-    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'),
+    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
@@ -217,6 +217,19 @@
       ui.status.textContent = '原版打猎程序运行中 · 1/2 切换射箭/捕猎，点击猎物行动';
       return loaded;
     },
+    async startOriginalGambling(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      prepareMinigameSurface();
+      const loaded = await window.JYUpstream.prepareGamblingUI(progress);
+      progress('押宝资源加载完成，正在启动原版程序…');
+      const ok = fengari.load(
+        "return __jy_minigame_start('gambling')",
+        '@web/start-original-gambling'
+      )();
+      if (!ok) throw new Error('原 gambling 程序启动失败');
+      ui.status.textContent = '原版押宝程序运行中 · 选择单/双/小/大下注后点击中央骰子';
+      return loaded;
+    },
     async showLoggingUi(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
@@ -321,6 +334,7 @@
       if (ui.dig) ui.dig.disabled = false;
       if (ui.fishing) ui.fishing.disabled = false;
       if (ui.hunting) ui.hunting.disabled = false;
+      if (ui.gambling) ui.gambling.disabled = false;
       setTimeout(() => {
         try {
           fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
@@ -621,6 +635,7 @@
       if (ui.dig) ui.dig.disabled = false;
       if (ui.fishing) ui.fishing.disabled = false;
       if (ui.hunting) ui.hunting.disabled = false;
+      if (ui.gambling) ui.gambling.disabled = false;
       if (ui.save) ui.save.disabled = false;
       refreshLoadButton();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
@@ -678,6 +693,18 @@
           console.error('hunting mini-game start failed', error);
           ui.status.textContent = `打猎小游戏启动失败：${error?.message || error}`;
           ui.hunting.disabled = false;
+        }
+      };
+      if (ui.gambling) ui.gambling.onclick = async () => {
+        ui.gambling.disabled = true;
+        try {
+          resetJsState();
+          resetLuaState();
+          await window.JYWeb.startOriginalGambling((message) => { ui.status.textContent = message; });
+        } catch (error) {
+          console.error('gambling mini-game start failed', error);
+          ui.status.textContent = `押宝小游戏启动失败：${error?.message || error}`;
+          ui.gambling.disabled = false;
         }
       };
       if (ui.save) ui.save.onclick = saveGame;
