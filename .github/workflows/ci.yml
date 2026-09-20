@@ -21,6 +21,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check src/app.js
+          node --check src/save-store.js
           node --check src/audio.js
           node --check src/audio-controls.js
           node --check src/animation-resources.js
@@ -65,6 +66,7 @@ jobs:
           node --check tools/smoke-character-growth.mjs
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
+          node --check tools/test-save-store.mjs
           node --check tools/smoke-shop-runtime.mjs
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
@@ -275,6 +277,9 @@ jobs:
 
       - name: Save-state roundtrip
         run: node tools/smoke-save-state.mjs
+
+      - name: Versioned multi-slot save store
+        run: node tools/test-save-store.mjs
 
       - name: Compile normalized upstream Lua
         run: node tools/check-normalized-upstream.mjs
