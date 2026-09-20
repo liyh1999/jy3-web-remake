@@ -82,6 +82,7 @@ jobs:
           node --check tools/test-renderer.mjs
           node --check tools/test-resource-resolver.mjs
           node --check tools/test-shop-model.mjs
+          node --check tools/test-story-runtime-loader.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
 
@@ -96,6 +97,9 @@ jobs:
 
       - name: Validate upstream Lua module loader
         run: node tools/test-upstream-module-loader.mjs
+
+      - name: Validate independent base story runtime loader
+        run: node tools/test-story-runtime-loader.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
