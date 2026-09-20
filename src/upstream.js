@@ -73,6 +73,13 @@
   const ON_DEMAND_PROGRAMS = ALL_PROGRAMS.filter(path => !CORE_PROGRAM_SET.has(path));
   const CACHED_PROGRAMS = [...ALL_PROGRAMS];
 
+  const CORE_NOTIFY = [
+    '06_notify/n_common.lua',
+    '06_notify/n_citymap_system.lua',
+    '06_notify/n_dialogue_system.lua',
+    '06_notify/n_cheat_system.lua',
+  ];
+
   const LOGGING_UI_MODULES = [
     { module: 'c_button', path: '03_ui_component/c_button.lua' },
     { module: 'c_logging', path: '03_ui_component/c_logging.lua' },
@@ -423,8 +430,9 @@ return true
       loadedModules += 1;
     }
     fengari.load('return __jy_reset_runtime()', '@web/reset-after-data')();
+    const loadedNotifies = await loadPrograms(CORE_NOTIFY, onProgress);
     const loadedPrograms = await loadPrograms(CORE_PROGRAMS, onProgress);
-    return { loadedModules, loadedPrograms };
+    return { loadedModules, loadedNotifies, loadedPrograms };
   }
 
   window.JYUpstream = {
@@ -439,6 +447,7 @@ return true
     CORE_PROGRAMS,
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
+    CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
     DIG_UI_MODULES,
