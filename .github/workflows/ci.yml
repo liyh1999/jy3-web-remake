@@ -150,6 +150,9 @@ jobs:
       - name: Validate browser mini-game pump bridge
         run: node tools/check-minigame-browser-pump.mjs
 
+      - name: Validate story-to-mini-game resume bridge
+        run: node tools/test-minigame-story-bridge.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
