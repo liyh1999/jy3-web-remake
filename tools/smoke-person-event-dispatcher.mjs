@@ -58,6 +58,7 @@ local huashan_calls = 0
 local shaolin_calls = 0
 local emei_calls = 0
 local gaibang_calls = 0
+local taohuadao_calls = 0
 G.api['城镇-渡口'] = function() city_calls = city_calls + 1 return true end
 G.api['初入全真-赵志敬'] = function() quanzhen_calls = quanzhen_calls + 1 return true end
 G.api['初入古墓-小龙女'] = function() gumu_calls = gumu_calls + 1 return true end
@@ -66,6 +67,7 @@ G.api['初入华山-岳不群'] = function() huashan_calls = huashan_calls + 1 r
 G.api['初入少林-慧伦'] = function() shaolin_calls = shaolin_calls + 1 return true end
 G.api['初入峨嵋派-周芷若'] = function() emei_calls = emei_calls + 1 return true end
 G.api['初入丐帮-洪七公'] = function() gaibang_calls = gaibang_calls + 1 return true end
+G.api['初入桃花岛-黄药师'] = function() taohuadao_calls = taohuadao_calls + 1 return true end
 G.api['hunting'] = function() hunt_calls = hunt_calls + 1 return true end
 G.api['add_time'] = function(value)
     time_calls = time_calls + (tonumber(value) or 0)
@@ -131,6 +133,12 @@ assert(gaibang_calls == 1, 'original p_person did not dispatch 初入丐帮-洪�
 kind = select(1, __jy_story_program_status('地图系统_人物'))
 assert(kind == 'case', 'p_person dispatcher did not keep listening after Gaibang event')
 
+G.trig_event('初入桃花岛-黄药师')
+__jy_story_program_browser_pump(0)
+assert(taohuadao_calls == 1, 'original p_person did not dispatch 初入桃花岛-黄药师')
+kind = select(1, __jy_story_program_status('地图系统_人物'))
+assert(kind == 'case', 'p_person dispatcher did not keep listening after Taohuadao event')
+
 assert(__jy_story_program_reset() == true)
 assert(not __jy_story_program_has('地图系统_人物'), 'p_person dispatcher leaked after reset')
 
@@ -141,6 +149,7 @@ print('  Quanzhen/Gumu NPC events route through the same persistent dispatcher')
 print('  Wudang/Huashan NPC events route through the same persistent dispatcher')
 print('  Shaolin/Emei NPC events route through the same persistent dispatcher')
 print('  Gaibang NPC events route through the same persistent dispatcher')
+print('  Taohuadao NPC events route through the same persistent dispatcher')
 `;
 
 fs.writeFileSync(path.join(temp, 'smoke.lua'), harness, 'utf8');
