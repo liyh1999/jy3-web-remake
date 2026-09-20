@@ -89,6 +89,7 @@ jobs:
           node --check tools/smoke-quanzhen-gumu-basic.mjs
           node --check tools/smoke-wudang-huashan-basic.mjs
           node --check tools/smoke-shaolin-basic.mjs
+          node --check tools/smoke-emei-basic.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -335,8 +336,11 @@ jobs:
       - name: Execute original Wudang Huashan sect branches
         run: node tools/smoke-wudang-huashan-basic.mjs
 
-      - name: Execute original Shaolin admission and greeting
+      - name: Execute original Shaolin sect branches
         run: node tools/smoke-shaolin-basic.mjs
+
+      - name: Execute original Emei admission and greeting
+        run: node tools/smoke-emei-basic.mjs
 
       - name: Audit full original program API coverage
         run: |
@@ -482,6 +486,11 @@ jobs:
 
       - name: Smoke Wudang Huashan sect branches from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-wudang-huashan-basic.mjs
+
+      - name: Smoke Shaolin Emei sect branches from offline dist
+        run: |
+          JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-shaolin-basic.mjs
+          JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-emei-basic.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
