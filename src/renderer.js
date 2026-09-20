@@ -704,6 +704,59 @@
     return true;
   }
 
+  const tweenGeneration = new Map();
+
+  function interpolatePackedColor(from, to, progress) {
+    const a = u32(from) & 0xffffff;
+    const b = u32(to) & 0xffffff;
+    const channel = (shift) => {
+      const start = (a >>> shift) & 0xff;
+      const end = (b >>> shift) & 0xff;
+      return Math.round(start + (end - start) * progress);
+    };
+    return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+  }
+
+  function tweenNodeProperty(handle, key, duration, target) {
+    const node = nodeByHandle(handle);
+    if (!node) return false;
+    const name = String(key || '');
+    if (!name || name === 'parent' || name === 'childCount' || name === 'handle' || name === 'children') return false;
+
+    const end = Number(target);
+    const start = Number(node[name]);
+    if (!Number.isFinite(end) || !Number.isFinite(start)) {
+      node[name] = target;
+      return true;
+    }
+
+    const ms = Math.max(0, Number(duration) || 0);
+    const tokenKey = `${node.handle}:${name}`;
+    const generation = (tweenGeneration.get(tokenKey) || 0) + 1;
+    tweenGeneration.set(tokenKey, generation);
+
+    if (ms === 0 || typeof requestAnimationFrame === 'undefined') {
+      node[name] = end;
+      return true;
+    }
+
+    let startedAt = null;
+    const isColor = /color/i.test(name);
+    const step = (timestamp) => {
+      if (tweenGeneration.get(tokenKey) !== generation) return;
+      if (startedAt === null) startedAt = Number(timestamp) || 0;
+      const elapsed = Math.max(0, (Number(timestamp) || startedAt) - startedAt);
+      const progress = Math.min(1, elapsed / ms);
+      node[name] = isColor
+        ? interpolatePackedColor(start, end, progress)
+        : start + (end - start) * progress;
+      if (progress < 1) requestAnimationFrame(step);
+      else node[name] = end;
+    };
+    requestAnimationFrame(step);
+    return true;
+  }
+
   function nodeCall(handle, method, ...args) {
     const node = nodeByHandle(handle);
     if (!node) return 0;
@@ -813,6 +866,7 @@
     cloneNodeHandle,
     getNodeProperty,
     setNodeProperty,
+    tweenNodeProperty,
     nodeCall,
     findNode,
     findNodeHandle,
