@@ -8,6 +8,7 @@ globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
 
+const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const sourceBase = process.env.JY3_LAKES_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-lakes-dispatch-'));
 fs.writeFileSync(
