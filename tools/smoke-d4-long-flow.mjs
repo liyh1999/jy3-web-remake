@@ -212,7 +212,7 @@ assert(team_has(12) and G.call('get_item', 75) == village_item75, 'world/minigam
 
 -- 4) Original Wudang admission, then a real battle through the same runtime.
 G.call('set_point', 15, 20)
-G.call('add_love', 159, 50)
+G.call('set_love', 159, 50)
 drive('初入武当', {})
 assert(tonumber(body()['8']) == 1 and body()['12'] == '俞岱岩', '武当入门 school/master state mismatch')
 assert(body()['9'] == '看门弟子', '武当入门 title mismatch')
@@ -220,7 +220,7 @@ assert(G.call('get_item', 127) >= 1, '武当入门 item reward missing')
 assert(G.call('get_magicexp', 75) > 0, '武当入门 magic 75 missing')
 assert(team_has(12) and G.call('get_item', 75) == village_item75, '武当入门 lost prior 牛家村 state')
 
-G.call('add_love', 161, 50)
+G.call('set_love', 161, 50)
 local love_before = G.call('get_love', 161)
 local battle_before = battle_count
 drive('初入武当-俞莲舟', {2})
