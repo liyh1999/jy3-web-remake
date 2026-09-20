@@ -86,6 +86,7 @@ jobs:
           node --check tools/test-quanzhen-gumu-runtime-loader.mjs
           node --check tools/smoke-quanzhen-gumu-basic.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
+          node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
           node --check tools/test-cross-system-story-resume.mjs
           node --check tools/smoke-base-story-programs.mjs
@@ -317,6 +318,9 @@ jobs:
 
       - name: Execute original Quanzhen to Gumu transition
         run: node tools/smoke-quanzhen-gumu-transition.mjs
+
+      - name: Execute original Gumu Li Mochou branch
+        run: node tools/smoke-gumu-limochou.mjs
 
       - name: Audit full original program API coverage
         run: |
