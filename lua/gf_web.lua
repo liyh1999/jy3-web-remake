@@ -7,6 +7,8 @@ local G = { api = {} }
 local objects = {}
 local templates = {}
 local table_ids = {}
+local dynamic_ids = {}
+local dynamic_next = {}
 local active = nil
 local missing_calls = {}
 local missing_objects = {}
@@ -38,8 +40,8 @@ local function deep_copy(value, seen)
     return copy
 end
 
-function G.deepcopy(destination, source)
-    if type(destination) ~= "table" or type(source) ~= "table" then return destination end
+function G.deepcopy(source, destination)
+    if type(source) ~= "table" or type(destination) ~= "table" then return destination end
     for k in pairs(destination) do destination[k] = nil end
     local copy = deep_copy(source)
     for k, v in pairs(copy) do destination[k] = v end
@@ -149,6 +151,15 @@ function G.DBTable(type_name)
 end
 
 function G.ResetData()
+    for type_name, ids in pairs(dynamic_ids) do
+        local kept = {}
+        for _, id in ipairs(table_ids[type_name] or {}) do
+            if not ids[id] then kept[#kept + 1] = id end
+        end
+        table_ids[type_name] = kept
+    end
+    dynamic_ids = {}
+    dynamic_next = {}
     objects = {}
     for id, template in pairs(templates) do
         objects[id] = deep_copy(template)
@@ -156,6 +167,36 @@ function G.ResetData()
     missing_calls = {}
     missing_objects = {}
     sync_web_snapshot()
+end
+
+function G.addNewInst2Dynamic(instance, type_name)
+    if type(instance) ~= "table" then return nil end
+    type_name = tostring(type_name or "")
+    if type_name == "" then return nil end
+
+    table_ids[type_name] = table_ids[type_name] or {}
+    dynamic_ids[type_name] = dynamic_ids[type_name] or {}
+
+    local next_id = dynamic_next[type_name]
+    if not next_id then
+        local max_id = 0
+        for _, id in ipairs(table_ids[type_name]) do
+            id = tonumber(id) or 0
+            if id > max_id then max_id = id end
+        end
+        next_id = max_id + 1
+    end
+    while objects[next_id] ~= nil or templates[next_id] ~= nil do
+        next_id = next_id + 1
+    end
+
+    instance.name = next_id
+    instance.__placeholder = nil
+    objects[next_id] = instance
+    table_ids[type_name][#table_ids[type_name] + 1] = next_id
+    dynamic_ids[type_name][next_id] = true
+    dynamic_next[type_name] = next_id + 1
+    return instance
 end
 
 function G.GetDeviceInfo(_) return "" end
