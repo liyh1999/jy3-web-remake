@@ -92,6 +92,7 @@ jobs:
           node --check tools/smoke-shaolin-basic.mjs
           node --check tools/smoke-emei-basic.mjs
           node --check tools/smoke-gaibang-basic.mjs
+          node --check tools/smoke-taohuadao-basic.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -350,6 +351,9 @@ jobs:
       - name: Execute original Gaibang sect branches
         run: node tools/smoke-gaibang-basic.mjs
 
+      - name: Execute original Taohuadao sect branches
+        run: node tools/smoke-taohuadao-basic.mjs
+
       - name: Audit full original program API coverage
         run: |
           node tools/audit-program-api-coverage.mjs
@@ -502,6 +506,9 @@ jobs:
 
       - name: Smoke Gaibang sect branches from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-gaibang-basic.mjs
+
+      - name: Smoke Taohuadao sect branches from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-taohuadao-basic.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
