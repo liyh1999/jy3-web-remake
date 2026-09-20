@@ -1,4 +1,5 @@
 local temp = assert(os.getenv('JY3_LOGGING_TMP'), 'JY3_LOGGING_TMP missing')
+local runtime_root = os.getenv('JY3_RUNTIME_ROOT') or '.'
 local nodes, next_handle = {}, 1
 local scheduled, cancelled, finished = {}, {}, nil
 local web_host = {}
@@ -225,11 +226,11 @@ function G.start_program() return true end
 function G.stop_program() return true end
 function G.remove_program() return true end
 
-assert(loadfile('lua/runtime_shims.lua'))()
+assert(loadfile(runtime_root .. '/lua/runtime_shims.lua'))()
 package.preload['program_runtime'] = function()
-    return assert(loadfile('lua/program_runtime.lua'))()
+    return assert(loadfile(runtime_root .. '/lua/program_runtime.lua'))()
 end
-assert(loadfile('lua/minigame_web.lua'))()
+assert(loadfile(runtime_root .. '/lua/minigame_web.lua'))()
 
 package.preload['c_button'] = function()
     return assert(loadfile(temp .. '/c_button.lua'))()
@@ -677,7 +678,14 @@ assert(finished == 'gambling', 'browser host was not notified of gambling comple
 __jy_minigame_reset()
 assert(__jy_minigame_signal_count('跳骰') == 0, 'queued gambling roll signals leaked after reset')
 assert(__jy_minigame_signal_count('赌博结束') == 0, 'queued gambling finish signals leaked after reset')
+assert(__jy_minigame_pending_timers() == 0, 'five-game sequence left pending timers after final reset')
+for _, ui_name in ipairs({'v_logging', 'v_dig', 'v_fishing', 'v_hunting', 'v_gambling', 'v_movie'}) do
+    assert(G.getUI(ui_name) == nil, 'five-game sequence leaked UI: ' .. ui_name)
+end
 
+print('five mini-game sequential isolation PASS')
+print('  logging -> dig -> fishing -> hunting -> gambling completed in one Lua process')
+print('  final reset has no mini-game UI/timer residue')
 print('original gambling scheduler PASS')
 print('  v_empty + v_button + v_gambling/c_gambling mounted and initialized')
 print('  单+小 bets -> 800ms dice movie -> 500ms settle -> original 1+2 payout/bankroll')
