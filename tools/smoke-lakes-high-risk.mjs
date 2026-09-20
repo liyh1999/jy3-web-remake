@@ -93,6 +93,14 @@ G.api['add_schoollove'] = function(id, delta)
     return true
 end
 
+local function enemy_count(args)
+    local count = 0
+    for i = 5, 10 do
+        if tonumber(args[i]) ~= 0 then count = count + 1 end
+    end
+    return count
+end
+
 local function run_case(choice, m, o)
     menu_choice = choice
     random_values = {19, m, o, 3}
@@ -112,18 +120,16 @@ local function run_case(choice, m, o)
     if choice == 1 then
         assert(point15 == 2, 'help-Shaolin morality delta mismatch')
         assert(school[1] == 5 and school[2] == -5, 'help-Shaolin school reputation mismatch')
-        local expected = 4 + m
-        assert(#battle_args == expected, 'help-Shaolin enemy formation size mismatch for m=' .. tostring(m))
+        assert(enemy_count(battle_args) == m, 'help-Shaolin enemy formation size mismatch for m=' .. tostring(m))
     elseif choice == 2 then
         assert(point15 == -2, 'help-Wudang morality delta mismatch')
         assert(school[1] == -5 and school[2] == 5, 'help-Wudang school reputation mismatch')
-        local expected = 4 + m
-        assert(#battle_args == expected, 'help-Wudang enemy formation size mismatch for m=' .. tostring(m))
+        assert(enemy_count(battle_args) == m, 'help-Wudang enemy formation size mismatch for m=' .. tostring(m))
     else
         assert(point15 == -2, 'fight-both morality delta mismatch')
         assert(school[1] == -5 and school[2] == -5, 'fight-both school reputation mismatch')
-        local expected = ({[1]=6,[2]=8,[3]=10})[o]
-        assert(#battle_args == expected, 'fight-both enemy formation size mismatch for o=' .. tostring(o))
+        local expected = ({[1]=2,[2]=4,[3]=6})[o]
+        assert(enemy_count(battle_args) == expected, 'fight-both enemy formation size mismatch for o=' .. tostring(o))
     end
 end
 
