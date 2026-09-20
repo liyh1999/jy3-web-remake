@@ -153,6 +153,9 @@ jobs:
       - name: Validate story-to-mini-game resume bridge
         run: node tools/test-minigame-story-bridge.mjs
 
+      - name: Validate original typo call aliases
+        run: node tools/test-original-call-aliases.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
