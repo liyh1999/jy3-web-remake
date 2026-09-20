@@ -650,6 +650,12 @@ function __jy_register_data_source(source, chunk_name)
 end
 
 function __jy_reset_runtime()
+    if type(_G.__jy_story_program_reset) == "function" then
+        pcall(_G.__jy_story_program_reset)
+    end
+    active_wait_event = nil
+    active_event_info = nil
+    queued_story_events = {}
     G.ResetData()
     return true
 end
