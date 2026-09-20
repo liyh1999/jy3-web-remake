@@ -458,6 +458,12 @@ jobs:
       - name: Smoke base story branches from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_STORY_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-base-story-programs.mjs
 
+      - name: Smoke Quanzhen Gumu sect branches from offline dist
+        run: |
+          JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-quanzhen-gumu-basic.mjs
+          JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-quanzhen-gumu-transition.mjs
+          JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-gumu-limochou.mjs
+
       - name: Simulate disconnected runtime
         run: npm run verify:offline
 
