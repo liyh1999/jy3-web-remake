@@ -139,8 +139,8 @@ G.api['input'] = function()
 end
 G.api['puzzle'] = function()
     G.misc()['拼图结果'] = 1
-    G.misc()['计时器'] = 1300
-    record('puzzle', 1300)
+    G.misc()['计时器'] = 1000
+    record('puzzle', 1000)
     return true
 end
 G.api['set_note'] = function(note)
