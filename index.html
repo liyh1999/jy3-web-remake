@@ -46,6 +46,12 @@
         <div class="save-actions">
           <button id="personBtn" disabled>人物</button>
           <button id="inventoryBtn" disabled>背包</button>
+          <select id="saveSlotSelect" class="save-slot" aria-label="存档槽位" disabled>
+            <option value="slot1">存档 1 · 空</option>
+            <option value="slot2">存档 2 · 空</option>
+            <option value="slot3">存档 3 · 空</option>
+            <option value="autosave">自动存档 · 空</option>
+          </select>
           <button id="saveBtn" disabled>存档</button>
           <button id="loadBtn" disabled>读档</button>
         </div>
@@ -220,6 +226,7 @@
   <script src="./src/map-scene.js"></script>
   <script src="./src/upstream.js"></script>
   <script src="./src/shop.js"></script>
+  <script src="./src/save-store.js"></script>
   <script src="./src/battle-effects.js"></script>
   <script src="./src/battle.js"></script>
   <script src="./src/app.js"></script>
