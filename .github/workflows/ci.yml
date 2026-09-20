@@ -85,6 +85,7 @@ jobs:
           node --check tools/test-story-runtime-loader.mjs
           node --check tools/test-story-program-runtime.mjs
           node --check tools/smoke-base-story-programs.mjs
+          node --check tools/smoke-init-story-programs.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
 
@@ -289,6 +290,9 @@ jobs:
 
       - name: Execute original base world and task branches
         run: node tools/smoke-base-story-programs.mjs
+
+      - name: Execute original p_init background startup
+        run: node tools/smoke-init-story-programs.mjs
 
       - name: Audit full original program API coverage
         run: |
