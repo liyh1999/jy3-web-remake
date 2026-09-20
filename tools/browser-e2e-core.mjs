@@ -155,7 +155,10 @@ export async function launchBrowserHarness({
   });
   cdp.on('Log.entryAdded', params => {
     const entry = params.entry || {};
-    if (entry.level === 'error') errors.push(`log: ${entry.text || 'unknown'}`);
+    if (entry.level !== 'error') return;
+    const url = String(entry.url || '');
+    if (/\/favicon\.ico(?:$|[?#])/.test(url)) return;
+    errors.push(`log: ${entry.text || 'unknown'}${url ? ` @ ${url}` : ''}`);
   });
   cdp.on('Runtime.consoleAPICalled', params => {
     if (params.type !== 'error') return;
