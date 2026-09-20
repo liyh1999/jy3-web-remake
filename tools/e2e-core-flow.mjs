@@ -12,6 +12,7 @@ async function drainDialogueUntil(predicate, answers = [], timeoutMs = 30000) {
   const deadline = Date.now() + timeoutMs;
   let answerIndex = 0;
   while (Date.now() < deadline) {
+    if (errors.length) throw new Error('browser errors during dialogue flow:\n' + errors.join('\n'));
     if (await evaluate(`Boolean(${predicate})`)) return answerIndex;
     const optionCount = await evaluate("document.querySelectorAll('#options button').length");
     if (optionCount > 0) {
