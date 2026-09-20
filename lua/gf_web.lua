@@ -338,6 +338,14 @@ function G.call(name, ...)
             if found then return result end
         end
         return web:getLastBattle()
+    elseif name == "logging" or name == "dig" or name == "fishing"
+        or name == "hunting" or name == "gambling" then
+        if web and web.startOriginalMinigame then
+            web:startOriginalMinigame(name, function(result)
+                resume_after_ui(result ~= false)
+            end)
+            return coroutine.yield()
+        end
     end
 
     -- Platform/UI side effects that are deliberately replaced by Web-native systems.
