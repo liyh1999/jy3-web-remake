@@ -11,6 +11,7 @@
     '01_data/o_files.lua',
     '01_data/o_misc.lua',
     '01_data/o_storehouse.lua',
+    '01_data/o_jm.lua',
     '01_data/o_role.lua',
     '01_data/o_skill.lua',
     '01_data/o_achieve.lua',
