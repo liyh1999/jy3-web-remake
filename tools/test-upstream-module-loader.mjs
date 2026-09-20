@@ -15,6 +15,7 @@ if (U.ALL_PROGRAMS.length !== 24) throw new Error('04_program inventory mismatch
 if (new Set(U.ALL_PROGRAMS).size !== 24) throw new Error('04_program inventory contains duplicates');
 if (U.CACHED_PROGRAMS.join('\n') !== U.ALL_PROGRAMS.join('\n')) throw new Error('all programs must be cached/compile-gated');
 if (U.CORE_PROGRAMS.length !== 5 || U.ON_DEMAND_PROGRAMS.length !== 19) throw new Error('core/on-demand program split mismatch');
+if (U.CORE_NOTIFY.join(',') !== '06_notify/n_common.lua,06_notify/n_citymap_system.lua,06_notify/n_dialogue_system.lua,06_notify/n_cheat_system.lua') throw new Error('original notify inventory mismatch');
 for (const required of ['04_program/p_task.lua','04_program/p_school_shaolin.lua','04_program/p_story-town or city.lua']) {
   if (!U.ALL_PROGRAMS.includes(required)) throw new Error('missing original program: ' + required);
 }
