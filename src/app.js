@@ -2,6 +2,7 @@
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
   const SAVE_KEY = 'jy3-web-remake:save:v1';
+  const LEGACY_FILE_KEY = 'jy3-web-remake:legacy-file:';
   const ui = {
     status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'),
@@ -98,6 +99,28 @@
     fengari.load('return __jy_reset_runtime()', '@web/reset-runtime')();
   }
 
+  function normalizeLegacyRelativePath(value) {
+    const raw = String(value || '').replaceAll('\\', '/').replace(/^\/+/, '');
+    const parts = raw.split('/').filter(Boolean);
+    if (!parts.length || parts.some(part => part === '.' || part === '..' || part.includes('\0'))) {
+      throw new Error('非法存档路径');
+    }
+    return parts.join('/');
+  }
+
+  function legacyVirtualPath(scope, value) {
+    const kind = scope === 'write' ? 'write' : 'save';
+    return `jy3-web://${kind}/${normalizeLegacyRelativePath(value)}`;
+  }
+
+  function legacyStorageKey(virtualPath) {
+    const value = String(virtualPath || '');
+    if (!/^jy3-web:\/\/(?:save|write)\//.test(value)) throw new Error('拒绝访问非存档路径');
+    const relative = value.replace(/^jy3-web:\/\/(?:save|write)\//, '');
+    normalizeLegacyRelativePath(relative);
+    return LEGACY_FILE_KEY + value;
+  }
+
   function refreshLoadButton() {
     if (!ui.load) return;
     ui.load.disabled = !localStorage.getItem(SAVE_KEY);
@@ -166,6 +189,23 @@
   window.JYWeb = {
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
+    legacyFilePath(scope, value) { return legacyVirtualPath(scope, value); },
+    legacyFileExists(path) {
+      try { return localStorage.getItem(legacyStorageKey(path)) !== null; }
+      catch (_) { return false; }
+    },
+    legacyFileRead(path) {
+      try { return localStorage.getItem(legacyStorageKey(path)); }
+      catch (_) { return null; }
+    },
+    legacyFileWrite(path, data) {
+      try {
+        localStorage.setItem(legacyStorageKey(path), String(data ?? ''));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    },
     async startOriginalLogging(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       prepareMinigameSurface();
