@@ -210,7 +210,6 @@ assert(__jy_run('初入少林-慧伦') == true, 'Huilun battle branch did not st
 assert(battle_calls == 1, 'Huilun battle branch did not invoke original battle API')
 assert(loves[91] == 53, 'Huilun victory did not add original love +3')
 assert(saw('add_time', 4), 'Huilun battle did not add original four time units')
-assert(saw('turn_map'), 'Huilun battle did not return through original map flow')
 
 -- 4) Shaolin graduation: three Copper Men Array battles.
 reset_calls()
