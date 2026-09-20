@@ -1,5 +1,7 @@
 {
   "schemaVersion": 1,
   "upstreamRevision": "c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8",
-  "knownMissing": []
+  "knownMissing": [
+    "image/2/0004.png"
+  ]
 }
