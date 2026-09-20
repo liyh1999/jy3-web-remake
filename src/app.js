@@ -337,6 +337,13 @@
       ui.status.textContent = '少林/峨嵋原剧情运行时已启用';
       return loaded;
     },
+    async prepareOriginalGaibangTaohuadao(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareGaibangTaohuadaoRuntime(progress);
+      fengari.load('return __jy_dialogue_enable_original(true)', '@web/enable-original-gaibang-taohuadao-dialogue')();
+      ui.status.textContent = '丐帮/桃花岛原剧情运行时已启用';
+      return loaded;
+    },
     disableOriginalDialogue() {
       return fengari.load('return __jy_dialogue_enable_original(false)', '@web/disable-original-dialogue')();
     },
@@ -774,7 +781,7 @@
       try {
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
         originalProgramLoaded = loaded.loadedPrograms === window.JYUpstream.CORE_PROGRAMS.length;
-        const sect = await window.JYUpstream.prepareShaolinEmeiRuntime((message) => { ui.status.textContent = message; });
+        const sect = await window.JYUpstream.prepareGaibangTaohuadaoRuntime((message) => { ui.status.textContent = message; });
         ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${sect.storyPrograms.length} 个 / 已接门派 ${sect.allSectPrograms.length} 个已就绪`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
