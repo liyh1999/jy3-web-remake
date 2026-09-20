@@ -16,6 +16,8 @@ for (const needle of [
   "return __jy_minigame_start('hunting')",
   '押宝资源加载完成，正在启动原版程序',
   "return __jy_minigame_start('gambling')",
+  'startOriginalMinigame(name, resume)',
+  'originalMinigameCallback',
   'scheduleProgramPump(delay, token)',
   'cancelProgramPump(token)',
   'minigameFinished(name)',
