@@ -11,9 +11,15 @@ const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
 const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const sourceBase = process.env.JY3_LAKES_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-lakes-dispatch-'));
+const normalizedSource = normalizeLuaSource(fs.readFileSync(path.join(sourceBase, 'p_lakes_notice.lua'), 'utf8'));
+const taskNames = [...normalizedSource.matchAll(/t\\\['(聚贤庄任务_[^']+)'\\\]\\s*=\\s*function\\\(\\\)/g)].map((match) => match[1]);
+if (taskNames.length !== 47) {
+  throw new Error(`expected 47 pinned upstream lakes tasks, found ${taskNames.length}`);
+}
+const luaTaskNames = taskNames.map((name) => JSON.stringify(name)).join(',\\n    ');
 fs.writeFileSync(
   path.join(temp, 'p_lakes_notice.lua'),
-  normalizeLuaSource(fs.readFileSync(path.join(sourceBase, 'p_lakes_notice.lua'), 'utf8')),
+  normalizedSource,
   'utf8',
 );
 
@@ -57,32 +63,41 @@ G.getUI = function(name)
     return nil
 end
 
-local bone_calls = 0
-local ruan_calls = 0
-G.api['聚贤庄任务_爪下白骨'] = function() bone_calls = bone_calls + 1 return true end
-G.api['聚贤庄任务_阮姓何辜'] = function() ruan_calls = ruan_calls + 1 return true end
+local routed = {}
+local task_names = {
+    ${luaTaskNames}
+}
+for _, task_name in ipairs(task_names) do
+    local name = task_name
+    G.api[name] = function()
+        routed[name] = (routed[name] or 0) + 1
+        return true
+    end
+end
 
 assert(G.start_program('地图系统_聚贤庄任务') == true, 'lakes dispatcher did not start')
 local kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
 assert(kind == 'case', 'lakes dispatcher did not enter wait_case')
 
-G.trig_event('聚贤庄任务_爪下白骨')
-__jy_story_program_browser_pump(0)
-assert(bone_calls == 1, 'lakes dispatcher did not route 爪下白骨')
-kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
-assert(kind == 'case', 'lakes dispatcher did not keep listening after 爪下白骨')
+for _, task_name in ipairs(task_names) do
+    G.trig_event(task_name)
+    __jy_story_program_browser_pump(0)
+    assert(routed[task_name] == 1, 'lakes dispatcher did not route ' .. task_name)
+    kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
+    assert(kind == 'case', 'lakes dispatcher stopped listening after ' .. task_name)
+end
 
-G.trig_event('聚贤庄任务_阮姓何辜')
-__jy_story_program_browser_pump(0)
-assert(ruan_calls == 1, 'lakes dispatcher did not route 阮姓何辜')
-kind = select(1, __jy_story_program_status('地图系统_聚贤庄任务'))
-assert(kind == 'case', 'lakes dispatcher did not keep listening after 阮姓何辜')
+local routed_count = 0
+for _, count in pairs(routed) do
+    if count == 1 then routed_count = routed_count + 1 end
+end
+assert(routed_count == #task_names, 'lakes dispatcher routed task count mismatch')
 
 assert(__jy_story_program_reset() == true)
 assert(not __jy_story_program_has('地图系统_聚贤庄任务'), 'lakes dispatcher leaked after reset')
 
 print('original lakes notice dispatcher PASS')
-print('  two 聚贤庄任务 events route through the persistent original wait_case program')
+print('  all ' .. tostring(#task_names) .. ' 聚贤庄任务 events route through the persistent original wait_case program')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
