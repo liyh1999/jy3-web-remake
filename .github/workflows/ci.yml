@@ -112,6 +112,7 @@ jobs:
           node --check tools/smoke-book-sixth-batch.mjs
           node --check tools/smoke-book-seventh-batch.mjs
           node --check tools/smoke-book-eighth-batch.mjs
+          node --check tools/smoke-lakes-high-risk.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -430,6 +431,9 @@ jobs:
       - name: Execute eighth-batch original book story
         run: node tools/smoke-book-eighth-batch.mjs
 
+      - name: Execute high-risk lakes branch matrix
+        run: node tools/smoke-lakes-high-risk.mjs
+
       - name: Audit full original program API coverage
         run: |
           node tools/audit-program-api-coverage.mjs
@@ -634,6 +638,9 @@ jobs:
 
       - name: Smoke eighth-batch book story from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_BOOK_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-book-eighth-batch.mjs
+
+      - name: Smoke high-risk lakes branch matrix from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_LAKES_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-lakes-high-risk.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
