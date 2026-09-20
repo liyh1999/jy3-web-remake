@@ -431,6 +431,9 @@ jobs:
       - name: Smoke five mini-games from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_MINIGAME_SOURCE_BASE=dist/vendor/upstream/JY3/script node tools/smoke-logging-ui.mjs
 
+      - name: Smoke base story branches from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_STORY_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-base-story-programs.mjs
+
       - name: Simulate disconnected runtime
         run: npm run verify:offline
 
