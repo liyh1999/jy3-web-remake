@@ -150,6 +150,8 @@ local fishing_count = { name = 0x10170005, ['完成'] = 0, ['进度列表'] = { 
 local worm_item = { name = 0x100b013d, ['数量'] = 1, ['名称'] = '蚯蚓' }
 local hunting_tiger = { name = 0x10170008, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
 local hunting_bear = { name = 0x10170009, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local gambling_small = { name = 0x10170001, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
+local gambling_spend = { name = 0x10170002, ['完成'] = 0, ['进度列表'] = { { ['当前进度'] = 0, ['完成'] = 0 } } }
 local misc_state = {}
 local newbody = { name = 0x101b0001, ['80'] = 0 }
 local body = {
@@ -172,6 +174,8 @@ function G.QueryName(id)
     if id == 0x100b013d then return worm_item end
     if id == 0x10170008 then return hunting_tiger end
     if id == 0x10170009 then return hunting_bear end
+    if id == 0x10170001 then return gambling_small end
+    if id == 0x10170002 then return gambling_spend end
     if id == 0x101b0001 then return newbody end
     return { name = id, __placeholder = true }
 end
@@ -186,6 +190,23 @@ function G.call(name, ...)
         return reward_points[id]
     end
     if name == 'get_point' then return reward_points[tonumber(args[1]) or 0] or 0 end
+    if name == 'set_point' then
+        local id, value = tonumber(args[1]) or 0, tonumber(args[2]) or 0
+        reward_points[id] = value
+        return value
+    end
+    if name == 'get_newpoint' then return tonumber(newbody[tostring(tonumber(args[1]) or 0)]) or 0 end
+    if name == 'set_newpoint' then
+        local id, value = tonumber(args[1]) or 0, tonumber(args[2]) or 0
+        newbody[tostring(id)] = value
+        return value
+    end
+    if name == 'get_money' then return reward_points[110] or 0 end
+    if name == 'add_money' then
+        local delta = tonumber(args[1]) or 0
+        reward_points[110] = math.max(0, math.min(99999999, (reward_points[110] or 0) + delta))
+        return reward_points[110]
+    end
     if name == 'add_item' then
         local id, delta = tonumber(args[1]) or 0, tonumber(args[2]) or 0
         reward_items[id] = (reward_items[id] or 0) + delta
@@ -228,6 +249,9 @@ end
 package.preload['c_hunting'] = function()
     return assert(loadfile(temp .. '/c_hunting.lua'))()
 end
+package.preload['c_gambling'] = function()
+    return assert(loadfile(temp .. '/c_gambling.lua'))()
+end
 
 assert(loadfile(temp .. '/v_button.lua'))()
 assert(loadfile(temp .. '/v_logging.lua'))()
@@ -236,6 +260,7 @@ assert(loadfile(temp .. '/v_empty.lua'))()
 assert(loadfile(temp .. '/v_dig.lua'))()
 assert(loadfile(temp .. '/v_fishing.lua'))()
 assert(loadfile(temp .. '/v_hunting.lua'))()
+assert(loadfile(temp .. '/v_gambling.lua'))()
 assert(loadfile(temp .. '/p_order.lua'))()
 assert(loadfile(temp .. '/p_init.lua'))()
 
@@ -541,6 +566,122 @@ __jy_minigame_reset()
 assert(__jy_minigame_signal_count('打猎') == 0, 'queued hunting signals leaked after reset')
 assert(__jy_minigame_signal_count('打猎动画关闭') == 0, 'queued hunting animation signals leaked after reset')
 
+scheduled, cancelled, finished = {}, {}, nil
+misc_state = {}
+reward_points[110] = 100
+reward_points[130] = 100
+newbody['80'] = 0
+newbody['110'] = 0
+newbody['130'] = 0
+gambling_small['完成'] = 0
+gambling_small['进度列表'][1]['当前进度'] = 0
+gambling_small['进度列表'][1]['完成'] = 0
+gambling_spend['完成'] = 0
+gambling_spend['进度列表'][1]['当前进度'] = 0
+gambling_spend['进度列表'][1]['完成'] = 0
+
+local gambling_random = math.random
+local gambling_dice = 0
+math.random = function(a, b)
+    if a and b then return a end
+    if a == 3 then return 1 end
+    if a == 6 then
+        gambling_dice = gambling_dice + 1
+        if gambling_dice == 1 then return 1 end
+        if gambling_dice == 2 then return 2 end
+        return 1
+    end
+    if a then return 1 end
+    return 0.5
+end
+
+assert(__jy_minigame_start('gambling'), 'original gambling program failed to start')
+wait_kind, wait_name = __jy_minigame_status('gambling')
+assert(wait_kind == 'event' and wait_name == '赌博结束', 'gambling did not stop at wait1(赌博结束)')
+assert(__jy_minigame_pending_timers() == 0, 'gambling unexpectedly scheduled child timers before rolling')
+assert(__jy_minigame_has('地图系统_小游戏'), 'gambling dispatcher did not start')
+
+local gambling_ui = G.getUI('v_gambling')
+assert(gambling_ui and gambling_ui.c_gambling and gambling_ui.c_gambling.obj == gambling_ui, 'original v_gambling/c_gambling failed to mount')
+assert(gambling_ui.getChildByName('显示').getChildByName('银两').text == '100', 'gambling UI did not initialize player money')
+assert(gambling_ui.getChildByName('显示').getChildByName('本金').text == '100', 'gambling UI did not initialize house bankroll')
+assert(G.misc()['下注'] == 0, 'gambling did not start in betting mode')
+
+local bet_panel = gambling_ui.getChildByName('下注')
+local bet_single = bet_panel.getChildByName('单')
+local bet_small = bet_panel.getChildByName('小')
+local roll_button = gambling_ui.getChildByName('开始')
+local exit_button = gambling_ui.getChildByName('结束')
+assert(bet_single and bet_single.mouseEnabled == true and bet_small and bet_small.mouseEnabled == true, 'gambling bet hit targets missing')
+assert(roll_button and roll_button.mouseEnabled == true and exit_button and exit_button.mouseEnabled == true, 'gambling roll/exit hit targets missing')
+
+__jy_input_event('click', bet_single.__handle, 0, 0, '', 0)
+__jy_input_event('click', bet_small.__handle, 0, 0, '', 0)
+assert(reward_points[110] == 90, 'two gambling bets did not deduct 10 money through original component logic')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('单').text) == 1, 'single bet count did not increment')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('小').text) == 1, 'small bet count did not increment')
+
+__jy_input_event('click', roll_button.__handle, 0, 0, '', 0)
+assert(G.misc()['下注'] == 1, 'gambling roll did not lock additional betting')
+assert(__jy_minigame_signal_count('跳骰') == 0, '跳骰 event was queued instead of consumed by dispatcher')
+__jy_program_browser_pump(0)
+
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '800', 'gambling dispatcher did not enter original 800ms dice movie wait')
+local gambling_movie = G.getUI('v_movie')
+assert(gambling_movie, 'gambling dice playmovie UI was not mounted')
+assert(gambling_movie.getChildByName('movie').c_button.img_normal == 0x33010004, 'gambling did not use original dice framelist resource 0x33010004')
+local dice_movie_timer = latest_live_timer(800)
+assert(dice_movie_timer, 'gambling dice movie timer missing')
+__jy_program_browser_pump(dice_movie_timer)
+
+assert(G.getUI('v_movie') == nil, 'gambling dice movie UI did not clean up')
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '500', 'gambling dispatcher did not enter original 500ms pre-settlement wait')
+local dice_settle_timer = latest_live_timer(500)
+assert(dice_settle_timer, 'gambling pre-settlement timer missing')
+__jy_program_browser_pump(dice_settle_timer)
+
+assert(gambling_ui.getChildByName('一').text == '1' and gambling_ui.getChildByName('二').text == '2', 'deterministic gambling dice result did not reach original UI')
+assert(reward_points[110] == 110, 'winning single+small bets did not settle original 2x payout')
+assert(reward_points[130] == 90, 'house bankroll did not track original gambling settlement')
+assert(gambling_spend['进度列表'][1]['当前进度'] == 10, 'gambling achievement progress did not track house loss')
+kind, value = __jy_minigame_status('地图系统_小游戏')
+assert(kind == 'time' and value == '1500', 'gambling result did not enter original 1500ms display wait')
+
+local gambling_result_timer = latest_live_timer(1500)
+assert(gambling_result_timer, 'gambling result display timer missing')
+__jy_program_browser_pump(gambling_result_timer)
+assert(G.misc()['下注'] == 0, 'gambling did not reopen betting after result display')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('单').text) == 0, 'single bet was not cleared after settlement')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('小').text) == 0, 'small bet was not cleared after settlement')
+kind = select(1, __jy_minigame_status('地图系统_小游戏'))
+assert(kind == 'case', 'gambling dispatcher did not return to wait_case after settlement')
+
+local bet_double = bet_panel.getChildByName('双')
+__jy_input_event('click', bet_double.__handle, 0, 0, '', 0)
+assert(reward_points[110] == 105, 'exit-refund setup bet did not deduct 5 money')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('双').text) == 1, 'exit-refund bet count did not increment')
+__jy_input_event('click', exit_button.__handle, 0, 0, '', 0)
+assert(reward_points[110] == 110, 'gambling exit did not refund unresolved player bet')
+assert(__jy_minigame_signal_count('赌博结束') == 0, '赌博结束 event was queued instead of consumed by gambling root')
+__jy_program_browser_pump(0)
+math.random = gambling_random
+
+assert(not __jy_minigame_has('gambling'), 'gambling program remained after original 赌博结束')
+assert(__jy_minigame_pending_timers() == 0, 'gambling timers leaked after cleanup')
+assert(G.getUI('v_gambling') == nil, 'v_gambling remained active after program cleanup')
+assert(G.getUI('v_movie') == nil, 'v_movie remained active after gambling cleanup')
+assert(finished == 'gambling', 'browser host was not notified of gambling completion')
+
+__jy_minigame_reset()
+assert(__jy_minigame_signal_count('跳骰') == 0, 'queued gambling roll signals leaked after reset')
+assert(__jy_minigame_signal_count('赌博结束') == 0, 'queued gambling finish signals leaked after reset')
+
+print('original gambling scheduler PASS')
+print('  v_empty + v_button + v_gambling/c_gambling mounted and initialized')
+print('  单+小 bets -> 800ms dice movie -> 500ms settle -> original 1+2 payout/bankroll')
+print('  1500ms result reset -> unresolved 双 bet -> exit refund -> 赌博结束 cleanup')
 print('original hunting scheduler PASS')
 print('  v_empty + v_button + v_hunting/c_hunting mounted and initialized')
 print('  click + hotkey mode switching -> target spawn -> original capture reward')
