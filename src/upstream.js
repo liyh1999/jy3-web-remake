@@ -96,6 +96,11 @@
     '04_program/p_emei.lua',
   ];
 
+  const GAIBANG_TAOHUADAO_PROGRAMS = [
+    '04_program/p_school_gaibang.lua',
+    '04_program/p_school_taohuadao.lua',
+  ];
+
   const CORE_NOTIFY = [
     '06_notify/n_common.lua',
     '06_notify/n_citymap_system.lua',
@@ -580,6 +585,29 @@ return true
     return shaolinEmeiRuntimePromise;
   }
 
+  let gaibangTaohuadaoRuntimePromise = null;
+  async function prepareGaibangTaohuadaoRuntime(onProgress) {
+    if (!gaibangTaohuadaoRuntimePromise) {
+      gaibangTaohuadaoRuntimePromise = (async () => {
+        const previous = await prepareShaolinEmeiRuntime(onProgress);
+        const loadedPrograms = await loadPrograms(GAIBANG_TAOHUADAO_PROGRAMS, onProgress);
+        return {
+          loadedModules: previous.loadedModules,
+          loadedViews: previous.loadedViews,
+          loadedPrograms: previous.loadedPrograms + loadedPrograms,
+          storyPrograms: [...previous.storyPrograms],
+          previousSectPrograms: [...previous.allSectPrograms],
+          sectPrograms: [...GAIBANG_TAOHUADAO_PROGRAMS],
+          allSectPrograms: [...previous.allSectPrograms, ...GAIBANG_TAOHUADAO_PROGRAMS],
+        };
+      })().catch((error) => {
+        gaibangTaohuadaoRuntimePromise = null;
+        throw error;
+      });
+    }
+    return gaibangTaohuadaoRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -610,6 +638,7 @@ return true
     QUANZHEN_GUMU_PROGRAMS,
     WUDANG_HUASHAN_PROGRAMS,
     SHAOLIN_EMEI_PROGRAMS,
+    GAIBANG_TAOHUADAO_PROGRAMS,
     CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
@@ -643,6 +672,7 @@ return true
     prepareQuanzhenGumuRuntime,
     prepareWudangHuashanRuntime,
     prepareShaolinEmeiRuntime,
+    prepareGaibangTaohuadaoRuntime,
     bootstrapData,
   };
 })();
