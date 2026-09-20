@@ -502,7 +502,7 @@ assert(animal_timer, '猎物显示1 did not schedule its first target spawn')
 __jy_program_browser_pump(animal_timer)
 local animal = hunting_ui.getChildByName('猎物').getChildByName('1').getChildByName('1')
 assert(animal and animal.visible == true, 'deterministic hunting target did not appear')
-assert(tostring(animal.getChildByName('dead').text) == '0', 'spawned hunting target did not reset dead state')
+assert(animal.getChildByName('dead').text == '0', 'spawned hunting target did not reset dead state as original TextQuad string')
 local animal_button = animal.getChildByName('0')
 assert(animal_button and animal_button.mouseEnabled == true, 'hunting target click surface missing')
 
