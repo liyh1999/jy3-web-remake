@@ -56,6 +56,12 @@ local gifts_done = {['是否完成'] = true}
 local rogues_task = {['是否完成'] = false}
 local condor_task = {['是否完成'] = false}
 local merchant_achievement = {['完成'] = 0, ['进度列表'] = {{['当前进度'] = 0, ['完成'] = 0}}}
+local brother_task = {['是否完成'] = false}
+local player = {['性别'] = 1, ['50'] = 1}
+for i = 70, 75 do player[tostring(i)] = 0 end
+local team = {['1'] = 0x10040005}
+local brother_role = {['性别'] = 1, ['姓名'] = '测试兄弟'}
+local brother_achievement = {['完成'] = 0, ['进度列表'] = {{['编号'] = 5, ['完成'] = 0}}}
 
 G.QueryName = function(id)
     id = tonumber(id) or 0
@@ -64,6 +70,11 @@ G.QueryName = function(id)
     if id == 0x10080013 then return rogues_task end
     if id == 0x1008000c then return condor_task end
     if id == 0x1017000b then return merchant_achievement end
+    if id == 0x10080027 then return brother_task end
+    if id == 0x10030001 then return player end
+    if id == 0x10110001 then return team end
+    if id == 0x10040005 then return brother_role end
+    if id == 0x10170016 then return brother_achievement end
     return original_query(id)
 end
 
@@ -80,6 +91,9 @@ local menu_choice = 1
 local random_values = {}
 local random_index = 1
 local shop_calls = 0
+local role_add = {}
+local role_set = {}
+local role_base = {[1] = 1200, [2] = 800}
 
 math.random = function(a, b)
     local value = random_values[random_index]
@@ -160,6 +174,21 @@ G.api['通用_神秘商店'] = function()
     shop_calls = shop_calls + 1
     return true
 end
+G.api['get_role'] = function(role, field)
+    if tonumber(role) == 5 then return role_base[tonumber(field) or 0] or 0 end
+    return 0
+end
+G.api['add_role'] = function(role, field, delta)
+    role = tonumber(role) or 0
+    field = tonumber(field) or 0
+    role_add[field] = (role_add[field] or 0) + (tonumber(delta) or 0)
+    return true
+end
+G.api['set_role'] = function(role, field, value)
+    role_set[tonumber(field) or 0] = tonumber(value) or value
+    return true
+end
+G.api['notice1'] = function() return true end
 
 -- 1) Four Rogues: execute all three legal menu branches.
 local branch_skills = {[1] = 15, [2] = 133, [3] = 141}
@@ -224,10 +253,43 @@ assert(newpoints[80] == 8, 'Mysterious Merchant newpoint decrement mismatch')
 assert(merchant_achievement['进度列表'][1]['当前进度'] == 11, 'Mysterious Merchant achievement progress mismatch')
 assert(items[235] == 1, 'Mysterious Merchant deterministic free gift mismatch')
 
+-- 4) Brotherhood: three menu confirmations -> relationship slot + achievement + bulk role upgrades.
+brother_task['是否完成'] = false
+player['50'] = 1
+for i = 70, 75 do player[tostring(i)] = 0 end
+brother_achievement['完成'] = 0
+brother_achievement['进度列表'][1]['完成'] = 0
+rewards['进度列表'][39]['完成'] = 0
+role_add = {}
+role_set = {}
+points[41] = 0
+local brother_menu = {1, 1, 1}
+local brother_menu_index = 1
+G.api['menu'] = function()
+    local choice = brother_menu[brother_menu_index]
+    brother_menu_index = brother_menu_index + 1
+    assert(choice ~= nil, 'Brotherhood menu fixture exhausted')
+    return choice
+end
+G.Play = function() return true end
+
+assert(__jy_run('聚贤庄任务_义结金兰') == true, 'Brotherhood task did not start')
+assert(player['50'] == 0, 'Brotherhood did not consume original brotherhood count')
+assert(brother_task['是否完成'] == true, 'Brotherhood task completion mismatch')
+assert(rewards['进度列表'][39]['完成'] == 1, 'Brotherhood reward progress mismatch')
+assert(player['70'] == 5, 'Brotherhood did not persist selected sworn-brother role')
+assert(brother_achievement['进度列表'][1]['完成'] == 1 and brother_achievement['完成'] == 1,
+    'Brotherhood achievement state mismatch')
+assert(role_add[1] == 5000 and role_add[2] == 5000, 'Brotherhood HP/MP upgrade mismatch')
+for field = 3, 8 do
+    assert(role_add[field] == 30, 'Brotherhood six-attribute upgrade mismatch field=' .. tostring(field))
+end
+assert(role_set[15] == 1200 and role_set[14] == 800, 'Brotherhood max HP/MP sync mismatch')
+
 assert(__jy_missing_calls() == '', 'high-risk lakes state smoke used missing calls: ' .. __jy_missing_calls())
 
 print('original high-risk lakes state paths PASS')
-print('  Four Rogues all menu branches + Dugu Pet full reward chain + Mysterious Merchant special shop path')
+print('  Four Rogues all menu branches + Dugu Pet full reward chain + Mysterious Merchant shop + Brotherhood bulk role upgrades')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
