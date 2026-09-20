@@ -46,6 +46,12 @@ for (const forbidden of paths.filter(p =>
   throw new Error('Quanzhen/Gumu runtime leaked unrelated program dependency: ' + forbidden);
 }
 
+const appSource = fs.readFileSync('src/app.js', 'utf8');
+if (!appSource.includes('window.JYUpstream.prepareQuanzhenGumuRuntime')) {
+  throw new Error('normal app boot does not preload the Quanzhen/Gumu sect family');
+}
+
 console.log('independent Quanzhen/Gumu runtime loader PASS');
 console.log('  reuses base story runtime and loads only p_school_quanzhen + p_school_gumu');
 console.log('  does not depend on p_battle or unrelated sect programs');
+console.log('  normal app boot preloads the first sect family before gameplay');
