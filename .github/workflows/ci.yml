@@ -83,6 +83,7 @@ jobs:
           node --check tools/test-resource-resolver.mjs
           node --check tools/test-shop-model.mjs
           node --check tools/test-story-runtime-loader.mjs
+          node --check tools/test-story-program-runtime.mjs
           node --check tools/smoke-base-story-programs.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
@@ -137,6 +138,7 @@ jobs:
       - name: Check Lua syntax
         run: |
           luac5.3 -p lua/program_runtime.lua
+          luac5.3 -p lua/story_program_web.lua
           luac5.3 -p lua/minigame_web.lua
           luac5.3 -p tools/fixtures/smoke-logging-ui.lua
           luac5.3 -p lua/gf_web.lua
@@ -151,6 +153,9 @@ jobs:
 
       - name: Validate reusable Lua program runtime
         run: node tools/test-program-runtime.mjs
+
+      - name: Validate background story program scheduler
+        run: node tools/test-story-program-runtime.mjs
 
       - name: Validate browser mini-game pump bridge
         run: node tools/check-minigame-browser-pump.mjs
@@ -250,6 +255,7 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/lua/story_program_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gcore_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/battle_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/save_state.lua >/dev/null
@@ -406,6 +412,7 @@ jobs:
           test -f dist/src/shop.css
           test -f dist/lua/gcore_web.lua
           test -f dist/lua/program_runtime.lua
+          test -f dist/lua/story_program_web.lua
           test -f dist/lua/minigame_web.lua
           test -f dist/lua/battle_web.lua
           test -f dist/lua/person_web.lua
@@ -458,6 +465,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/src/person.css >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/shop.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/shop.css >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/lua/story_program_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/lua/battle_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/lua/person_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/lua/shop_web.lua >/dev/null
