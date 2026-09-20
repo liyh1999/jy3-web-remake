@@ -81,6 +81,11 @@
     '04_program/p_story-town or city.lua',
   ];
 
+  const QUANZHEN_GUMU_PROGRAMS = [
+    '04_program/p_school_quanzhen.lua',
+    '04_program/p_school_gumu.lua',
+  ];
+
   const CORE_NOTIFY = [
     '06_notify/n_common.lua',
     '06_notify/n_citymap_system.lua',
@@ -498,6 +503,27 @@ return true
     return storyRuntimePromise;
   }
 
+  let quanzhenGumuRuntimePromise = null;
+  async function prepareQuanzhenGumuRuntime(onProgress) {
+    if (!quanzhenGumuRuntimePromise) {
+      quanzhenGumuRuntimePromise = (async () => {
+        const story = await prepareStoryRuntime(onProgress);
+        const loadedPrograms = await loadPrograms(QUANZHEN_GUMU_PROGRAMS, onProgress);
+        return {
+          loadedModules: story.loadedModules,
+          loadedViews: story.loadedViews,
+          loadedPrograms: story.loadedPrograms + loadedPrograms,
+          storyPrograms: [...story.programs],
+          sectPrograms: [...QUANZHEN_GUMU_PROGRAMS],
+        };
+      })().catch((error) => {
+        quanzhenGumuRuntimePromise = null;
+        throw error;
+      });
+    }
+    return quanzhenGumuRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -525,6 +551,7 @@ return true
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
     BASE_STORY_PROGRAMS,
+    QUANZHEN_GUMU_PROGRAMS,
     CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
@@ -555,6 +582,7 @@ return true
     prepareGamblingUI,
     prepareDialogueRuntime,
     prepareStoryRuntime,
+    prepareQuanzhenGumuRuntime,
     bootstrapData,
   };
 })();
