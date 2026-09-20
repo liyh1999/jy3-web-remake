@@ -168,6 +168,9 @@ jobs:
       - name: Validate original Tween renderer semantics
         run: node tools/test-renderer-tween.mjs
 
+      - name: Validate sandboxed original file APIs
+        run: node tools/test-legacy-file-runtime.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
