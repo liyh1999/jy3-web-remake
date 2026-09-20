@@ -165,6 +165,9 @@ jobs:
       - name: Validate story wait1 and event_info semantics
         run: node tools/test-story-events.mjs
 
+      - name: Validate original Tween renderer semantics
+        run: node tools/test-renderer-tween.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
