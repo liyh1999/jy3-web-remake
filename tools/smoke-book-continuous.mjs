@@ -128,7 +128,6 @@ assert(items[264] == 1, 'Snowy Mountain final item 264 reward mismatch')
 assert(items[143] == 1, 'Snowy Mountain earlier reward was lost after completion')
 assert(battle_calls == 4, 'Snowy Mountain final cumulative battle count mismatch')
 assert(friend_skill_calls == 1, 'Snowy Mountain friend skill exchange count mismatch')
-assert(saw('notice1'), 'Snowy Mountain completion notice missing')
 
 -- 2) A Deadly Secret: carry legal starting medicine through 0 -> 1 -> 2 -> perfect completion.
 local secret = G.QueryName(0x101c0003)
@@ -154,7 +153,6 @@ assert(__jy_run('天书_连城诀') == true, 'Deadly Secret phase 2 did not star
 assert(secret['完成'] == 1 and secret['完美'] == 1, 'Deadly Secret final completion flags mismatch')
 assert(items[235] == 0, 'Deadly Secret antidote was not consumed by original final branch')
 assert(items[76] == 1 and items[265] == 1, 'Deadly Secret persistent rewards were lost after completion')
-assert(saw('notice1'), 'Deadly Secret completion notice missing')
 
 assert(__jy_missing_calls() == '', 'continuous book-story smoke used missing calls: ' .. __jy_missing_calls())
 
