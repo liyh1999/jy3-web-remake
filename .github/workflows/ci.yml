@@ -84,6 +84,7 @@ jobs:
           node --check tools/test-shop-model.mjs
           node --check tools/test-story-runtime-loader.mjs
           node --check tools/test-story-program-runtime.mjs
+          node --check tools/test-cross-system-story-resume.mjs
           node --check tools/smoke-base-story-programs.mjs
           node --check tools/smoke-init-story-programs.mjs
           node --check tools/smoke-person-event-dispatcher.mjs
@@ -158,6 +159,9 @@ jobs:
 
       - name: Validate background story program scheduler
         run: node tools/test-story-program-runtime.mjs
+
+      - name: Validate cross-system parent story resume
+        run: node tools/test-cross-system-story-resume.mjs
 
       - name: Validate browser mini-game pump bridge
         run: node tools/check-minigame-browser-pump.mjs
