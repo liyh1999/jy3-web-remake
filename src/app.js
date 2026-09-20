@@ -316,6 +316,13 @@
       ui.status.textContent = '基础世界/任务剧情运行时已启用';
       return loaded;
     },
+    async prepareOriginalQuanzhenGumu(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareQuanzhenGumuRuntime(progress);
+      fengari.load('return __jy_dialogue_enable_original(true)', '@web/enable-original-quanzhen-gumu-dialogue')();
+      ui.status.textContent = '全真/古墓原剧情运行时已启用';
+      return loaded;
+    },
     disableOriginalDialogue() {
       return fengari.load('return __jy_dialogue_enable_original(false)', '@web/disable-original-dialogue')();
     },
