@@ -102,34 +102,37 @@ menu_choice = 4
 assert(__jy_run('城镇-渡口') == true, 'ferry story did not start')
 local ferry_menu = saw('menu')
 assert(ferry_menu and ferry_menu[2] == 4, 'ferry did not expose original four choices')
-assert(saw('goto_map', 1), 'ferry leave branch did not return to world map')
+assert(tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'ferry leave branch did not return to world map')
 assert(not saw('dig'), 'ferry leave branch unexpectedly entered mining')
 
 -- Town path 2: Wuliang cave already visited -> one dialogue then return.
 reset_calls()
+G.QueryName(0x10030001)['140'] = 0
 story[44] = 1
 assert(__jy_run('城镇-无量山洞') == true, 'Wuliang cave story did not start')
 local cave_talk = saw('talk')
 assert(cave_talk and string.find(tostring(cave_talk[2]), '神仙姐姐', 1, true), 'visited Wuliang cave dialogue branch mismatch')
-assert(saw('all_over') and saw('goto_map', 1), 'Wuliang cave did not cleanly return to world map')
+assert(saw('all_over') and tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'Wuliang cave did not cleanly return to world map')
 
 -- Task path 1: conquered Qingcheng monthly revisit, no combat.
 reset_calls()
+G.QueryName(0x10030001)['140'] = 0
 story[26] = 1
 points[169] = 13
 assert(__jy_run('门派-青城派') == true, 'Qingcheng revisit did not start')
 assert(saw('地图_进入地图', '青城派'), 'Qingcheng revisit did not enter original sect map')
 local qing_talk = saw('talk')
 assert(qing_talk and string.find(tostring(qing_talk[2]), '太上掌门', 1, true), 'Qingcheng conquered dialogue mismatch')
-assert(saw('goto_map', 1), 'Qingcheng revisit did not return to world map')
+assert(tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'Qingcheng revisit did not return to world map')
 
 -- Task path 2: Hengshan player already leader, direct greeting/no battle.
 reset_calls()
+G.QueryName(0x10030001)['140'] = 0
 story[17] = 1
 assert(__jy_run('门派-恒山派') == true, 'Hengshan leader revisit did not start')
 local heng_talk = saw('talk')
 assert(heng_talk and string.find(tostring(heng_talk[2]), '拜见掌门人', 1, true), 'Hengshan leader dialogue mismatch')
-assert(saw('goto_map', 1), 'Hengshan leader revisit did not return to world map')
+assert(tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'Hengshan leader revisit did not return to world map')
 
 assert(__jy_missing_calls() == '', 'base story smoke used missing calls: ' .. __jy_missing_calls())
 
