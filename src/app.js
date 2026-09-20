@@ -307,6 +307,13 @@
       ui.status.textContent = '原版对话/选择运行时已启用';
       return loaded;
     },
+    async prepareOriginalStory(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareStoryRuntime(progress);
+      fengari.load('return __jy_dialogue_enable_original(true)', '@web/enable-original-story-dialogue')();
+      ui.status.textContent = '基础世界/任务剧情运行时已启用';
+      return loaded;
+    },
     disableOriginalDialogue() {
       return fengari.load('return __jy_dialogue_enable_original(false)', '@web/disable-original-dialogue')();
     },
