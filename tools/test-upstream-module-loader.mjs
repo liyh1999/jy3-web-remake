@@ -38,6 +38,8 @@ if (U.DIALOGUE_UI_MODULES.map(x => x.module).join(',') !== 'c_button,c_layout_v,
 if (U.DIALOGUE_UI_VIEWS.join(',') !== '02_ui_view/v_empty.lua,02_ui_view/v_button.lua,02_ui_view/v_scrollview.lua,02_ui_view/v_dialogue_system_story.lua,02_ui_view/v_dialogue_system_story1.lua,02_ui_view/v_dialogue_system_story3.lua,02_ui_view/v_dialogue_system_select.lua,02_ui_view/v_dialogue_system_select1.lua') throw new Error('dialogue view load order mismatch');
 if (typeof U.prepareDialogueRuntime !== 'function') throw new Error('prepareDialogueRuntime API missing');
 if (typeof U.registerModuleSource !== 'function' || typeof U.loadModule !== 'function') throw new Error('module loader API missing');
+const notifyNormalized = U.normalizeLuaSource("local noti={}\nfunction noti.测试(value) return value end\nreturn noti");
+if (!notifyNormalized.includes('noti["测试"] = function(value)')) throw new Error('non-ASCII table function declaration was not normalized');
 U.registerModuleSource('c_demo', "local t={}\nt.测试=1\nreturn t", '03_ui_component/c_demo.lua');
 if (!captured.includes('package.preload["c_demo"]')) throw new Error('package.preload registration missing');
 if (!captured.includes('@upstream-module/03_ui_component/c_demo.lua')) throw new Error('module chunk name missing');
