@@ -85,6 +85,7 @@ jobs:
           node --check tools/test-story-runtime-loader.mjs
           node --check tools/test-quanzhen-gumu-runtime-loader.mjs
           node --check tools/test-wudang-huashan-runtime-loader.mjs
+          node --check tools/test-shaolin-emei-runtime-loader.mjs
           node --check tools/smoke-quanzhen-gumu-basic.mjs
           node --check tools/smoke-wudang-huashan-basic.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
@@ -118,6 +119,9 @@ jobs:
 
       - name: Validate independent Wudang Huashan runtime loader
         run: node tools/test-wudang-huashan-runtime-loader.mjs
+
+      - name: Validate independent Shaolin Emei runtime loader
+        run: node tools/test-shaolin-emei-runtime-loader.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
