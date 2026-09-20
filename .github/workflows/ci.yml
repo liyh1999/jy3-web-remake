@@ -84,6 +84,7 @@ jobs:
           node --check tools/test-shop-model.mjs
           node --check tools/test-story-runtime-loader.mjs
           node --check tools/test-quanzhen-gumu-runtime-loader.mjs
+          node --check tools/smoke-quanzhen-gumu-basic.mjs
           node --check tools/test-story-program-runtime.mjs
           node --check tools/test-cross-system-story-resume.mjs
           node --check tools/smoke-base-story-programs.mjs
@@ -309,6 +310,9 @@ jobs:
 
       - name: Execute original p_event to p_person routing
         run: node tools/smoke-map-event-routing.mjs
+
+      - name: Execute original Quanzhen Gumu basic sect branches
+        run: node tools/smoke-quanzhen-gumu-basic.mjs
 
       - name: Audit full original program API coverage
         run: |
