@@ -94,34 +94,5 @@
       1
     ]
   ],
-  "directMissing": [
-    [
-      "GetSavePath",
-      15
-    ],
-    [
-      "IsFileExist",
-      12
-    ],
-    [
-      "LoadFile",
-      9
-    ],
-    [
-      "unzip",
-      9
-    ],
-    [
-      "WriteFile",
-      11
-    ],
-    [
-      "WritePath",
-      9
-    ],
-    [
-      "zip",
-      4
-    ]
-  ]
+  "directMissing": []
 }
