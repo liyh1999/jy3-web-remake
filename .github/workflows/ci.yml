@@ -156,6 +156,9 @@ jobs:
       - name: Validate original typo call aliases
         run: node tools/test-original-call-aliases.mjs
 
+      - name: Validate original string and log runtime helpers
+        run: node tools/test-runtime-string-utils.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
