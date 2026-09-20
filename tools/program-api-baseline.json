@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "upstreamRevision": "c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8",
+  "programCount": 24,
+  "originalDefinitionCount": 540,
+  "externalNotifyDefinitionCount": 17,
+  "uniqueNamedGCalls": 471,
+  "categoryCounts": {
+    "original": 455,
+    "externalOriginal": 7,
+    "runtime": 3,
+    "alias": 6,
+    "unresolved": 0
+  },
+  "externalOriginal": [
+    [
+      "对话系统_显示对话大ui",
+      2
+    ],
+    [
+      "对话系统_显示对话上ui",
+      2
+    ],
+    [
+      "对话系统_显示对话下ui",
+      1
+    ],
+    [
+      "对话系统_显示选择上ui",
+      1
+    ],
+    [
+      "对话系统_显示选择下ui",
+      1
+    ],
+    [
+      "作弊系统_初始化作弊系统ui",
+      1
+    ],
+    [
+      "作弊系统_更新作弊指令列表UI",
+      1
+    ]
+  ],
+  "runtime": [
+    [
+      "地图_进入地图UI",
+      1
+    ],
+    [
+      "地图系统_进入地图UI",
+      2
+    ],
+    [
+      "地图系统_离开地图UI",
+      1
+    ]
+  ],
+  "aliases": [
+    [
+      "add_itme",
+      2,
+      "add_item"
+    ],
+    [
+      "get_ponit",
+      2,
+      "get_point"
+    ],
+    [
+      "schoollove",
+      14,
+      "add_schoollove"
+    ],
+    [
+      "ser_point",
+      4,
+      "set_point"
+    ],
+    [
+      "ser_role",
+      6,
+      "set_role"
+    ],
+    [
+      "set,note",
+      43,
+      "set_note"
+    ]
+  ],
+  "dynamicCallPrefixes": [
+    [
+      "天书_",
+      1
+    ]
+  ],
+  "directMissing": [
+    [
+      "addNewInst2Dynamic",
+      2
+    ],
+    [
+      "event_info",
+      4
+    ],
+    [
+      "GetSavePath",
+      15
+    ],
+    [
+      "getStrLen",
+      2
+    ],
+    [
+      "IsFileExist",
+      12
+    ],
+    [
+      "LoadFile",
+      9
+    ],
+    [
+      "log",
+      5
+    ],
+    [
+      "split",
+      1
+    ],
+    [
+      "Tween",
+      11
+    ],
+    [
+      "unzip",
+      9
+    ],
+    [
+      "utf8sub",
+      2
+    ],
+    [
+      "WriteFile",
+      11
+    ],
+    [
+      "WritePath",
+      9
+    ],
+    [
+      "zip",
+      4
+    ]
+  ]
+}
