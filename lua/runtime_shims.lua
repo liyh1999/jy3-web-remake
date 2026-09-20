@@ -196,6 +196,18 @@ function G.GetObjRealHeight(node)
     return tonumber(node.height) or 0
 end
 
+function G.Tween(property, duration, node, target)
+    if not node then return false end
+    local key = tostring(property or "")
+    if key == "" then return false end
+    if renderer.tweenNodeProperty then
+        local ok = renderer:tweenNodeProperty(handle_of(node), key, tonumber(duration) or 0, target)
+        if ok ~= nil then return ok and true or false end
+    end
+    node[key] = target
+    return true
+end
+
 local function start_component_tree(node)
     if not node then return end
     for key, component in pairs(node_components[handle_of(node)] or {}) do
