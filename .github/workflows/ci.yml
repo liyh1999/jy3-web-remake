@@ -83,6 +83,7 @@ jobs:
           node --check tools/test-resource-resolver.mjs
           node --check tools/test-shop-model.mjs
           node --check tools/test-story-runtime-loader.mjs
+          node --check tools/smoke-base-story-programs.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
 
@@ -100,6 +101,9 @@ jobs:
 
       - name: Validate independent base story runtime loader
         run: node tools/test-story-runtime-loader.mjs
+
+      - name: Execute original base world and task branches
+        run: node tools/smoke-base-story-programs.mjs
 
       - name: Validate original animation resource parser
         run: node tools/test-animation-resources.mjs
