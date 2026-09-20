@@ -47,7 +47,17 @@ end
 
 assert(loadfile(runtime_root .. '/lua/gf_web.lua'))()
 assert(__jy_dialogue_enable_original(true) == true)
+G.__original_battle_enabled = true
 assert(loadfile(temp .. '/p_emei.lua'))()
+
+local original_query = G.QueryName
+local progress = { ['进度列表'] = {} }
+for i = 1, 20 do progress['进度列表'][i] = { ['完成'] = 0 } end
+G.QueryName = function(id)
+    id = tonumber(id) or 0
+    if id == 0x1017000e then return progress end
+    return original_query(id)
+end
 
 local body = G.QueryName(0x10030001)
 body['1'] = '测'
@@ -59,7 +69,14 @@ local calls = {}
 local menu_queue = {}
 local menu_index = 1
 local learned = {}
+local loves = {}
+local magic_owned = {}
 local battle_calls = 0
+local battle_result = 1
+local joined = {}
+local passive_count = 0
+local juxianzhuang_count = 0
+local alltime = nil
 
 local function record(name, ...)
     calls[#calls + 1] = { name, ... }
@@ -69,9 +86,9 @@ local function reset_calls()
     menu_queue = {}
     menu_index = 1
 end
-local function saw(name)
+local function saw(name, value)
     for _, row in ipairs(calls) do
-        if row[1] == name then return row end
+        if row[1] == name and (value == nil or row[2] == value) then return row end
     end
     return nil
 end
@@ -93,8 +110,12 @@ end
 G.api['learnmagic'] = function(id)
     id = tonumber(id) or 0
     learned[id] = true
+    magic_owned[id] = 1
     record('learnmagic', id)
     return true
+end
+G.api['get_magic'] = function(id)
+    return magic_owned[tonumber(id) or 0] or 0
 end
 G.api['set_note'] = function(value)
     record('set_note', tostring(value))
@@ -105,11 +126,45 @@ G.api['call_battle'] = function(...)
     record('call_battle', ...)
     return true
 end
+G.api['get_battle'] = function() return battle_result end
+G.api['get_love'] = function(id) return loves[tonumber(id) or 0] or 0 end
+G.api['add_love'] = function(id, delta)
+    id = tonumber(id) or 0
+    loves[id] = (loves[id] or 0) + (tonumber(delta) or 0)
+    record('add_love', id, tonumber(delta) or 0)
+    return loves[id]
+end
+G.api['add_time'] = function(value) record('add_time', tonumber(value) or value); return true end
+G.api['turn_map'] = function() record('turn_map'); return true end
+G.api['story'] = function(text) record('story', tostring(text)); return true end
+G.api['set_team'] = function(...) record('set_team', ...); return true end
+G.api['join'] = function(id)
+    id = tonumber(id) or 0
+    joined[id] = true
+    record('join', id)
+    return true
+end
+G.api['set_alltime'] = function(y,m,d,h,minute)
+    alltime = {tonumber(y),tonumber(m),tonumber(d),tonumber(h),tonumber(minute)}
+    record('set_alltime', table.unpack(alltime))
+    return true
+end
+G.api['出师-增加被动'] = function()
+    passive_count = passive_count + 1
+    record('出师-增加被动')
+    return true
+end
+G.api['初入聚贤庄'] = function()
+    juxianzhuang_count = juxianzhuang_count + 1
+    record('初入聚贤庄')
+    return true
+end
 
 -- 1) Emei admission.
 reset_calls()
 body['140'] = 0
 learned = {}
+magic_owned = {}
 assert(__jy_run('初入峨嵋') == true, 'Emei admission did not start')
 assert(body['9'] == '峨嵋见习弟子', 'Emei admission title mismatch')
 assert(tonumber(body['11']) == 1 and tonumber(body['107']) == 1, 'Emei admission base state mismatch')
@@ -127,10 +182,71 @@ local zhou_menu = saw('menu')
 assert(zhou_menu and zhou_menu[2] == 3, 'Zhou Zhiruo daily did not expose original three choices')
 assert(battle_calls == 0, 'Zhou Zhiruo greeting unexpectedly entered battle')
 
-assert(__jy_missing_calls() == '', 'Emei basic smoke used missing calls: ' .. __jy_missing_calls())
+-- 3) Zhou Zhiruo fixed sparring branch.
+reset_calls()
+menu_queue = {2}
+loves[18] = 50
+battle_result = 1
+battle_calls = 0
+assert(__jy_run('初入峨嵋派-周芷若') == true, 'Zhou Zhiruo battle branch did not start')
+assert(battle_calls == 1, 'Zhou Zhiruo battle did not invoke original battle API')
+assert(loves[18] == 53, 'Zhou Zhiruo victory did not add original love +3')
+assert(saw('add_time', 4), 'Zhou Zhiruo battle did not add original four time units')
+assert(saw('turn_map'), 'Zhou Zhiruo battle did not return through original map flow')
 
-print('original Emei basic sect branches PASS')
-print('  admission + Zhou Zhiruo greeting execute directly from p_emei')
+-- 4) March contest: three victories grant Four Symbols footwork.
+reset_calls()
+battle_result = 1
+battle_calls = 0
+assert(__jy_run('初入峨嵋派-三月大比较') == true, 'Emei March contest did not start')
+assert(battle_calls == 3, 'Emei March contest did not execute three battles')
+assert(learned[179] == true, 'Emei March contest did not learn original magic 179')
+assert(body['9'] == '峨嵋入门弟子', 'Emei March contest title mismatch')
+
+-- 5) June contest: three victories grant Emei Nine Yang.
+reset_calls()
+battle_calls = 0
+assert(__jy_run('初入峨嵋派-六月大比较') == true, 'Emei June contest did not start')
+assert(battle_calls == 3, 'Emei June contest did not execute three battles')
+assert(learned[154] == true, 'Emei June contest did not learn original magic 154')
+assert(body['9'] == '峨嵋入室弟子', 'Emei June contest title mismatch')
+
+-- 6) September contest: three victories grant chief-disciple title and senior-sister favor.
+reset_calls()
+battle_calls = 0
+loves[421] = 50
+loves[422] = 50
+assert(__jy_run('初入峨嵋派-九月大比较') == true, 'Emei September contest did not start')
+assert(battle_calls == 3, 'Emei September contest did not execute three battles')
+assert(body['9'] == '峨嵋首席弟子', 'Emei September contest title mismatch')
+assert(loves[421] == 60 and loves[422] == 60, 'Emei September contest favor rewards mismatch')
+
+-- 7) Emei graduation victory: Yang Xiao battle -> direct disciple -> Miejue sword -> Zhou joins -> Juxianzhuang.
+reset_calls()
+battle_result = 1
+battle_calls = 0
+magic_owned[254] = 1
+magic_owned[255] = 1
+learned[48] = nil
+joined = {}
+passive_count = 0
+juxianzhuang_count = 0
+alltime = nil
+progress['进度列表'][10]['完成'] = 0
+assert(__jy_run('初入峨嵋派-出师') == true, 'Emei graduation did not start')
+assert(battle_calls == 1, 'Emei graduation victory path did not execute Yang Xiao battle')
+assert(body['9'] == '峨嵋亲传弟子', 'Emei graduation did not grant direct-disciple title')
+assert(learned[48] == true, 'Emei graduation did not learn original Miejue sword when 254/255 are owned')
+assert(joined[18] == true, 'Emei graduation did not let Zhou Zhiruo join')
+assert(progress['进度列表'][10]['完成'] == 1, 'Emei graduation progress mismatch')
+assert(passive_count == 1 and juxianzhuang_count == 1, 'Emei graduation handoff mismatch')
+assert(alltime and alltime[1] == 2 and alltime[2] == 1 and alltime[3] == 1 and alltime[4] == 4 and alltime[5] == 1,
+    'Emei graduation all-time reset mismatch')
+
+assert(__jy_missing_calls() == '', 'Emei smoke used missing calls: ' .. __jy_missing_calls())
+
+print('original Emei sect branches PASS')
+print('  admission + Zhou greeting/battle + March/June/September contests + graduation execute from p_emei')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
