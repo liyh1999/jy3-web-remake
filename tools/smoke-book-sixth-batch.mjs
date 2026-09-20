@@ -49,11 +49,23 @@ assert(__jy_dialogue_enable_original(true) == true)
 G.__original_battle_enabled = true
 assert(loadfile(temp .. '/p_book_story.lua'))()
 
+local original_query = G.QueryName
+local achieve = {['进度列表'] = {}}
+achieve['进度列表'][10] = {['完成'] = 1}
+G.QueryName = function(id)
+    id = tonumber(id) or 0
+    if id == 0x10170017 then return achieve end
+    return original_query(id)
+end
+
 local calls = {}
 local items = {}
 local joined = {}
 local money = 0
 local notes = {}
+local current_team = {}
+local battle_calls = 0
+local friend_skills = {}
 
 local function record(name, ...)
     calls[#calls + 1] = {name, ...}
@@ -67,7 +79,32 @@ G.api['地图_进入地图'] = function(name, map, family)
 end
 G.api['in_team'] = function(id)
     id = tonumber(id) or 0
-    return id == 5 or joined[id] == true
+    return id == 5 or id == 27 or id == 4 or joined[id] == true
+end
+G.api['set_team'] = function(...)
+    current_team = {...}
+    record('set_team', ...)
+    return true
+end
+G.api['call_battle'] = function(...)
+    battle_calls = battle_calls + 1
+    record('call_battle', ...)
+    return true
+end
+G.api['get_battle'] = function() return 1 end
+G.api['get_role'] = function(role, field)
+    if tonumber(role) == 406 and tonumber(field) == 9 then return 80 end
+    return 0
+end
+G.api['set_friend_skill'] = function(role, slot, skill, exp)
+    friend_skills[#friend_skills + 1] = {
+        role = tonumber(role) or role,
+        slot = tonumber(slot) or slot,
+        skill = tonumber(skill) or skill,
+        exp = tonumber(exp) or exp,
+    }
+    record('set_friend_skill', role, slot, skill, exp)
+    return true
 end
 G.api['get_point'] = function(id)
     id = tonumber(id) or 0
@@ -170,10 +207,67 @@ assert(joined[396] == true, 'White Horse final branch did not recruit original r
 assert(items[344] == 1, 'White Horse final branch did not grant original item 344')
 assert(money == 100000, 'White Horse final branch money reward mismatch')
 
+-- 3) Sword Stained with Royal Blood: 0 -> 1 -> 2 -> perfect complete.
+local blood = G.QueryName(0x101c000d)
+blood['流程'] = 0
+blood['完成'] = 0
+blood['完美'] = 0
+items[22] = 0
+items[245] = 0
+items[129] = 0
+battle_calls = 0
+current_team = {}
+
+assert(__jy_run('天书_碧血剑') == true, 'Royal Blood phase 0 did not start')
+assert(blood['流程'] == 1, 'Royal Blood phase 0 did not persist flow 1')
+
+assert(__jy_run('天书_碧血剑') == true, 'Royal Blood phase 1 did not start')
+assert(blood['流程'] == 2, 'Royal Blood phase 1 did not persist flow 2')
+assert(items[22] == 1, 'Royal Blood phase 1 did not grant original item 22')
+assert(battle_calls == 2, 'Royal Blood phase 1 battle count mismatch')
+
+assert(__jy_run('天书_碧血剑') == true, 'Royal Blood phase 2 did not start')
+assert(blood['完成'] == 1 and blood['完美'] == 1, 'Royal Blood final completion flags mismatch')
+assert(items[245] == 1 and items[129] == 1,
+    'Royal Blood final rewards did not pass through original add_itme compatibility alias')
+assert(battle_calls == 3, 'Royal Blood final cumulative battle count mismatch')
+
+-- 4) Heaven Sword and Dragon Saber: 0 -> 1 -> 2 -> perfect complete.
+local heaven = G.QueryName(0x101c000c)
+heaven['流程'] = 0
+heaven['完成'] = 0
+heaven['完美'] = 0
+joined[406] = nil
+joined[28] = nil
+items[118] = 0
+items[104] = 0
+battle_calls = 0
+friend_skills = {}
+current_team = {}
+achieve['进度列表'][10]['完成'] = 1
+
+assert(__jy_run('天书_倚天屠龙记') == true, 'Heaven Sword phase 0 did not start')
+assert(heaven['流程'] == 1, 'Heaven Sword phase 0 did not persist flow 1')
+assert(joined[406] == true, 'Heaven Sword phase 0 did not recruit original role 406')
+assert(battle_calls == 1, 'Heaven Sword phase 0 battle count mismatch')
+
+assert(__jy_run('天书_倚天屠龙记') == true, 'Heaven Sword phase 1 did not start')
+assert(heaven['流程'] == 2, 'Heaven Sword phase 1 did not persist flow 2')
+assert(battle_calls == 2, 'Heaven Sword phase 1 cumulative battle count mismatch')
+assert(#friend_skills == 1 and friend_skills[1].role == 4 and friend_skills[1].skill == 245,
+    'Heaven Sword phase 1 did not grant Zhang Wuji original friend skill')
+assert(current_team[1] == 4 and current_team[2] == 18 and current_team[3] == 15 and current_team[4] == 252,
+    'Heaven Sword phase 1 battle team mismatch')
+
+assert(__jy_run('天书_倚天屠龙记') == true, 'Heaven Sword phase 2 did not start')
+assert(heaven['完成'] == 1 and heaven['完美'] == 1, 'Heaven Sword final completion flags mismatch')
+assert(items[118] == 1 and items[104] == 1, 'Heaven Sword perfect branch reward items mismatch')
+assert(joined[28] == true and joined[406] == true, 'Heaven Sword final team state mismatch')
+
 assert(__jy_missing_calls() == '', 'sixth-batch book smoke used missing calls: ' .. __jy_missing_calls())
 
 print('original sixth-batch book stories PASS')
-print('  Flying Fox flow 3 reaches perfect completion; White Horse 0->1->2->4->perfect covers deterministic no-battle puzzles and rewards')
+print('  Flying Fox finale, White Horse 0->1->2->4->perfect, Royal Blood 0->1->2->perfect and Heaven Sword 0->1->2->perfect all preserve original state')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
