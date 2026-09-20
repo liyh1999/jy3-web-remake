@@ -92,7 +92,7 @@ G.api['地图_进入地图'] = function(name, map, family)
 end
 G.api['in_team'] = function(id)
     id = tonumber(id) or 0
-    return id == 5 or id == 25 or joined[id] == true
+    return id == 5 or id == 25 or id == 37 or joined[id] == true
 end
 G.api['set_team'] = function(...)
     current_team = {...}
