@@ -96,9 +96,9 @@ function G.wait_case()
     return nil
 end
 
-function G.trig_event(event_name)
-    if enabled then return runtime:trig_event(event_name) end
-    return raw.trig_event(event_name)
+function G.trig_event(event_name, ...)
+    if enabled then return runtime:trig_event(event_name, ...) end
+    return raw.trig_event(event_name, ...)
 end
 
 function G.start_program(name, ...)
