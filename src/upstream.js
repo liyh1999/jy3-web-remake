@@ -106,6 +106,11 @@
     '04_program/p_school_xuedaomen.lua',
   ];
 
+  const BOOK_LAKES_PROGRAMS = [
+    '04_program/p_book_story.lua',
+    '04_program/p_lakes_notice.lua',
+  ];
+
   const CORE_NOTIFY = [
     '06_notify/n_common.lua',
     '06_notify/n_citymap_system.lua',
@@ -636,6 +641,29 @@ return true
     return xingxiuXuedaomenRuntimePromise;
   }
 
+  let bookLakesRuntimePromise = null;
+  async function prepareBookLakesRuntime(onProgress) {
+    if (!bookLakesRuntimePromise) {
+      bookLakesRuntimePromise = (async () => {
+        const previous = await prepareXingxiuXuedaomenRuntime(onProgress);
+        const loadedPrograms = await loadPrograms(BOOK_LAKES_PROGRAMS, onProgress);
+        return {
+          loadedModules: previous.loadedModules,
+          loadedViews: previous.loadedViews,
+          loadedPrograms: previous.loadedPrograms + loadedPrograms,
+          storyPrograms: [...previous.storyPrograms],
+          sectPrograms: [...previous.allSectPrograms],
+          bookLakesPrograms: [...BOOK_LAKES_PROGRAMS],
+          allSectPrograms: [...previous.allSectPrograms],
+        };
+      })().catch((error) => {
+        bookLakesRuntimePromise = null;
+        throw error;
+      });
+    }
+    return bookLakesRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -668,6 +696,7 @@ return true
     SHAOLIN_EMEI_PROGRAMS,
     GAIBANG_TAOHUADAO_PROGRAMS,
     XINGXIU_XUEDAOMEN_PROGRAMS,
+    BOOK_LAKES_PROGRAMS,
     CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
@@ -703,6 +732,7 @@ return true
     prepareShaolinEmeiRuntime,
     prepareGaibangTaohuadaoRuntime,
     prepareXingxiuXuedaomenRuntime,
+    prepareBookLakesRuntime,
     bootstrapData,
   };
 })();
