@@ -711,7 +711,8 @@
       try {
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
         originalProgramLoaded = loaded.loadedPrograms === window.JYUpstream.CORE_PROGRAMS.length;
-        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 原程序 ${loaded.loadedPrograms} 个已载入`;
+        const story = await window.JYUpstream.prepareStoryRuntime((message) => { ui.status.textContent = message; });
+        ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${story.programs.length} 个已就绪`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
         originalProgramLoaded = false;
