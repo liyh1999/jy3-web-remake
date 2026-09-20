@@ -100,6 +100,20 @@ package.preload['js'] = function()
     }
 end
 
+package.preload['co'] = function()
+    return {
+        create = coroutine.create,
+        resume = coroutine.resume,
+        yield = coroutine.yield,
+        running = coroutine.running,
+        status = coroutine.status,
+        wrap = coroutine.wrap,
+        weak_meta = { __mode = 'kv' },
+        error = function(err) error(err, 2) end,
+        wait_time = function() return true end,
+    }
+end
+
 assert(loadfile(runtime_root .. '/lua/gf_web.lua'))()
 
 for i = 1, #arg do
