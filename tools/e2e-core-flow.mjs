@@ -1,0 +1,146 @@
+import { launchBrowserHarness } from './browser-e2e-core.mjs';
+
+const browser = await launchBrowserHarness({
+  port: Number(process.env.JY3_E2E_PORT || 8092),
+  debugPort: Number(process.env.JY3_E2E_DEBUG_PORT || 9228),
+  dist: process.env.JY3_E2E_DIST === '1',
+});
+
+const { evaluate, waitFor, click, errors, sleep } = browser;
+
+async function drainDialogueUntil(predicate, answers = [], timeoutMs = 30000) {
+  const deadline = Date.now() + timeoutMs;
+  let answerIndex = 0;
+  while (Date.now() < deadline) {
+    if (await evaluate(`Boolean(${predicate})`)) return answerIndex;
+    const optionCount = await evaluate("document.querySelectorAll('#options button').length");
+    if (optionCount > 0) {
+      if (answerIndex >= answers.length) {
+        throw new Error(`menu answer fixture exhausted; visible options=${optionCount}`);
+      }
+      const choice = Number(answers[answerIndex++]);
+      if (choice < 1 || choice > optionCount) throw new Error(`invalid menu choice ${choice}/${optionCount}`);
+      const clicked = await evaluate(`(() => {
+        const buttons = [...document.querySelectorAll('#options button')];
+        const button = buttons[${choice - 1}];
+        if (!button || button.disabled) return false;
+        button.click();
+        return true;
+      })()`);
+      if (!clicked) throw new Error('menu click failed');
+      await sleep(60);
+      continue;
+    }
+    const canContinue = await evaluate("Boolean(document.querySelector('#continueBtn:not(.hidden):not(:disabled)'))");
+    if (canContinue) {
+      await click('#continueBtn');
+      await sleep(60);
+      continue;
+    }
+    await sleep(80);
+  }
+  throw new Error('dialogue/menu flow timed out');
+}
+
+try {
+  await waitFor(
+    "document.querySelector('#startBtn') && !document.querySelector('#startBtn').disabled && document.querySelector('#startBtn').textContent.includes('原版')",
+    { timeoutMs: 30000, label: 'original runtime bootstrap' }
+  );
+
+  // 1) Real page new-game button + original questionnaire menus.
+  await click('#startBtn');
+  const openingAnswers = [5,5,1,1,1,1,1,1,1,1,1,1,1,1,6];
+  await drainDialogueUntil(
+    "document.querySelector('#scene')?.classList.contains('village-scene')",
+    openingAnswers,
+    45000
+  );
+
+  const openingState = await evaluate(`(() => ({
+    scene: document.querySelector('#scene')?.className || '',
+    hudHidden: document.querySelector('#hud')?.classList.contains('hidden'),
+    morality: Number(window.JYWeb?.getPoint?.(15) || 0),
+    money: Number(document.querySelector('#money')?.textContent || 0)
+  }))()`);
+  if (!openingState.scene.includes('village-scene') || openingState.hudHidden) {
+    throw new Error('new game did not reach visible Niujia Village HUD');
+  }
+
+  // 2) Original Niujia NPC dialogue in the real browser UI.
+  const huangStarted = await evaluate(`window.fengari.load("return __jy_run('牛家村-黄蓉')", '@e2e/huang-rong')()`);
+  if (!huangStarted) throw new Error('Huang Rong event did not start');
+  await drainDialogueUntil(
+    "document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0",
+    [],
+    20000
+  );
+  await sleep(500);
+  const autosaveRaw = await evaluate("localStorage.getItem('jy3-web-remake:save:v2:autosave')");
+  if (!autosaveRaw) throw new Error('completed NPC event did not create autosave');
+
+  // 3) Original Mu Nianci event -> menu -> original battle UI. Exercise browser escape control.
+  const muStarted = await evaluate(`window.fengari.load("return __jy_run('牛家村-穆念慈')", '@e2e/mu-nianci')()`);
+  if (!muStarted) throw new Error('Mu Nianci event did not start');
+
+  // Initial talk, then choose the marriage/battle option.
+  await waitFor("document.querySelector('#continueBtn:not(.hidden)')", { label: 'Mu Nianci opening talk' });
+  await click('#continueBtn');
+  await waitFor("document.querySelectorAll('#options button').length >= 2", { label: 'Mu Nianci menu' });
+  await evaluate("document.querySelectorAll('#options button')[0].click()");
+
+  await waitFor(
+    "document.querySelector('#battle') && !document.querySelector('#battle').classList.contains('hidden')",
+    { timeoutMs: 30000, label: 'original battle UI' }
+  );
+  const battleTitle = await evaluate("document.querySelector('#battleTitle')?.textContent || ''");
+  if (!battleTitle) throw new Error('battle UI title missing');
+
+  await waitFor(
+    "document.querySelector('#battleEscapeBtn') && !document.querySelector('#battleEscapeBtn').disabled",
+    { timeoutMs: 20000, label: 'battle escape enabled' }
+  );
+  await click('#battleEscapeBtn');
+
+  await drainDialogueUntil(
+    "document.querySelector('#battle')?.classList.contains('hidden') && document.querySelector('#dialogue')?.classList.contains('hidden') && document.querySelectorAll('#options button').length===0",
+    [],
+    30000
+  );
+
+  // 4) Manual slot save, mutate authoritative Lua state, then load and verify restoration.
+  await evaluate(`(() => {
+    const select = document.querySelector('#saveSlotSelect');
+    select.value = 'slot1';
+    select.dispatchEvent(new Event('change', { bubbles:true }));
+  })()`);
+  await waitFor("!document.querySelector('#saveBtn').disabled", { label: 'manual save enabled' });
+
+  const before = await evaluate("Number(window.JYWeb.getPoint(15) || 0)");
+  await click('#saveBtn');
+  await waitFor("Boolean(localStorage.getItem('jy3-web-remake:save:v2:slot1'))", { label: 'slot1 persisted' });
+
+  const slotPayload = await evaluate("JSON.parse(localStorage.getItem('jy3-web-remake:save:v2:slot1'))");
+  if (slotPayload.schemaVersion !== 2 || !slotPayload.luaState || !slotPayload.meta) {
+    throw new Error('manual slot payload is incomplete');
+  }
+
+  const changed = before === 77 ? 76 : 77;
+  await evaluate(`window.fengari.load("local G=require 'gf'; return G.call('set_point',15,${changed})", '@e2e/mutate-save')()`);
+  await waitFor(`Number(window.JYWeb.getPoint(15)) === ${changed}`, { label: 'mutated morality visible' });
+
+  await click('#loadBtn');
+  await waitFor(`Number(window.JYWeb.getPoint(15)) === ${before}`, { timeoutMs: 20000, label: 'manual slot restored morality' });
+
+  // Let late async browser tasks settle before evaluating errors.
+  await sleep(750);
+  if (errors.length) {
+    throw new Error(`browser errors captured:\n${errors.join('\n')}`);
+  }
+
+  console.log('browser E2E core flow PASS');
+  console.log('  page load -> original new game -> Niujia NPC dialogue -> original battle escape -> slot1 save/load');
+  console.log('  console errors / Runtime.exceptionThrown: 0');
+} finally {
+  await browser.cleanup();
+}
