@@ -11,7 +11,7 @@ const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
 const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const sourceBase = process.env.JY3_SECT_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-quanzhen-gumu-transition-'));
-for (const name of ['p_school_quanzhen.lua', 'p_school_gumu.lua']) {
+for (const name of ['p_order.lua', 'p_school_quanzhen.lua', 'p_school_gumu.lua']) {
   fs.writeFileSync(
     path.join(temp, name),
     normalizeLuaSource(fs.readFileSync(path.join(sourceBase, name), 'utf8')),
@@ -50,6 +50,7 @@ end
 assert(loadfile(runtime_root .. '/lua/gf_web.lua'))()
 assert(__jy_dialogue_enable_original(true) == true)
 G.__original_battle_enabled = true
+assert(loadfile(temp .. '/p_order.lua'))()
 assert(loadfile(temp .. '/p_school_quanzhen.lua'))()
 assert(loadfile(temp .. '/p_school_gumu.lua'))()
 
