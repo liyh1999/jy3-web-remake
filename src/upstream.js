@@ -86,6 +86,11 @@
     '04_program/p_school_gumu.lua',
   ];
 
+  const WUDANG_HUASHAN_PROGRAMS = [
+    '04_program/p_school_wudang.lua',
+    '04_program/p_school_huashan.lua',
+  ];
+
   const CORE_NOTIFY = [
     '06_notify/n_common.lua',
     '06_notify/n_citymap_system.lua',
@@ -524,6 +529,29 @@ return true
     return quanzhenGumuRuntimePromise;
   }
 
+  let wudangHuashanRuntimePromise = null;
+  async function prepareWudangHuashanRuntime(onProgress) {
+    if (!wudangHuashanRuntimePromise) {
+      wudangHuashanRuntimePromise = (async () => {
+        const previous = await prepareQuanzhenGumuRuntime(onProgress);
+        const loadedPrograms = await loadPrograms(WUDANG_HUASHAN_PROGRAMS, onProgress);
+        return {
+          loadedModules: previous.loadedModules,
+          loadedViews: previous.loadedViews,
+          loadedPrograms: previous.loadedPrograms + loadedPrograms,
+          storyPrograms: [...previous.storyPrograms],
+          previousSectPrograms: [...previous.sectPrograms],
+          sectPrograms: [...WUDANG_HUASHAN_PROGRAMS],
+          allSectPrograms: [...previous.sectPrograms, ...WUDANG_HUASHAN_PROGRAMS],
+        };
+      })().catch((error) => {
+        wudangHuashanRuntimePromise = null;
+        throw error;
+      });
+    }
+    return wudangHuashanRuntimePromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -552,6 +580,7 @@ return true
     CACHED_PROGRAMS,
     BASE_STORY_PROGRAMS,
     QUANZHEN_GUMU_PROGRAMS,
+    WUDANG_HUASHAN_PROGRAMS,
     CORE_NOTIFY,
     LOGGING_UI_MODULES,
     LOGGING_UI_VIEWS,
@@ -583,6 +612,7 @@ return true
     prepareDialogueRuntime,
     prepareStoryRuntime,
     prepareQuanzhenGumuRuntime,
+    prepareWudangHuashanRuntime,
     bootstrapData,
   };
 })();
