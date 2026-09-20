@@ -22,6 +22,7 @@
   let pendingSavePayload = '';
   let originalBattleCallback = null;
   let originalBattleStarting = false;
+  let originalMinigameCallback = null;
   let battlePumpTimer = null;
   const programPumpTimers = new Map();
   let programReadyTimer = null;
@@ -230,6 +231,35 @@
       ui.status.textContent = '原版押宝程序运行中 · 选择单/双/小/大下注后点击中央骰子';
       return loaded;
     },
+    startOriginalMinigame(name, resume) {
+      const key = String(name || '');
+      const starters = {
+        logging: () => window.JYWeb.startOriginalLogging((message) => { ui.status.textContent = message; }),
+        dig: () => window.JYWeb.startOriginalDig((message) => { ui.status.textContent = message; }),
+        fishing: () => window.JYWeb.startOriginalFishing((message) => { ui.status.textContent = message; }),
+        hunting: () => window.JYWeb.startOriginalHunting((message) => { ui.status.textContent = message; }),
+        gambling: () => window.JYWeb.startOriginalGambling((message) => { ui.status.textContent = message; }),
+      };
+      const starter = starters[key];
+      if (!starter || originalMinigameCallback) {
+        if (typeof resume === 'function') setTimeout(() => resume(false), 0);
+        return false;
+      }
+      originalMinigameCallback = typeof resume === 'function' ? resume : null;
+      Promise.resolve()
+        .then(starter)
+        .catch((error) => {
+          console.error('story mini-game start failed', error);
+          ui.status.textContent = `原版小游戏启动失败：${error?.message || error}`;
+          const cb = originalMinigameCallback;
+          originalMinigameCallback = null;
+          setTimeout(() => {
+            try { fengari.load('return __jy_minigame_reset()', '@web/minigame-start-failed-reset')(); } catch (_) {}
+            if (cb) cb(false);
+          }, 0);
+        });
+      return true;
+    },
     async showLoggingUi(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
@@ -335,12 +365,15 @@
       if (ui.fishing) ui.fishing.disabled = false;
       if (ui.hunting) ui.hunting.disabled = false;
       if (ui.gambling) ui.gambling.disabled = false;
+      const cb = originalMinigameCallback;
+      originalMinigameCallback = null;
       setTimeout(() => {
         try {
           fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
         } catch (error) {
           console.error('minigame cleanup failed', error);
         }
+        if (cb) cb(true);
       }, 0);
     },
     scheduleBattlePump(delay) {
