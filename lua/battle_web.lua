@@ -760,8 +760,8 @@ function G.wait1(event_name)
     return pump_until(event)
 end
 
-function G.trig_event(event_name)
-    if not headless and not browser then return raw.trig_event(event_name) end
+function G.trig_event(event_name, ...)
+    if not headless and not browser then return raw.trig_event(event_name, ...) end
     local event = tostring(event_name)
     local woke = 0
     for _, meta in pairs(programs) do
