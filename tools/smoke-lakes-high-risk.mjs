@@ -79,7 +79,6 @@ G.api['call_battle'] = function(...)
     return true
 end
 G.api['get_battle'] = function()
-    o_battle_结果 = 1
     return 1
 end
 G.api['talk'] = function() return true end
@@ -87,11 +86,13 @@ G.api['add_point'] = function(id, delta)
     if tonumber(id) == 15 then point15 = point15 + (tonumber(delta) or 0) end
     return true
 end
-G.api['add_schoollove'] = function(id, delta)
+local function change_schoollove(id, delta)
     id = tonumber(id) or 0
     school[id] = (school[id] or 0) + (tonumber(delta) or 0)
     return true
 end
+G.api['schoollove'] = change_schoollove
+G.api['add_schoollove'] = change_schoollove
 
 local function enemy_count(args)
     local count = 0
@@ -109,7 +110,7 @@ local function run_case(choice, m, o)
     battle_calls = 0
     point15 = 0
     school = {[1] = 0, [2] = 0}
-    o_battle_结果 = 1
+    _G['__jy_u_6f_5f_62_61_74_74_6c_65_5f_7ed3_679c'] = 1
 
     assert(__jy_run('聚贤庄任务_少林与武当的恶斗') == true, 'Shaolin/Wudang branch did not start')
     assert(battle_calls == 1, 'Shaolin/Wudang branch must execute exactly one selected battle')
