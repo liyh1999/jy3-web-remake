@@ -21,7 +21,14 @@ const harness = String.raw`
 local temp = assert(os.getenv('JY3_BOOK_TMP'), 'JY3_BOOK_TMP missing')
 local runtime_root = assert(os.getenv('JY3_RUNTIME_ROOT'), 'JY3_RUNTIME_ROOT missing')
 
+local pending_ui = {}
 local web = {}
+function web:showTalk(speaker, text, resume)
+    pending_ui[#pending_ui + 1] = resume
+end
+function web:story(text, resume)
+    pending_ui[#pending_ui + 1] = resume
+end
 function web:setPoint() end
 function web:setMoney() end
 function web:setItem() end
@@ -62,6 +69,15 @@ local function saw(name, value)
     for _,row in ipairs(calls) do
         if row[1] == name and (value == nil or row[2] == value) then return row end
     end
+end
+local function run_to_idle(name)
+    assert(__jy_run(name) == true, name .. ' did not start')
+    while #pending_ui > 0 do
+        local resume = table.remove(pending_ui, 1)
+        assert(type(resume) == 'function', name .. ' queued invalid UI callback')
+        resume(true)
+    end
+    return true
 end
 
 G.api['talk'] = function(name, role, text, pos, ui) record('talk', text, role); return true end
@@ -112,17 +128,17 @@ items[264] = 0
 battle_calls = 0
 friend_skill_calls = 0
 
-assert(__jy_run('天书_雪山飞狐') == true, 'Snowy Mountain phase 0 did not start')
+assert(run_to_idle('天书_雪山飞狐') == true, 'Snowy Mountain phase 0 did not finish')
 assert(snow['流程'] == 1, 'Snowy Mountain phase 0 did not persist flow 1')
 assert(items[143] == 1, 'Snowy Mountain phase 0 item 143 reward mismatch')
 assert(battle_calls == 1, 'Snowy Mountain phase 0 battle count mismatch')
 
-assert(__jy_run('天书_雪山飞狐') == true, 'Snowy Mountain phase 1 did not start')
+assert(run_to_idle('天书_雪山飞狐') == true, 'Snowy Mountain phase 1 did not finish')
 assert(snow['流程'] == 3, 'Snowy Mountain phase 1 did not persist flow 3')
 assert(items[143] == 1, 'Snowy Mountain item 143 did not persist across phases')
 assert(battle_calls == 3, 'Snowy Mountain phase 1 cumulative battle count mismatch')
 
-assert(__jy_run('天书_雪山飞狐') == true, 'Snowy Mountain phase 3 did not start')
+assert(run_to_idle('天书_雪山飞狐') == true, 'Snowy Mountain phase 3 did not finish')
 assert(snow['完成'] == 1 and snow['完美'] == 1, 'Snowy Mountain final completion flags mismatch')
 assert(items[264] == 1, 'Snowy Mountain final item 264 reward mismatch')
 assert(items[143] == 1, 'Snowy Mountain earlier reward was lost after completion')
@@ -139,17 +155,17 @@ items[265] = 0
 items[235] = 1
 local before_secret_battles = battle_calls
 
-assert(__jy_run('天书_连城诀') == true, 'Deadly Secret phase 0 did not start')
+assert(run_to_idle('天书_连城诀') == true, 'Deadly Secret phase 0 did not finish')
 assert(secret['流程'] == 1, 'Deadly Secret phase 0 did not persist flow 1')
 assert(items[76] == 1 and items[265] == 1, 'Deadly Secret phase 0 persistent rewards mismatch')
 assert(items[235] == 1, 'Deadly Secret starting antidote changed before final phase')
 
-assert(__jy_run('天书_连城诀') == true, 'Deadly Secret phase 1 did not start')
+assert(run_to_idle('天书_连城诀') == true, 'Deadly Secret phase 1 did not finish')
 assert(secret['流程'] == 2, 'Deadly Secret phase 1 did not persist flow 2')
 assert(items[76] == 1 and items[265] == 1, 'Deadly Secret earlier rewards were lost at flow 2')
 assert(battle_calls == before_secret_battles + 2, 'Deadly Secret cumulative battle count mismatch before finale')
 
-assert(__jy_run('天书_连城诀') == true, 'Deadly Secret phase 2 did not start')
+assert(run_to_idle('天书_连城诀') == true, 'Deadly Secret phase 2 did not finish')
 assert(secret['完成'] == 1 and secret['完美'] == 1, 'Deadly Secret final completion flags mismatch')
 assert(items[235] == 0, 'Deadly Secret antidote was not consumed by original final branch')
 assert(items[76] == 1 and items[265] == 1, 'Deadly Secret persistent rewards were lost after completion')
