@@ -95,6 +95,7 @@ jobs:
           node --check tools/smoke-gaibang-basic.mjs
           node --check tools/smoke-taohuadao-basic.mjs
           node --check tools/smoke-xingxiu-basic.mjs
+          node --check tools/smoke-xuedaomen-basic.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -362,6 +363,9 @@ jobs:
       - name: Execute original Xingxiu sect branches
         run: node tools/smoke-xingxiu-basic.mjs
 
+      - name: Execute original Xuedaomen sect branches
+        run: node tools/smoke-xuedaomen-basic.mjs
+
       - name: Audit full original program API coverage
         run: |
           node tools/audit-program-api-coverage.mjs
@@ -520,6 +524,9 @@ jobs:
 
       - name: Smoke Xingxiu sect branches from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-xingxiu-basic.mjs
+
+      - name: Smoke Xuedaomen sect branches from offline dist
+        run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-xuedaomen-basic.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
