@@ -513,7 +513,16 @@ __jy_program_browser_pump(0)
 math.random = hunting_random
 
 assert(tonumber(hunting_ui.getChildByName('目标').text) == 1 and tonumber(hunting_ui.getChildByName('位置').text) == 1, 'hunting target selection did not reach c_hunting')
-assert((reward_items[291] or 0) == 1, 'original capture path did not award the first hunting creature item')
+local hunting_reward_dump = {}
+for id = 286, 333 do
+    if (reward_items[id] or 0) ~= 0 then hunting_reward_dump[#hunting_reward_dump + 1] = tostring(id) .. '=' .. tostring(reward_items[id]) end
+end
+assert((reward_items[291] or 0) == 1,
+    'original capture path did not award the first hunting creature item; mode=' .. tostring(G.misc()['模式']) ..
+    ' score=' .. tostring(hunting_ui.getChildByName('得分').text) ..
+    ' total=' .. tostring(hunting_ui.getChildByName('总分').text) ..
+    ' exp=' .. tostring(reward_points[103] or 0) ..
+    ' rewards=' .. table.concat(hunting_reward_dump, ','))
 assert(tonumber(hunting_ui.getChildByName('得分').text) == 5, 'original hunting capture did not update score')
 assert(tonumber(hunting_ui.getChildByName('总分').text) == 20, 'original hunting capture did not update total score with experience')
 assert((reward_points[103] or 0) == 15, 'original hunting capture did not award hunting experience')
