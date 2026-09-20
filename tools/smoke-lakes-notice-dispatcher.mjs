@@ -12,7 +12,7 @@ const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const sourceBase = process.env.JY3_LAKES_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-lakes-dispatch-'));
 const normalizedSource = normalizeLuaSource(fs.readFileSync(path.join(sourceBase, 'p_lakes_notice.lua'), 'utf8'));
-const taskNames = [...normalizedSource.matchAll(/t\\\['(聚贤庄任务_[^']+)'\\\]\\s*=\\s*function\\\(\\\)/g)].map((match) => match[1]);
+const taskNames = [...normalizedSource.matchAll(/t\['(聚贤庄任务_[^']+)'\]\s*=\s*function\(\)/g)].map((match) => match[1]);
 if (taskNames.length !== 47) {
   throw new Error(`expected 47 pinned upstream lakes tasks, found ${taskNames.length}`);
 }
