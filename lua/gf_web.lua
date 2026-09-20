@@ -2,7 +2,7 @@
 -- Original Lua owns gameplay/data state; Web code owns platform/UI side effects.
 local js = require "js"
 local web = js.global.JYWeb
-local G = { api = {} }
+local G = { api = {}, notify = {} }
 
 local objects = {}
 local templates = {}
@@ -476,6 +476,11 @@ function G.call(name, ...)
 
     local found, result = call_lua_api(name, args)
     if found then return result end
+
+    local notify_fn = G.notify and G.notify[name]
+    if type(notify_fn) == "function" then
+        return notify_fn(table.unpack(args))
+    end
 
     if name == "get_point" then
         return fallback_get_point(args[1])
