@@ -1,11 +1,15 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
-  const SAVE_KEY = 'jy3-web-remake:save:v1';
   const LEGACY_FILE_KEY = 'jy3-web-remake:legacy-file:';
+  const saveStorage = (() => {
+    try { return window.localStorage || null; }
+    catch (_) { return null; }
+  })();
+  const saveStore = saveStorage && window.JYSaveStore ? window.JYSaveStore.create(saveStorage) : null;
   const ui = {
     status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
-    save: $('#saveBtn'), load: $('#loadBtn'),
+    save: $('#saveBtn'), load: $('#loadBtn'), saveSlot: $('#saveSlotSelect'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
     options: $('#options'), cont: $('#continueBtn'), actions: $('#villageActions'),
@@ -29,6 +33,9 @@
   let programReadyTimer = null;
   const storyProgramPumpTimers = new Map();
   let storyProgramReadyTimer = null;
+  let saveReady = false;
+  let suppressAutosave = false;
+  let autosaveTimer = null;
 
   function emitTeamChanged() {
     const detail = { team: [...state.team] };
@@ -123,40 +130,115 @@
     return LEGACY_FILE_KEY + value;
   }
 
-  function refreshLoadButton() {
-    if (!ui.load) return;
-    ui.load.disabled = !localStorage.getItem(SAVE_KEY);
-  }
-
-  function saveGame() {
+  function luaScalar(source, fallback = 0) {
     try {
-      const luaState = fengari.load('return __jy_export_state()', '@web/export-save')();
-      const tracked = fengari.load('return __jy_tracked_save_objects()', '@web/save-count')();
-      const payload = {
-        version: 1,
-        upstream: window.JYUpstream?.UPSTREAM_REV || '',
-        savedAt: new Date().toISOString(),
-        luaState
-      };
-      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-      refreshLoadButton();
-      ui.status.textContent = `已存档 · ${tracked} 个原 Lua 对象`;
-    } catch (e) {
-      console.error(e);
-      ui.status.textContent = `存档失败：${e.message || e}`;
+      const value = fengari.load(source, '@web/save-meta')();
+      return value === undefined || value === null ? fallback : value;
+    } catch (_) {
+      return fallback;
     }
   }
 
-  function loadGame() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) {
-        ui.status.textContent = '没有可读取的本地存档';
-        return;
-      }
-      const payload = JSON.parse(raw);
-      if (!payload?.luaState) throw new Error('存档内容不完整');
+  function collectSaveMeta(trackedObjects) {
+    const characterName = String(luaScalar(
+      'local G=require"gf"; local b=G.QueryName(0x10030001); return tostring(b[tostring(1)] or "")..tostring(b[tostring(2)] or "")',
+      ''
+    ) || '').trim() || '无名侠客';
+    const level = Number(luaScalar('local G=require"gf"; return tonumber(G.QueryName(0x10030001)[tostring(4)]) or 0', 0)) || 0;
+    const mapId = Number(luaScalar('local G=require"gf"; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0', 0)) || 0;
+    const morality = Number(luaScalar('local G=require"gf"; return tonumber(G.QueryName(0x10030001)[tostring(15)]) or 0', 0)) || 0;
+    const school = Number(luaScalar('local G=require"gf"; return tonumber(G.QueryName(0x10030001)[tostring(8)]) or 0', 0)) || 0;
+    const gameDay = Number(luaScalar(
+      'local G=require"gf"; local f=G.api["count_day"]; if type(f)=="function" then return tonumber(f()) or 0 end; return tonumber(G.QueryName(0x10030001)[tostring(70)]) or 0',
+      0
+    )) || 0;
+    return {
+      characterName,
+      level,
+      mapId,
+      morality,
+      school,
+      gameDay,
+      gameTime: gameDay > 0 ? `第 ${gameDay} 天` : '未记录',
+      trackedObjects: Number(trackedObjects) || 0,
+    };
+  }
 
+  function baseSlotLabel(slot) {
+    if (slot === 'autosave') return '自动存档';
+    return `存档 ${Number(String(slot).replace('slot', '')) || '?'}`;
+  }
+
+  function slotSummary(row) {
+    const base = baseSlotLabel(row.slot);
+    if (row.empty) return `${base} · 空`;
+    if (!row.ok) return `${base} · 损坏`;
+    const meta = row.meta || {};
+    const pieces = [meta.characterName || '无名侠客'];
+    if (Number(meta.level) > 0) pieces.push(`Lv.${Number(meta.level)}`);
+    if (Number(meta.gameDay) > 0) pieces.push(`第${Number(meta.gameDay)}天`);
+    return `${base} · ${pieces.join(' ')}`;
+  }
+
+  function refreshSaveControls() {
+    if (!ui.saveSlot || !saveStore) {
+      if (ui.save) ui.save.disabled = true;
+      if (ui.load) ui.load.disabled = true;
+      return;
+    }
+    const selected = ui.saveSlot.value || 'slot1';
+    const rows = saveStore.list();
+    for (const option of ui.saveSlot.options) {
+      const row = rows.find(item => item.slot === option.value);
+      if (row) option.textContent = slotSummary(row);
+    }
+    ui.saveSlot.disabled = !saveReady;
+    const current = rows.find(item => item.slot === selected);
+    if (ui.save) ui.save.disabled = !saveReady || selected === 'autosave';
+    if (ui.load) ui.load.disabled = !saveReady || !current?.ok;
+  }
+
+  function saveGame(slot = ui.saveSlot?.value || 'slot1', options = {}) {
+    const auto = options.auto === true;
+    const silent = options.silent === true;
+    try {
+      if (!saveStore) throw new Error('浏览器存储不可用');
+      if (slot === 'autosave' && !auto) throw new Error('自动存档槽不能手动覆盖');
+      const luaState = fengari.load('return __jy_export_state()', '@web/export-save')();
+      const tracked = fengari.load('return __jy_tracked_save_objects()', '@web/save-count')();
+      const payload = saveStore.write(slot, {
+        upstream: window.JYUpstream?.UPSTREAM_REV || '',
+        savedAt: new Date().toISOString(),
+        meta: collectSaveMeta(tracked),
+        luaState,
+      });
+      refreshSaveControls();
+      if (!silent) {
+        ui.status.textContent = `${baseSlotLabel(slot)}已保存 · ${tracked} 个原 Lua 对象 · ${payload.meta.characterName} Lv.${payload.meta.level}`;
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      if (!silent) ui.status.textContent = `存档失败：${e.message || e}`;
+      return false;
+    }
+  }
+
+  function loadGame(slot = ui.saveSlot?.value || 'slot1') {
+    if (!saveStore) {
+      ui.status.textContent = '浏览器存储不可用';
+      return false;
+    }
+    const result = saveStore.read(slot);
+    if (!result.ok) {
+      ui.status.textContent = result.empty ? `${baseSlotLabel(slot)}为空` : `读档失败：${result.error}`;
+      refreshSaveControls();
+      return false;
+    }
+
+    const payload = result.payload;
+    try {
+      suppressAutosave = true;
       closeDialogue();
       ui.battle.classList.add('hidden');
       resetJsState();
@@ -167,12 +249,28 @@
       if (!ok) throw new Error('Lua 状态导入失败');
 
       window.JYWeb.enterVillage();
-      ui.status.textContent = `已读档 · ${payload.savedAt ? new Date(payload.savedAt).toLocaleString() : '本地存档'}`;
+      const meta = payload.meta || {};
+      ui.status.textContent = `已读取${baseSlotLabel(slot)} · ${meta.characterName || '无名侠客'}${meta.level ? ` Lv.${meta.level}` : ''} · ${payload.savedAt ? new Date(payload.savedAt).toLocaleString() : '未知时间'}`;
+      return true;
     } catch (e) {
       pendingSavePayload = '';
       console.error(e);
       ui.status.textContent = `读档失败：${e.message || e}`;
+      return false;
+    } finally {
+      pendingSavePayload = '';
+      suppressAutosave = false;
+      refreshSaveControls();
     }
+  }
+
+  function scheduleAutosave() {
+    if (!saveReady || suppressAutosave || !saveStore) return;
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      saveGame('autosave', { auto: true, silent: true });
+    }, 350);
   }
 
   function prepareMinigameSurface() {
@@ -632,6 +730,7 @@
     skillChanged() { emitSkillChanged(); },
     growthChanged() { emitGrowthChanged(); },
     relationshipChanged() { emitRelationshipChanged(); },
+    eventFinished() { scheduleAutosave(); },
     setTeam(ids) {
       const next = [...ids].map(Number).filter(Boolean);
       const changed = next.length !== state.team.length || next.some((id, i) => state.team[i] !== id);
@@ -811,8 +910,9 @@
       if (ui.fishing) ui.fishing.disabled = false;
       if (ui.hunting) ui.hunting.disabled = false;
       if (ui.gambling) ui.gambling.disabled = false;
-      if (ui.save) ui.save.disabled = false;
-      refreshLoadButton();
+      saveStore?.migrateLegacySingleSlot();
+      saveReady = true;
+      refreshSaveControls();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
       ui.village.textContent = originalProgramLoaded ? '进入原版牛家村事件测试' : '直接进入牛家村测试';
 
@@ -882,8 +982,9 @@
           ui.gambling.disabled = false;
         }
       };
-      if (ui.save) ui.save.onclick = saveGame;
-      if (ui.load) ui.load.onclick = loadGame;
+      if (ui.saveSlot) ui.saveSlot.onchange = refreshSaveControls;
+      if (ui.save) ui.save.onclick = () => saveGame(ui.saveSlot?.value || 'slot1');
+      if (ui.load) ui.load.onclick = () => loadGame(ui.saveSlot?.value || 'slot1');
 
       ui.original.onclick = async () => {
         ui.original.disabled = true;
