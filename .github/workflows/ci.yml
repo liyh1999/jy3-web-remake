@@ -162,6 +162,9 @@ jobs:
       - name: Validate original deepcopy and dynamic data semantics
         run: node tools/test-runtime-data-utils.mjs
 
+      - name: Validate story wait1 and event_info semantics
+        run: node tools/test-story-events.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
