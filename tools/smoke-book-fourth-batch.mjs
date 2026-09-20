@@ -133,7 +133,7 @@ G.api['set_friend_skill'] = function(...)
     record('set_friend_skill', ...)
     return true
 end
-G.api['add_time'] = function(v) record('add_time', tonumber(v)); return true end
+G.api['get_point'] = function(id)\n    id = tonumber(id) or 0\n    if id == 8 then return 6 end\n    return 0\nend\nG.api['add_time'] = function(v) record('add_time', tonumber(v)); return true end
 
 -- 1) Other Tales of the Flying Fox: preserve one object through 0 -> 1 -> 2 -> 3.
 local fly = G.QueryName(0x101c0001)
@@ -189,10 +189,34 @@ assert(book['完成'] == 1 and book['完美'] == 1, 'Book and Sword final comple
 assert(joined[397] == true and joined[398] == true, 'Book and Sword recruits were lost after completion')
 assert(battle_calls == before_book_battles + 3, 'Book and Sword final cumulative battle count mismatch')
 
+-- 3) The Legend of the Condor Heroes: preserve Guo Jing/Huang Rong team through 0 -> 1 -> 2 -> perfect completion.
+local condor = G.QueryName(0x101c0005)
+condor['流程'] = 0
+condor['完成'] = 0
+condor['完美'] = 0
+items[104] = 0
+local before_condor_battles = battle_calls
+
+assert(run_to_idle('天书_射雕英雄传'), 'Legend of Condor Heroes phase 0 failed')
+assert(condor['流程'] == 1, 'Legend of Condor Heroes phase 0 did not persist flow 1')
+assert(team_has(37), 'Legend of Condor Heroes phase 0 lost Guo Jing battle team')
+assert(battle_calls == before_condor_battles + 1, 'Legend of Condor Heroes phase 0 battle count mismatch')
+
+assert(run_to_idle('天书_射雕英雄传'), 'Legend of Condor Heroes phase 1 failed')
+assert(condor['流程'] == 2, 'Legend of Condor Heroes phase 1 did not persist flow 2')
+assert(team_has(37) and team_has(12), 'Legend of Condor Heroes phase 1 did not keep Guo Jing/Huang Rong team')
+assert(battle_calls == before_condor_battles + 2, 'Legend of Condor Heroes phase 1 cumulative battle count mismatch')
+
+assert(run_to_idle('天书_射雕英雄传'), 'Legend of Condor Heroes phase 2 failed')
+assert(condor['完成'] == 1 and condor['完美'] == 1, 'Legend of Condor Heroes completion flags mismatch')
+assert(items[104] == 1, 'Legend of Condor Heroes did not grant original Wumu Testament item 104')
+assert(team_has(37) and team_has(12), 'Legend of Condor Heroes final battle team mismatch')
+assert(battle_calls == before_condor_battles + 3, 'Legend of Condor Heroes final cumulative battle count mismatch')
+
 assert(__jy_missing_calls() == '', 'fourth-batch book smoke used missing calls: ' .. __jy_missing_calls())
 
 print('original fourth-batch book stories PASS')
-print('  Other Tales of the Flying Fox 0->1->2->3 and The Book and the Sword 0->1->2->complete preserve cross-stage state')
+print('  Flying Fox 0->1->2->3, Book and Sword 0->1->2->complete, and Condor Heroes 0->1->2->perfect preserve cross-stage state')
 `;
 
 const harnessPath = path.join(temp, 'smoke.lua');
