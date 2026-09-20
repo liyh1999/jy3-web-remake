@@ -108,6 +108,9 @@ local function wrap_node(handle)
             rawset(self, key, value)
             return
         end
+        if key == "text" then
+            if value == nil then value = "" else value = tostring(value) end
+        end
         renderer:setNodeProperty(handle, key, value)
     end
 
