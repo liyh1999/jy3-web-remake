@@ -27,6 +27,8 @@
   let battlePumpTimer = null;
   const programPumpTimers = new Map();
   let programReadyTimer = null;
+  const storyProgramPumpTimers = new Map();
+  let storyProgramReadyTimer = null;
 
   function emitTeamChanged() {
     const detail = { team: [...state.team] };
@@ -377,6 +379,44 @@
           if (cb) setTimeout(() => cb(0), 0);
         });
     },
+    scheduleStoryProgramPump(delay, token) {
+      const id = Number(token) || 0;
+      const ms = Math.max(0, Number(delay) || 0);
+      const run = () => {
+        try {
+          fengari.load(
+            `return __jy_story_program_browser_pump(${id})`,
+            '@web/story-program-pump'
+          )();
+        } catch (error) {
+          console.error('story program scheduler failed', error);
+          ui.status.textContent = `剧情后台调度错误：${error?.message || error}`;
+        }
+      };
+      if (id > 0) {
+        if (storyProgramPumpTimers.has(id)) return;
+        const timer = setTimeout(() => {
+          storyProgramPumpTimers.delete(id);
+          run();
+        }, ms);
+        storyProgramPumpTimers.set(id, timer);
+        return;
+      }
+      if (storyProgramReadyTimer !== null) return;
+      storyProgramReadyTimer = setTimeout(() => {
+        storyProgramReadyTimer = null;
+        run();
+      }, ms);
+    },
+    cancelStoryProgramPump(token) {
+      const id = Number(token) || 0;
+      if (id <= 0) return false;
+      const timer = storyProgramPumpTimers.get(id);
+      if (timer === undefined) return false;
+      clearTimeout(timer);
+      storyProgramPumpTimers.delete(id);
+      return true;
+    },
     scheduleProgramPump(delay, token) {
       const id = Number(token) || 0;
       const ms = Math.max(0, Number(delay) || 0);
@@ -687,10 +727,11 @@
     }
 
     try {
-      const [compat, shims, programRuntime, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
+      const [compat, shims, programRuntime, storyProgramCompat, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
         fetch('./lua/program_runtime.lua').then(r => { if (!r.ok) throw new Error('program_runtime.lua'); return r.text(); }),
+        fetch('./lua/story_program_web.lua').then(r => { if (!r.ok) throw new Error('story_program_web.lua'); return r.text(); }),
         fetch('./lua/minigame_web.lua').then(r => { if (!r.ok) throw new Error('minigame_web.lua'); return r.text(); }),
         fetch('./lua/battle_web.lua').then(r => { if (!r.ok) throw new Error('battle_web.lua'); return r.text(); }),
         fetch('./lua/save_state.lua').then(r => { if (!r.ok) throw new Error('save_state.lua'); return r.text(); }),
@@ -703,6 +744,7 @@
         'package.preload["program_runtime"] = function(...)\n' + programRuntime + '\nend',
         '@program_runtime.preload.lua'
       )();
+      fengari.load(storyProgramCompat, '@story_program_web.lua')();
       fengari.load(minigameCompat, '@minigame_web.lua')();
       fengari.load(battleCompat, '@battle_web.lua')();
       fengari.load(saveState, '@save_state.lua')();
