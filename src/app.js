@@ -3,7 +3,7 @@
   const $$ = (s) => [...document.querySelectorAll(s)];
   const SAVE_KEY = 'jy3-web-remake:save:v1';
   const ui = {
-    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'),
+    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
@@ -204,6 +204,19 @@
       ui.status.textContent = '原版钓鱼程序运行中 · 点击画面中的开始提竿';
       return loaded;
     },
+    async startOriginalHunting(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      prepareMinigameSurface();
+      const loaded = await window.JYUpstream.prepareHuntingUI(progress);
+      progress('打猎资源加载完成，正在启动原版程序…');
+      const ok = fengari.load(
+        "return __jy_minigame_start('hunting')",
+        '@web/start-original-hunting'
+      )();
+      if (!ok) throw new Error('原 hunting 程序启动失败');
+      ui.status.textContent = '原版打猎程序运行中 · 1/2 切换射箭/捕猎，点击猎物行动';
+      return loaded;
+    },
     async showLoggingUi(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
@@ -307,6 +320,7 @@
       if (ui.logging) ui.logging.disabled = false;
       if (ui.dig) ui.dig.disabled = false;
       if (ui.fishing) ui.fishing.disabled = false;
+      if (ui.hunting) ui.hunting.disabled = false;
       setTimeout(() => {
         try {
           fengari.load('return __jy_minigame_reset()', '@web/minigame-reset')();
@@ -606,6 +620,7 @@
       if (ui.logging) ui.logging.disabled = false;
       if (ui.dig) ui.dig.disabled = false;
       if (ui.fishing) ui.fishing.disabled = false;
+      if (ui.hunting) ui.hunting.disabled = false;
       if (ui.save) ui.save.disabled = false;
       refreshLoadButton();
       ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
@@ -651,6 +666,18 @@
           console.error('fishing mini-game start failed', error);
           ui.status.textContent = `钓鱼小游戏启动失败：${error?.message || error}`;
           ui.fishing.disabled = false;
+        }
+      };
+      if (ui.hunting) ui.hunting.onclick = async () => {
+        ui.hunting.disabled = true;
+        try {
+          resetJsState();
+          resetLuaState();
+          await window.JYWeb.startOriginalHunting((message) => { ui.status.textContent = message; });
+        } catch (error) {
+          console.error('hunting mini-game start failed', error);
+          ui.status.textContent = `打猎小游戏启动失败：${error?.message || error}`;
+          ui.hunting.disabled = false;
         }
       };
       if (ui.save) ui.save.onclick = saveGame;
