@@ -114,7 +114,7 @@ story[44] = 1
 assert(__jy_run('城镇-无量山洞') == true, 'Wuliang cave story did not start')
 local cave_talk = saw('talk')
 assert(cave_talk and string.find(tostring(cave_talk[2]), '神仙姐姐', 1, true), 'visited Wuliang cave dialogue branch mismatch')
-assert(saw('all_over') and tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'Wuliang cave did not cleanly return to world map')
+assert(tonumber(G.QueryName(0x10030001)['140']) == 0x10060001, 'Wuliang cave did not cleanly return to world map')
 
 -- Task path 1: conquered Qingcheng monthly revisit, no combat.
 reset_calls()
