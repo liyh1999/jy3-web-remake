@@ -159,6 +159,9 @@ jobs:
       - name: Validate original string and log runtime helpers
         run: node tools/test-runtime-string-utils.mjs
 
+      - name: Validate original deepcopy and dynamic data semantics
+        run: node tools/test-runtime-data-utils.mjs
+
       - name: Validate gcore UI template runtime
         run: node tools/test-ui-runtime.mjs
 
