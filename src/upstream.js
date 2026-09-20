@@ -88,6 +88,18 @@
     '02_ui_view/v_hunting.lua',
   ];
 
+  const GAMBLING_UI_MODULES = [
+    { module: 'c_button', path: '03_ui_component/c_button.lua' },
+    { module: 'c_gambling', path: '03_ui_component/c_gambling.lua' },
+    { module: 'c_movie', path: '03_ui_component/c_movie.lua' },
+  ];
+  const GAMBLING_UI_VIEWS = [
+    '02_ui_view/v_empty.lua',
+    '02_ui_view/v_button.lua',
+    '02_ui_view/v_gambling.lua',
+    '02_ui_view/v_movie.lua',
+  ];
+
   const IDENT_START = /[A-Za-z_\p{L}]/u;
   const IDENT_PART = /[A-Za-z0-9_\p{L}\p{N}]/u;
   const NON_ASCII = /[^\x00-\x7f]/;
@@ -361,6 +373,21 @@ return true
     return huntingUiPromise;
   }
 
+  let gamblingUiPromise = null;
+  async function prepareGamblingUI(onProgress) {
+    if (!gamblingUiPromise) {
+      gamblingUiPromise = (async () => {
+        const loadedModules = await loadModules(GAMBLING_UI_MODULES, onProgress);
+        const loadedViews = await loadPrograms(GAMBLING_UI_VIEWS, onProgress);
+        return { loadedModules, loadedViews };
+      })().catch((error) => {
+        gamblingUiPromise = null;
+        throw error;
+      });
+    }
+    return gamblingUiPromise;
+  }
+
   async function bootstrapData(onProgress) {
     let loadedModules = 0;
     for (const path of CORE_DATA) {
@@ -393,6 +420,8 @@ return true
     FISHING_UI_VIEWS,
     HUNTING_UI_MODULES,
     HUNTING_UI_VIEWS,
+    GAMBLING_UI_MODULES,
+    GAMBLING_UI_VIEWS,
     normalizeLuaSource,
     fetchText,
     registerDataSource,
@@ -407,6 +436,7 @@ return true
     prepareDigUI,
     prepareFishingUI,
     prepareHuntingUI,
+    prepareGamblingUI,
     bootstrapData,
   };
 })();
