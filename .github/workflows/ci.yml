@@ -281,6 +281,9 @@ jobs:
       - name: Smoke original notify registration and dispatch
         run: node tools/smoke-notify-runtime.mjs
 
+      - name: Smoke original dialogue UI and event flow
+        run: node tools/smoke-dialogue-ui.mjs
+
       - name: Smoke original logging, mining, fishing, hunting and gambling UI
         run: node tools/smoke-logging-ui.mjs
 
@@ -335,6 +338,8 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_fishing.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_hunting.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_gambling.lua
+          test -f dist/vendor/upstream/JY3/script/02_ui_view/v_dialogue_system_story.lua
+          test -f dist/vendor/upstream/JY3/script/02_ui_view/v_dialogue_system_select.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_button.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_logging.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_movie.lua
@@ -342,6 +347,10 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_fishing.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_hunting.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_gambling.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_dialogue_system_story.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_dialogue_system_select.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_scrollview.lua
+          test -f dist/vendor/upstream/JY3/script/03_ui_component/c_layout_v.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_battle.lua
           test -f dist/vendor/upstream/JY3/script/03_ui_component/c_citymap_system_map.lua
           test -f dist/vendor/upstream/JY3/image/bjmap/0001.png
