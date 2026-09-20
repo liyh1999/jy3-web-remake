@@ -255,3 +255,41 @@ D1 已经有通用 framelist player，所以 D3 应继续走原资源 ID，不�
 - **D3-7**：五小游戏地图/NPC 长流程回归与 offline 资源收口。
 
 验收原则：JS 只提供原运行时能力；概率、奖励、属性和成就继续执行固定上游 Lua。
+
+## 10. D3 实现收口
+
+截至 2026-09-20，D3 已从“审计原小游戏”推进到五个原流程及地图/NPC入口全部接通：
+
+- **D3-2 / #53**：通用 Lua program/event scheduler、browser timer pump、原 gcore UI module loader；
+- **D3-3 / #54**：伐木、采矿；
+- **D3-4 / #55**：钓鱼；
+- **D3-5 / #56**：打猎，并补齐原 TextQuad 数字 `text` 写入后按字符串读取的兼容语义；
+- **D3-6 / #57**：押宝，包括下注、原骰子动画、开奖、赔付、庄家本金、成就和退出退款；
+- **D3-7 / #58**：地图/NPC入口、父剧情协程挂起/恢复、五小游戏连续运行隔离和 offline dist 实跑。
+
+### 原入口
+
+固定上游中的主要真实入口已经纳入自动门禁：
+
+- `p_person.lua`：`地图打猎 / 地图砍柴 / 地图钓鱼` → `hunting / logging / fishing`；
+- `p_newgame.lua`：牛家村乞丐乙 → `gambling`，老猎人/渔夫也直接进入打猎/钓鱼；
+- `p_story-town or city.lua`：渡口 → 海底采矿 → `dig`；
+- 门派剧情中仍可继续复用同一原入口，例如丐帮押宝、星宿打猎。
+
+`G.call('logging'/'dig'/'fishing'/'hunting'/'gambling')` 现在会由 Web host 启动对应原小游戏，并挂起当前剧情协程；小游戏结束、清理 minigame runtime 后，再恢复同一个父协程。测试按钮和剧情入口因此共用同一套原 Lua 流程，不存在第二套奖励状态。
+
+### 长流程与离线门禁
+
+CI 目前同时验证：
+
+1. 五小游戏逐个原流程的核心结算；
+2. 五种剧情调用都会挂起并恢复同一个父协程；
+3. `logging → dig → fishing → hunting → gambling` 在同一个 Lua 进程连续执行后无 signal/timer/UI 残留；
+4. 原地图/NPC/剧情入口脚本保持固定调用契约；
+5. `p_story-town or city.lua` 等入口脚本进入 offline cache；
+6. 完成 `dist` 构建后，直接用 `dist/lua` 与 `dist/vendor/upstream` 再执行完整五小游戏 smoke；
+7. 断网模拟和 offline dist HTTP smoke；
+8. 场景切换始终保留同一个 gcore canvas，避免小游戏/地图切换后出现 off-DOM canvas。
+
+D3 最终功能代码收口提交为 `c93e3ebb5f1dfbcda0422511544912efc9cc3097`，对应 CI Run `35481993771` 全绿。后续进入 **D4 / #17：全剧情、门派、任务程序接入与 API 覆盖矩阵**。
+
