@@ -67,6 +67,7 @@ jobs:
           node --check tools/smoke-renderer-canvas.mjs
           node --check tools/smoke-save-state.mjs
           node --check tools/test-save-store.mjs
+          node --check tools/test-event-finished-signal.mjs
           node --check tools/smoke-shop-runtime.mjs
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
@@ -281,6 +282,9 @@ jobs:
       - name: Versioned multi-slot save store
         run: node tools/test-save-store.mjs
 
+      - name: Story completion autosave signal
+        run: node tools/test-event-finished-signal.mjs
+
       - name: Compile normalized upstream Lua
         run: node tools/check-normalized-upstream.mjs
 
@@ -319,6 +323,7 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gf_web.lua >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/src/save-store.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/story_program_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/gcore_web.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8080/lua/battle_web.lua >/dev/null
