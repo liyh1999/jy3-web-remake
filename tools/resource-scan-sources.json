@@ -2,5 +2,9 @@
   "01_data/o_animation.lua",
   "01_data/o_image.lua",
   "01_data/o_font.lua",
-  "01_data/o_fontstyle.lua"
+  "01_data/o_fontstyle.lua",
+  "06_notify/n_common.lua",
+  "06_notify/n_citymap_system.lua",
+  "06_notify/n_dialogue_system.lua",
+  "06_notify/n_cheat_system.lua"
 ]
