@@ -66,6 +66,7 @@ end
 
 local function notify_event_finished()
     pcall(function() web:relationshipChanged() end)
+    pcall(function() web:eventFinished() end)
 end
 
 local function resume_active(...)
