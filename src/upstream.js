@@ -227,7 +227,14 @@
         while (j < source.length && IDENT_PART.test(source[j])) j += 1;
         const name = source.slice(i + 1, j);
         if (NON_ASCII.test(name)) {
-          out += `[${JSON.stringify(name)}]`;
+          const functionOwner = out.match(/function\s+([A-Za-z_][A-Za-z0-9_]*)$/);
+          if (functionOwner) {
+            out = out.slice(0, functionOwner.index)
+              + functionOwner[1]
+              + `[${JSON.stringify(name)}] = function`;
+          } else {
+            out += `[${JSON.stringify(name)}]`;
+          }
           i = j;
           continue;
         }
