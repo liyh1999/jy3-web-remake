@@ -224,6 +224,55 @@ function G.addNewInst2Dynamic(instance, type_name)
     return instance
 end
 
+local WEB_ZIP_MARKER = "\0JY3WEBZIP1\0"
+
+function G.GetSavePath(path)
+    if web and web.legacyFilePath then
+        return web:legacyFilePath("save", tostring(path or ""))
+    end
+    return "jy3-web://save/" .. tostring(path or "")
+end
+
+function G.WritePath(path)
+    if web and web.legacyFilePath then
+        return web:legacyFilePath("write", tostring(path or ""))
+    end
+    return "jy3-web://write/" .. tostring(path or "")
+end
+
+function G.IsFileExist(path)
+    if web and web.legacyFileExists then return web:legacyFileExists(tostring(path or "")) == true end
+    return false
+end
+
+function G.LoadFile(path)
+    if web and web.legacyFileRead then
+        local value = web:legacyFileRead(tostring(path or ""))
+        if value == js.null or value == js.undefined then return nil end
+        return value
+    end
+    return nil
+end
+
+function G.WriteFile(path, data)
+    if web and web.legacyFileWrite then
+        return web:legacyFileWrite(tostring(path or ""), tostring(data or "")) == true
+    end
+    return false
+end
+
+function G.zip(data)
+    return WEB_ZIP_MARKER .. tostring(data or "")
+end
+
+function G.unzip(data)
+    local value = tostring(data or "")
+    if string.sub(value, 1, #WEB_ZIP_MARKER) == WEB_ZIP_MARKER then
+        return string.sub(value, #WEB_ZIP_MARKER + 1)
+    end
+    return value
+end
+
 function G.GetDeviceInfo(_) return "" end
 
 function G.log(...)
