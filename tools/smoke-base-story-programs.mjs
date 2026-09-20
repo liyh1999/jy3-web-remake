@@ -18,11 +18,26 @@ for (const name of ['p_task.lua', 'p_story-town or city.lua']) {
 const harness = String.raw`
 local temp = assert(os.getenv('JY3_BASE_STORY_TMP'), 'JY3_BASE_STORY_TMP missing')
 local web = {}
+function web:setPoint() end
+function web:setMoney() end
+function web:setItem() end
+function web:setTeam() end
+function web:relationshipChanged() end
+
+local function new_js_array()
+    local array = {}
+    function array:push(value)
+        self[#self + 1] = value
+        return #self
+    end
+    return array
+end
+
 package.preload['js'] = function()
     return {
         global = { JYWeb = web, Array = {} },
         null = {}, undefined = {},
-        new = function() return {} end,
+        new = function() return new_js_array() end,
     }
 end
 
