@@ -167,6 +167,16 @@ local function drive(name, answers)
 end
 
 local function body() return G.QueryName(0x10030001) end
+
+-- The pinned o_jm data defines all nine meridians with these exact defaults.
+-- Keep them explicit in this long-lived fixture so p_order's original
+-- 指令_存储属性 can run instead of being stubbed like the older opening smoke.
+for i = 1, 9 do
+    local meridian = G.QueryName(0x100a0000 + i)
+    if meridian['打通数量'] == nil then meridian['打通数量'] = 0 end
+    if meridian['是否打通'] == nil then meridian['是否打通'] = false end
+end
+
 local function team_has(role_no)
     local team = G.QueryName(0x10110001)
     local full_id = 0x10040000 + (tonumber(role_no) or 0)
