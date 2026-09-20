@@ -96,10 +96,6 @@
   ],
   "directMissing": [
     [
-      "event_info",
-      4
-    ],
-    [
       "GetSavePath",
       15
     ],
