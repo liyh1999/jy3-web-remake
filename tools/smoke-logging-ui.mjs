@@ -4,11 +4,13 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 
+const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 globalThis.window = {};
-vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
+const upstreamRuntime = path.join(runtimeRoot, 'src', 'upstream.js');
+vm.runInThisContext(fs.readFileSync(upstreamRuntime, 'utf8'), { filename: upstreamRuntime });
 const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
 
-const sourceBase = path.join('vendor', 'upstream', 'JY3', 'script');
+const sourceBase = process.env.JY3_MINIGAME_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-logging-ui-'));
 const targets = {
   c_button: '03_ui_component/c_button.lua',
@@ -39,7 +41,7 @@ for (const [name, relative] of Object.entries(targets)) {
 
 const run = spawnSync('lua5.3', ['tools/fixtures/smoke-logging-ui.lua'], {
   cwd: process.cwd(),
-  env: { ...process.env, JY3_LOGGING_TMP: temp },
+  env: { ...process.env, JY3_LOGGING_TMP: temp, JY3_RUNTIME_ROOT: runtimeRoot },
   encoding: 'utf8',
 });
 
