@@ -10,6 +10,9 @@ local table_ids = {}
 local dynamic_ids = {}
 local dynamic_next = {}
 local active = nil
+local active_wait_event = nil
+local active_event_info = nil
+local queued_story_events = {}
 local missing_calls = {}
 local missing_objects = {}
 
@@ -65,11 +68,33 @@ local function notify_event_finished()
     pcall(function() web:relationshipChanged() end)
 end
 
-local function resume_after_ui(value)
-    if not active or coroutine.status(active) == "dead" then return end
-    local ok, err = coroutine.resume(active, value)
+local function resume_active(...)
+    if not active or coroutine.status(active) == "dead" then return false end
+    local ok, err = coroutine.resume(active, ...)
     if not ok then error(err) end
-    if coroutine.status(active) == "dead" then notify_event_finished() end
+    if coroutine.status(active) == "dead" then
+        active_wait_event = nil
+        active_event_info = nil
+        notify_event_finished()
+    end
+    return true
+end
+
+local function resume_after_ui(value)
+    return resume_active(value)
+end
+
+local function active_story_coroutine()
+    local co = coroutine.running()
+    return active ~= nil and co == active
+end
+
+local function pop_story_event(event_name)
+    local queue = queued_story_events[event_name]
+    if not queue or #queue == 0 then return nil end
+    local payload = table.remove(queue, 1)
+    if #queue == 0 then queued_story_events[event_name] = nil end
+    return payload
 end
 
 local function body()
@@ -273,14 +298,56 @@ function G.misc() return G.QueryName(0x100f0001) end
 function G.Play(...) return true end
 function G.Stop(...) return true end
 function G.wait_time(...) return true end
-function G.trig_event(...) return true end
-function G.wait1(...) return true end
+
+function G.trig_event(event_name, ...)
+    local event = tostring(event_name or "")
+    local payload = {...}
+    if event == "" then return false end
+
+    if active and coroutine.status(active) == "suspended" and active_wait_event == event then
+        active_wait_event = nil
+        active_event_info = payload
+        return resume_active(true)
+    end
+
+    queued_story_events[event] = queued_story_events[event] or {}
+    queued_story_events[event][#queued_story_events[event] + 1] = payload
+    return true
+end
+
+function G.wait1(event_name)
+    local event = tostring(event_name or "")
+    if event == "" then return false end
+    if not active_story_coroutine() then return true end
+
+    local payload = pop_story_event(event)
+    if payload then
+        active_event_info = payload
+        return true
+    end
+
+    active_wait_event = event
+    return coroutine.yield("__jy_story_wait_event", event)
+end
+
+function G.event_info()
+    local payload = active_event_info or {}
+    active_event_info = nil
+    return table.unpack(payload)
+end
+
 function G.addUI(...) return true end
 function G.removeUI(...) return true end
 function G.getUI(...) return nil end
 function G.start_program(...) return true end
 function G.stop_program(...) return true end
 function G.remove_program(...) return true end
+
+G.__original_dialogue_enabled = false
+function __jy_dialogue_enable_original(value)
+    G.__original_dialogue_enabled = value ~= false
+    return G.__original_dialogue_enabled
+end
 
 local growth_points = {
     [3]=true,[4]=true,[5]=true,[17]=true,[18]=true,
@@ -399,7 +466,7 @@ function G.call(name, ...)
     if name == "story" then
         web:story(tostring(args[1] or ""), function(v) resume_after_ui(v) end)
         return coroutine.yield()
-    elseif name == "talk" then
+    elseif name == "talk" and not G.__original_dialogue_enabled then
         local speaker = tostring(args[1] or "")
         local text = tostring(args[3] or args[1] or "")
         web:showTalk(speaker ~= "" and speaker or "旁白", text, function(v) resume_after_ui(v) end)
@@ -409,7 +476,7 @@ function G.call(name, ...)
         local text = tostring(args[2] or "")
         web:showTalk(speaker ~= "" and speaker or "旁白", text, function(v) resume_after_ui(v) end)
         return coroutine.yield()
-    elseif name == "menu" then
+    elseif name == "menu" and not G.__original_dialogue_enabled then
         local question = tostring(args[3] or "")
         local options = first_array_arg(args, 4)
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
@@ -561,6 +628,9 @@ end
 
 function __jy_run(event_name)
     if active and coroutine.status(active) ~= "dead" then return false end
+    active_wait_event = nil
+    active_event_info = nil
+    queued_story_events = {}
     local fn = G.api[event_name]
     if type(fn) ~= "function" then error("unknown JY3 event: " .. tostring(event_name)) end
     active = coroutine.create(function() fn() end)
