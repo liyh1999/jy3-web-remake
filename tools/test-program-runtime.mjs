@@ -32,8 +32,10 @@ local function worker()
   R:trig_event('done')
 end
 
+local finish_payload={}
 local function waiter()
   R:wait1('finish')
+  finish_payload={R:event_info()}
   log[#log+1]='finish'
 end
 
@@ -57,9 +59,10 @@ assert(log[2]=='case:2','done case was not dispatched')
 assert(not R:has_program('dispatcher') and not R:has_program('worker'),'completed programs leaked')
 assert(R:has_program('waiter'),'event waiter ended too early')
 
-R:trig_event('finish')
+R:trig_event('finish',7,'payload')
 while R:pending()>0 do R:pump(1) end
 assert(log[3]=='finish' and not R:has_program('waiter'),'wait1/trig_event failed')
+assert(finish_payload[1]==7 and finish_payload[2]=='payload','wait1 event payload was not preserved')
 
 local function delayed() R:wait_time(999); log[#log+1]='bad' end
 assert(R:start_program('remove-me',delayed))
@@ -69,15 +72,21 @@ assert(delayed_token and R:remove_program('remove-me'),'timed program removal fa
 assert(not R:wake_timer(delayed_token),'removed timer unexpectedly woke')
 assert(R:pending()==0,'removed timed program was requeued')
 
-R:trig_event('pre')
+R:trig_event('pre',9)
 local pre=''
-local function consume_pre() R:wait1('pre'); pre='ok' end
+local pre_payload=nil
+local function consume_pre()
+  R:wait1('pre')
+  pre_payload=R:event_info()
+  pre='ok'
+end
 assert(R:start_program('consume-pre',consume_pre))
 assert(pre=='ok' and not R:has_program('consume-pre'),'queued signal was not consumed synchronously')
+assert(pre_payload==9,'queued signal payload was not preserved')
 
 R:reset()
 assert(R:pending()==0 and R:pending_timers()==0,'reset failed')
-print('program runtime PASS: tokenized timers + event/case/remove/signal semantics')
+print('program runtime PASS: tokenized timers + event payload/case/remove/signal semantics')
 `;
 fs.writeFileSync(file,harness,'utf8');
 const run=spawnSync('lua5.3',[file],{encoding:'utf8'});
