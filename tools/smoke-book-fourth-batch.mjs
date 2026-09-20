@@ -133,7 +133,12 @@ G.api['set_friend_skill'] = function(...)
     record('set_friend_skill', ...)
     return true
 end
-G.api['get_point'] = function(id)\n    id = tonumber(id) or 0\n    if id == 8 then return 6 end\n    return 0\nend\nG.api['add_time'] = function(v) record('add_time', tonumber(v)); return true end
+G.api['get_point'] = function(id)
+    id = tonumber(id) or 0
+    if id == 8 then return 6 end
+    return 0
+end
+G.api['add_time'] = function(v) record('add_time', tonumber(v)); return true end
 
 -- 1) Other Tales of the Flying Fox: preserve one object through 0 -> 1 -> 2 -> 3.
 local fly = G.QueryName(0x101c0001)
