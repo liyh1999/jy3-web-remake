@@ -39,7 +39,27 @@ async function drainDialogueUntil(predicate, answers = [], timeoutMs = 30000) {
     }
     await sleep(80);
   }
-  throw new Error('dialogue/menu flow timed out');
+  const snapshot = await evaluate(`(() => {
+    let mapId = 0;
+    let activeStatus = '';
+    try {
+      mapId = Number(window.fengari.load("local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0", '@e2e/debug-map')()) || 0;
+      activeStatus = String(window.fengari.load("local a,b=__jy_story_program_status('序幕_开始'); return tostring(a or '')..':'..tostring(b or '')", '@e2e/debug-story')() || '');
+    } catch (error) {
+      activeStatus = 'debug-error:' + String(error?.message || error);
+    }
+    return {
+      mapId,
+      activeStatus,
+      scene: document.querySelector('#scene')?.className || '',
+      status: document.querySelector('#runtimeStatus')?.textContent || '',
+      dialogueHidden: document.querySelector('#dialogue')?.classList.contains('hidden'),
+      continueVisible: Boolean(document.querySelector('#continueBtn:not(.hidden):not(:disabled)')),
+      options: [...document.querySelectorAll('#options button')].map(node => node.textContent),
+      answerIndex: ${answerIndex},
+    };
+  })()`);
+  throw new Error('dialogue/menu flow timed out: ' + JSON.stringify(snapshot));
 }
 
 try {
@@ -52,9 +72,9 @@ try {
   await click('#startBtn');
   const openingAnswers = [5,5,1,1,1,1,1,1,1,1,1,1,1,1,6];
   await drainDialogueUntil(
-    "document.querySelector('#scene')?.classList.contains('village-scene')",
+    "document.querySelector('#scene')?.classList.contains('village-scene') || (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === 0x10060002; } catch (_) { return false; } })()",
     openingAnswers,
-    45000
+    30000
   );
 
   const openingState = await evaluate(`(() => ({
@@ -63,9 +83,12 @@ try {
     morality: Number(window.JYWeb?.getPoint?.(15) || 0),
     money: Number(document.querySelector('#money')?.textContent || 0)
   }))()`);
-  if (!openingState.scene.includes('village-scene') || openingState.hudHidden) {
-    throw new Error('new game did not reach visible Niujia Village HUD');
+  const openingMap = await evaluate("Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map-check')())");
+  if (openingMap !== 0x10060002) throw new Error('new game did not reach Niujia Village map state');
+  if (!openingState.scene.includes('village-scene')) {
+    throw new Error('new game reached Niujia Village state but browser scene did not render village');
   }
+  if (openingState.hudHidden) throw new Error('new game reached Niujia Village with hidden HUD');
 
   // 2) Original Niujia NPC dialogue in the real browser UI.
   const huangStarted = await evaluate(`window.fengari.load("return __jy_run('牛家村-黄蓉')", '@e2e/huang-rong')()`);
