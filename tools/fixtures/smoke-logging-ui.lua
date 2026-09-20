@@ -509,10 +509,13 @@ assert(animal_button and animal_button.mouseEnabled == true, 'hunting target cli
 hunting_ui.getChildByName('时间').width = 100
 __jy_input_event('click', animal_button.__handle, 0, 0, '', 0)
 assert(__jy_minigame_signal_count('打猎') == 0, '打猎 event was queued instead of consumed by dispatcher')
-__jy_program_browser_pump(0)
+assert(tonumber(hunting_ui.getChildByName('目标').text) == 1 and tonumber(hunting_ui.getChildByName('位置').text) == 1, 'hunting target selection did not reach c_hunting before dispatcher pump')
+local hunting_dispatch_before, hunting_dispatch_before_value = __jy_minigame_status('地图系统_小游戏')
+local hunting_pumped = __jy_program_browser_pump(0)
+local hunting_dispatch_after, hunting_dispatch_after_value = __jy_minigame_status('地图系统_小游戏')
 math.random = hunting_random
 
-assert(tonumber(hunting_ui.getChildByName('目标').text) == 1 and tonumber(hunting_ui.getChildByName('位置').text) == 1, 'hunting target selection did not reach c_hunting')
+assert(tonumber(hunting_ui.getChildByName('目标').text) == 1 and tonumber(hunting_ui.getChildByName('位置').text) == 1, 'hunting target selection did not survive dispatcher pump')
 local hunting_reward_dump = {}
 for id = 286, 333 do
     if (reward_items[id] or 0) ~= 0 then hunting_reward_dump[#hunting_reward_dump + 1] = tostring(id) .. '=' .. tostring(reward_items[id]) end
@@ -522,6 +525,9 @@ assert((reward_items[291] or 0) == 1,
     ' score=' .. tostring(hunting_ui.getChildByName('得分').text) ..
     ' total=' .. tostring(hunting_ui.getChildByName('总分').text) ..
     ' exp=' .. tostring(reward_points[103] or 0) ..
+    ' dispatcher_before=' .. tostring(hunting_dispatch_before) .. ':' .. tostring(hunting_dispatch_before_value) ..
+    ' pumped=' .. tostring(hunting_pumped) ..
+    ' dispatcher_after=' .. tostring(hunting_dispatch_after) .. ':' .. tostring(hunting_dispatch_after_value) ..
     ' rewards=' .. table.concat(hunting_reward_dump, ','))
 assert(tonumber(hunting_ui.getChildByName('得分').text) == 5, 'original hunting capture did not update score')
 assert(tonumber(hunting_ui.getChildByName('总分').text) == 20, 'original hunting capture did not update total score with experience')
