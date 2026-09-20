@@ -275,6 +275,9 @@ jobs:
       - name: Audit original map and NPC mini-game entries
         run: node tools/audit-minigame-entrypoints.mjs
 
+      - name: Smoke original notify registration and dispatch
+        run: node tools/smoke-notify-runtime.mjs
+
       - name: Smoke original logging, mining, fishing, hunting and gambling UI
         run: node tools/smoke-logging-ui.mjs
 
@@ -318,6 +321,8 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/04_program/p_school_shaolin.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_school_gaibang.lua
           test -f "dist/vendor/upstream/JY3/script/04_program/p_story-town or city.lua"
+          test -f dist/vendor/upstream/JY3/script/06_notify/n_dialogue_system.lua
+          test -f dist/vendor/upstream/JY3/script/06_notify/n_cheat_system.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_battle.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_button.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_logging.lua
