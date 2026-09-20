@@ -68,6 +68,7 @@ jobs:
           node --check tools/smoke-save-state.mjs
           node --check tools/test-save-store.mjs
           node --check tools/test-event-finished-signal.mjs
+          node --check tools/check-save-system-integration.mjs
           node --check tools/smoke-shop-runtime.mjs
           node --check tools/smoke-team-management.mjs
           node --check tools/smoke-teammate-interactions.mjs
@@ -284,6 +285,9 @@ jobs:
 
       - name: Story completion autosave signal
         run: node tools/test-event-finished-signal.mjs
+
+      - name: Multi-slot save integration guard
+        run: node tools/check-save-system-integration.mjs
 
       - name: Compile normalized upstream Lua
         run: node tools/check-normalized-upstream.mjs
@@ -676,6 +680,7 @@ jobs:
           trap 'kill $SERVER_PID' EXIT
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8090/index.html >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/src/save-store.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_headevent.lua >/dev/null
