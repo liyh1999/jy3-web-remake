@@ -260,6 +260,16 @@
         });
       return true;
     },
+    async prepareOriginalDialogue(onProgress) {
+      const progress = onProgress || ((message) => { ui.status.textContent = message; });
+      const loaded = await window.JYUpstream.prepareDialogueRuntime(progress);
+      fengari.load('return __jy_dialogue_enable_original(true)', '@web/enable-original-dialogue')();
+      ui.status.textContent = '原版对话/选择运行时已启用';
+      return loaded;
+    },
+    disableOriginalDialogue() {
+      return fengari.load('return __jy_dialogue_enable_original(false)', '@web/disable-original-dialogue')();
+    },
     async showLoggingUi(onProgress) {
       const progress = onProgress || ((message) => { ui.status.textContent = message; });
       const loaded = await window.JYUpstream.prepareLoggingUI(progress);
