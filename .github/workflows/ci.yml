@@ -97,6 +97,10 @@ jobs:
           node --check tools/smoke-taohuadao-basic.mjs
           node --check tools/smoke-xingxiu-basic.mjs
           node --check tools/smoke-xuedaomen-basic.mjs
+          node --check tools/smoke-book-story-entry-baseline.mjs
+          node --check tools/smoke-book-yuenv.mjs
+          node --check tools/smoke-lakes-notice-dispatcher.mjs
+          node --check tools/smoke-lakes-bone-claw.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -370,6 +374,18 @@ jobs:
       - name: Execute original Xuedaomen sect branches
         run: node tools/smoke-xuedaomen-basic.mjs
 
+      - name: Execute all original book story entry guards
+        run: node tools/smoke-book-story-entry-baseline.mjs
+
+      - name: Execute original Yue Maiden book story
+        run: node tools/smoke-book-yuenv.mjs
+
+      - name: Execute original lakes notice dispatcher
+        run: node tools/smoke-lakes-notice-dispatcher.mjs
+
+      - name: Execute original lakes Bone Claw task
+        run: node tools/smoke-lakes-bone-claw.mjs
+
       - name: Audit full original program API coverage
         run: |
           node tools/audit-program-api-coverage.mjs
@@ -531,6 +547,16 @@ jobs:
 
       - name: Smoke Xuedaomen sect branches from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_SECT_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-xuedaomen-basic.mjs
+
+      - name: Smoke book story branches from offline dist
+        run: |
+          JY3_RUNTIME_ROOT=dist JY3_BOOK_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-book-story-entry-baseline.mjs
+          JY3_RUNTIME_ROOT=dist JY3_BOOK_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-book-yuenv.mjs
+
+      - name: Smoke lakes notice branches from offline dist
+        run: |
+          JY3_RUNTIME_ROOT=dist JY3_LAKES_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-lakes-notice-dispatcher.mjs
+          JY3_RUNTIME_ROOT=dist JY3_LAKES_SOURCE_BASE="dist/vendor/upstream/JY3/script/04_program" node tools/smoke-lakes-bone-claw.mjs
 
       - name: Simulate disconnected runtime
         run: npm run verify:offline
