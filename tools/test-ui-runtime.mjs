@@ -71,6 +71,12 @@ function G.DBTable() return {} end
 function G.misc() return {} end
 assert(loadfile('lua/runtime_shims.lua'))()
 
+local text_node=G.TextQuad()
+text_node.text=0
+assert(type(text_node.text)=='string' and text_node.text=='0','TextQuad numeric text must roundtrip as a string')
+text_node.text=17
+assert(text_node.text=='17','TextQuad numeric text coercion mismatch')
+
 local Component=G.com()
 function Component:init() self.init_count=(self.init_count or 0)+1 end
 local root=G.Entity(); G.cacheUI(root); root.name='v_test'
