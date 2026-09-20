@@ -258,6 +258,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: npm run cache:offline
 
+      - name: Audit full original program API coverage
+        run: |
+          node tools/audit-program-api-coverage.mjs
+          sed -n '1,220p' reports/program-api-coverage.md
+
       - name: Audit original map and NPC mini-game entries
         run: node tools/audit-minigame-entrypoints.mjs
 
@@ -300,6 +305,9 @@ jobs:
           test -f dist/vendor/upstream/JY3/script/04_program/p_citymap_system.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_newgame.lua
           test -f dist/vendor/upstream/JY3/script/04_program/p_niujiacun.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_task.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_school_shaolin.lua
+          test -f dist/vendor/upstream/JY3/script/04_program/p_school_gaibang.lua
           test -f "dist/vendor/upstream/JY3/script/04_program/p_story-town or city.lua"
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_battle.lua
           test -f dist/vendor/upstream/JY3/script/02_ui_view/v_button.lua
