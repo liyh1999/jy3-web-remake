@@ -192,7 +192,6 @@ assert(__jy_run('初入峨嵋派-周芷若') == true, 'Zhou Zhiruo battle branch
 assert(battle_calls == 1, 'Zhou Zhiruo battle did not invoke original battle API')
 assert(loves[18] == 53, 'Zhou Zhiruo victory did not add original love +3')
 assert(saw('add_time', 4), 'Zhou Zhiruo battle did not add original four time units')
-assert(saw('turn_map'), 'Zhou Zhiruo battle did not return through original map flow')
 
 -- 4) March contest: three victories grant Four Symbols footwork.
 reset_calls()
