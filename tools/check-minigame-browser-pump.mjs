@@ -12,6 +12,8 @@ for (const needle of [
   "return __jy_minigame_start('dig')",
   '钓鱼资源加载完成，正在启动原版程序',
   "return __jy_minigame_start('fishing')",
+  '打猎资源加载完成，正在启动原版程序',
+  "return __jy_minigame_start('hunting')",
   'scheduleProgramPump(delay, token)',
   'cancelProgramPump(token)',
   'minigameFinished(name)',
