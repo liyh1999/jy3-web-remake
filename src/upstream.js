@@ -32,6 +32,33 @@
   ];
   const CACHED_DATA = [...new Set([...CORE_DATA, ...ON_DEMAND_DATA])];
 
+  const ALL_PROGRAMS = [
+    '04_program/p_battle.lua',
+    '04_program/p_book_story.lua',
+    '04_program/p_cheat_system.lua',
+    '04_program/p_citymap_system.lua',
+    '04_program/p_dialogue_system.lua',
+    '04_program/p_emei.lua',
+    '04_program/p_event.lua',
+    '04_program/p_init.lua',
+    '04_program/p_lakes_notice.lua',
+    '04_program/p_newgame.lua',
+    '04_program/p_niujiacun.lua',
+    '04_program/p_order.lua',
+    '04_program/p_person.lua',
+    '04_program/p_school_gaibang.lua',
+    '04_program/p_school_gumu.lua',
+    '04_program/p_school_huashan.lua',
+    '04_program/p_school_quanzhen.lua',
+    '04_program/p_school_shaolin.lua',
+    '04_program/p_school_taohuadao.lua',
+    '04_program/p_school_wudang.lua',
+    '04_program/p_school_xingxiu.lua',
+    '04_program/p_school_xuedaomen.lua',
+    '04_program/p_story-town or city.lua',
+    '04_program/p_task.lua',
+  ];
+
   const CORE_PROGRAMS = [
     '04_program/p_order.lua',
     '04_program/p_init.lua',
@@ -41,11 +68,10 @@
   ];
 
   // Cached and compile-gated, but deliberately not executed during normal boot.
-  // C2 will load these on demand once the battle runtime surface is ready.
-  const ON_DEMAND_PROGRAMS = [
-    '04_program/p_battle.lua'
-  ];
-  const CACHED_PROGRAMS = [...new Set([...CORE_PROGRAMS, ...ON_DEMAND_PROGRAMS])];
+  // D4 loads these on demand as their story/module surfaces are connected.
+  const CORE_PROGRAM_SET = new Set(CORE_PROGRAMS);
+  const ON_DEMAND_PROGRAMS = ALL_PROGRAMS.filter(path => !CORE_PROGRAM_SET.has(path));
+  const CACHED_PROGRAMS = [...ALL_PROGRAMS];
 
   const LOGGING_UI_MODULES = [
     { module: 'c_button', path: '03_ui_component/c_button.lua' },
@@ -409,6 +435,7 @@ return true
     CORE_DATA,
     ON_DEMAND_DATA,
     CACHED_DATA,
+    ALL_PROGRAMS,
     CORE_PROGRAMS,
     ON_DEMAND_PROGRAMS,
     CACHED_PROGRAMS,
