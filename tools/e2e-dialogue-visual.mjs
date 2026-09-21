@@ -17,9 +17,9 @@ try {
   await evaluate("window.JYWeb.enterVillage()");
   await waitFor("document.querySelector('#scene')?.classList.contains('village-scene')", { label: 'village scene' });
 
-  const village = await evaluate("(() => { const scene=document.querySelector('#scene'); return { titleCards:scene.querySelectorAll('.title-copy').length, background:getComputedStyle(scene).backgroundImage, gameTitle:document.querySelector('#game').classList.contains('title-mode') }; })()");
+  const village = await evaluate("(() => { const scene=document.querySelector('#scene'); const stage=window.JYRenderer?.snapshot?.(); const bg=stage?.children?.find(node=>node.name==='__background'); return { titleCards:scene.querySelectorAll('.title-copy').length, backgroundId:Number(bg?.img||0), canvas:Boolean(document.querySelector('#gcoreCanvas')), gameTitle:document.querySelector('#game').classList.contains('title-mode') }; })()");
   if (village.titleCards !== 0) throw new Error('Web explanatory village card is still visible');
-  if (!village.background.includes('/image/bjmap/0001.png')) throw new Error('village is not using original background: ' + village.background);
+  if (village.backgroundId !== 0x56050001 || !village.canvas) throw new Error('village is not using original gcore background: ' + JSON.stringify(village));
   if (village.gameTitle) throw new Error('game remained in title-mode after entering village');
 
   await evaluate("window.JYWeb.showTalk('黄蓉','测试原版对话框与人物头像',43,0x5608002b,1,()=>{})");
