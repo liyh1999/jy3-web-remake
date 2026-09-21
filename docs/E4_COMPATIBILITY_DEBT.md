@@ -86,4 +86,6 @@ E4 只负责“调用语义不能静默错误”，不在这里重新实现已�
 - D4 source/offline long-flow strict：通过。
 - 完整浏览器 runtime 启动成功后默认 strict；降级模式保持兼容。
 - 直接宿主空壳已加入 `runtime-compat-policy.json` 分类。
-- 下一项只剩 runtime missing-object 计数基线与阈值收紧。
+- runtime missing-object 已在浏览器 E2E、D4 source、D4 offline dist 三条关键路径收紧为 **0**；CI #758 全绿。
+- 之前暴露的 `0x1008001f / 0x10090001 / 0x101c0003` 均确认是原 `o_Gut / o_story / o_book_story` 真实对象，现已纳入正式 `CORE_DATA`，不再依赖 placeholder。
+- E4 完成：关键长流程 unknown call / missing object 均为 0；视觉 no-op 与 debug no-op 分别继续由 #18 / #25 收口。
