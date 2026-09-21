@@ -151,7 +151,19 @@ try {
   await note('title-ready', titleMetrics);
   await shot('title');
 
-  // Touch the visible settings like a player would.
+  await page.click('#startBtn');
+  const answered = await drainUntilVillage();
+  await note('new-game-to-village', {
+    questionnaireAnswers: answered,
+    mapId: await page.evaluate(() => Number(window.fengari.load(
+      "local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0",
+      '@playtest/map'
+    )()) || 0),
+  });
+  await shot('village');
+
+  // The original title presentation intentionally hides the Web footer. Touch
+  // player settings only after entering the in-game HUD, where they are visible.
   await page.click('#displaySettingsBtn');
   await page.selectOption('#displayScaleSelect', '1');
   await page.click('#audioSettingsBtn');
@@ -163,19 +175,10 @@ try {
   const settings = await page.evaluate(() => ({
     scale: document.querySelector('#displayScaleSelect')?.value || '',
     audio: document.querySelector('#audioMaster')?.value || '',
+    footerVisible: getComputedStyle(document.querySelector('.footer')).display !== 'none',
   }));
-  await note('settings-touched', settings);
-
-  await page.click('#startBtn');
-  const answered = await drainUntilVillage();
-  await note('new-game-to-village', {
-    questionnaireAnswers: answered,
-    mapId: await page.evaluate(() => Number(window.fengari.load(
-      "local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0",
-      '@playtest/map'
-    )()) || 0),
-  });
-  await shot('village');
+  if (!settings.footerVisible) throw new Error('in-game settings footer is not visible');
+  await note('settings-touched-in-game', settings);
 
   await page.click('#personBtn');
   await page.waitForSelector('#personPanel:not(.hidden)', { timeout: 10000 });
