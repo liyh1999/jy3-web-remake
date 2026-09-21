@@ -95,6 +95,15 @@
     ui.cont.classList.add('hidden');
   }
 
+  function invokeInteropCallback(callback, ...args) {
+    if (typeof callback !== 'function') return undefined;
+    if (typeof callback.invoke === 'function') {
+      const result = callback.invoke(undefined, args);
+      return Array.isArray(result) ? result[0] : result;
+    }
+    return callback(...args);
+  }
+
   function resetJsState() {
     state.points = {};
     state.money = 0;
@@ -382,7 +391,7 @@
       };
       const starter = starters[key];
       if (!starter || originalMinigameCallback) {
-        if (typeof resume === 'function') setTimeout(() => resume(false), 0);
+        if (typeof resume === 'function') setTimeout(() => invokeInteropCallback(resume, false), 0);
         return false;
       }
       originalMinigameCallback = typeof resume === 'function' ? resume : null;
@@ -395,7 +404,7 @@
           originalMinigameCallback = null;
           setTimeout(() => {
             try { fengari.load('return __jy_minigame_reset()', '@web/minigame-start-failed-reset')(); } catch (_) {}
-            if (cb) cb(false);
+            if (cb) invokeInteropCallback(cb, false);
           }, 0);
         });
       return true;
@@ -490,7 +499,7 @@
       while (args.length < 13) args.push(null);
       if (originalBattleStarting || originalBattleCallback) {
         console.warn('original battle already active');
-        if (resume) setTimeout(() => resume(0), 0);
+        if (resume) setTimeout(() => invokeInteropCallback(resume, 0), 0);
         return;
       }
       originalBattleStarting = true;
@@ -516,7 +525,7 @@
           originalBattleCallback = null;
           originalBattleStarting = false;
           window.JYBattleView?.hide();
-          if (cb) setTimeout(() => cb(0), 0);
+          if (cb) setTimeout(() => invokeInteropCallback(cb, 0), 0);
         });
     },
     scheduleStoryProgramPump(delay, token) {
@@ -610,7 +619,7 @@
         } catch (error) {
           console.error('minigame cleanup failed', error);
         }
-        if (cb) cb(true);
+        if (cb) invokeInteropCallback(cb, true);
       }, 0);
     },
     scheduleBattlePump(delay) {
@@ -627,7 +636,7 @@
           originalBattleCallback = null;
           originalBattleStarting = false;
           window.JYBattleView?.end(2);
-          if (cb) setTimeout(() => cb(2), 0);
+          if (cb) setTimeout(() => invokeInteropCallback(cb, 2), 0);
         }
       }, ms);
     },
@@ -641,7 +650,7 @@
       ui.status.textContent = value === 1 ? '原战斗结算完成：胜利' : value === 2 ? '原战斗结算完成：失败' : '原战斗结束';
       setTimeout(() => {
         window.JYBattleView?.hide();
-        if (cb) cb(value);
+        if (cb) invokeInteropCallback(cb, value);
       }, 420);
     },
     battleBegin(background, mode) { window.JYBattleView?.begin(background, mode); },
@@ -763,7 +772,7 @@
           const cb = modalCallback;
           modalCallback = null;
           closeDialogue();
-          cb(choice);
+          invokeInteropCallback(cb, choice);
         };
         ui.options.appendChild(b);
       });
@@ -772,7 +781,7 @@
       const products = [...names].map((name, idx) => `${name}　${Number(prices[idx]) || 0} 两`);
       products.push('离开商店');
       this.showMenu('选择要购买的物品（当前 Web 商店一次购买 1 件）', products, (choice) => {
-        resume(choice > products.length - 1 ? 0 : choice);
+        invokeInteropCallback(resume, choice > products.length - 1 ? 0 : choice);
       });
     },
     startBattle(enemy, resume) {
@@ -818,7 +827,7 @@
         const cb = battleCallback;
         battleCallback = null;
         battleState = null;
-        cb(1);
+        invokeInteropCallback(cb, 1);
       }, 280);
       return;
     }
@@ -834,7 +843,7 @@
         const cb = battleCallback;
         battleCallback = null;
         battleState = null;
-        cb(0);
+        invokeInteropCallback(cb, 0);
       }, 280);
     } else {
       ui.battleLog.textContent = `你造成 ${dmg} 点伤害；${battleState.enemyName} 反击 ${hurt} 点。`;
@@ -845,7 +854,7 @@
     const cb = modalCallback;
     modalCallback = null;
     closeDialogue();
-    if (cb) cb(true);
+    if (cb) invokeInteropCallback(cb, true);
   };
 
   function runEvent(name) {
