@@ -208,13 +208,18 @@ try {
   if (slotPayload.schemaVersion !== 2 || !slotPayload.luaState || !slotPayload.meta) {
     throw new Error('manual slot payload is incomplete');
   }
-  if (slotPayload.runtimeVersion !== window.JYRuntimeVersion?.runtimeVersion) {
+  const runtimeVersionMeta = await evaluate(`({
+    runtimeVersion: window.JYRuntimeVersion?.runtimeVersion || '',
+    protocolVersion: Number(window.JYRuntimeVersion?.protocolVersion || 0),
+    upstream: window.JYUpstream?.UPSTREAM_REV || ''
+  })`);
+  if (slotPayload.runtimeVersion !== runtimeVersionMeta.runtimeVersion) {
     throw new Error('manual slot runtimeVersion mismatch');
   }
-  if (Number(slotPayload.protocolVersion) !== Number(window.JYRuntimeVersion?.protocolVersion)) {
+  if (Number(slotPayload.protocolVersion) !== runtimeVersionMeta.protocolVersion) {
     throw new Error('manual slot protocolVersion mismatch');
   }
-  if (slotPayload.upstream !== window.JYUpstream?.UPSTREAM_REV) {
+  if (slotPayload.upstream !== runtimeVersionMeta.upstream) {
     throw new Error('manual slot upstream revision mismatch');
   }
 
