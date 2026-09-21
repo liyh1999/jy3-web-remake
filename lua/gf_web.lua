@@ -737,10 +737,16 @@ function __jy_runtime_object_count()
     return count
 end
 
-function __jy_debug_event_state()
+function __jy_debug_event_state(field)
+    local current = tostring(active_event_name or "")
     local status = active and coroutine.status(active) or "none"
-    return tostring(active_event_name or ""), tostring(status or "none"),
-           tostring(last_event_name or ""), tostring(active_wait_event or "")
+    local last = tostring(last_event_name or "")
+    local waiting = tostring(active_wait_event or "")
+    if field == "current" then return current end
+    if field == "status" then return tostring(status or "none") end
+    if field == "last" then return last end
+    if field == "wait" then return waiting end
+    return current, tostring(status or "none"), last, waiting
 end
 
 function __jy_run(event_name)
