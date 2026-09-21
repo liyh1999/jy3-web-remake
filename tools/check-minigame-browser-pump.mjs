@@ -24,8 +24,8 @@ for (const needle of [
   "ui.scene.querySelector('.title-copy')?.remove()",
   'gcore canvas 未挂载到页面',
   '伐木资源加载完成，正在启动原版程序',
-  "fetch('./lua/program_runtime.lua')",
-  "fetch('./lua/minigame_web.lua')",
+  "fetchBootLua('program_runtime.lua')",
+  "fetchBootLua('minigame_web.lua')",
   "__jy_program_browser_pump(",
   "__jy_minigame_reset()",
 ]) {
