@@ -4,6 +4,7 @@
 
   const STORAGE_KEY = 'jy3.audio.settings.v1';
   const groups = new Map();
+  const failureLog = [];
   let nextVoiceId = 1;
   let pageSuspended = typeof document !== 'undefined' && !!document.hidden;
 
@@ -15,6 +16,16 @@
   function rawValue(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number : 1;
+  }
+
+  function recordFailure(resourceId, url, reason) {
+    failureLog.push({
+      kind: 'audio',
+      resourceId: Number(resourceId) >>> 0,
+      url: String(url || ''),
+      reason: String(reason || 'error'),
+    });
+    while (failureLog.length > 64) failureLog.shift();
   }
 
   function unit(value, fallback = 1) {
@@ -219,6 +230,9 @@
       media.addEventListener('ended', () => {
         if (!voice.loop) removeVoice(voice);
       }, { once: true });
+      media.addEventListener('error', () => {
+        recordFailure(voice.resourceId, voice.url, 'media-load-error');
+      }, { once: true });
     }
 
     if (pageSuspended) {
@@ -236,7 +250,10 @@
 
   function play(resourceId, group = 1, loop = false, rawVolume = 1) {
     const source = Resources.resolve(resourceId);
-    if (!source || source.kind !== 'audio' || !source.resolvableFile) return false;
+    if (!source || source.kind !== 'audio' || !source.resolvableFile) {
+      recordFailure(resourceId, '', 'unresolvable');
+      return false;
+    }
 
     const state = stateFor(group, true);
     const longLived = !!loop;
@@ -288,6 +305,10 @@
     if (state.longLived) return publicVoice(state.longLived);
     const voices = [...state.oneShots];
     return publicVoice(voices[voices.length - 1] || null);
+  }
+
+  function failures() {
+    return failureLog.map(row => ({ ...row }));
   }
 
   function snapshot(group = 1) {
@@ -363,6 +384,7 @@
     play,
     stop,
     activeAudio,
+    failures,
     snapshot,
     retryBlocked,
     suspendForPageHide,
