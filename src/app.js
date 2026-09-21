@@ -12,7 +12,9 @@
     upstream: window.JYUpstream?.UPSTREAM_REV || '',
   }) : null;
   const ui = {
-    status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
+    game: $('#game'),
+    status: $('#runtimeStatus'), start: $('#startBtn'), titleContinue: $('#titleContinueBtn'), titleGuide: $('#titleGuideBtn'), titleExit: $('#titleExitBtn'),
+    village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'), saveSlot: $('#saveSlotSelect'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
     dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
@@ -71,7 +73,40 @@
     window.JYRenderer?.resizeCanvas?.();
     return canvas;
   }
+  function titleResourceUrl(id) {
+    return window.JYResources?.url?.(id) || '';
+  }
+
+  function applyTitleResources() {
+    const image = (selector, id) => {
+      const node = $(selector);
+      const url = titleResourceUrl(id);
+      if (node && url) node.src = url;
+      return url;
+    };
+    image('#titleBackdrop', 0x56050054);
+    image('#titleOverlay', 0x56044004);
+    image('#titleLogo', 0x56040002);
+    image('#titleMark', 0x56040003);
+
+    const button = (node, normal, hover, press = normal) => {
+      if (!node) return;
+      const normalUrl = titleResourceUrl(normal);
+      const hoverUrl = titleResourceUrl(hover);
+      const pressUrl = titleResourceUrl(press);
+      if (normalUrl) node.style.setProperty('--title-normal', `url("${normalUrl}")`);
+      if (hoverUrl) node.style.setProperty('--title-hover', `url("${hoverUrl}")`);
+      if (pressUrl) node.style.setProperty('--title-press', `url("${pressUrl}")`);
+    };
+    button(ui.start, 0x56041001, 0x56041002);
+    button(ui.titleContinue, 0x56042001, 0x56042002, 0x56042003);
+    button(ui.titleGuide, 0x56043001, 0x56043002, 0x56043003);
+    button(ui.titleExit, 0x56044001, 0x56044002, 0x56044003);
+  }
+
   function setScene(kind) {
+    const title = kind !== 'village';
+    ui.game?.classList.toggle('title-mode', title);
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
       const villageBackground = window.JYResources?.url(0x56050001);
@@ -216,7 +251,18 @@
     ui.saveSlot.disabled = !saveReady;
     const current = rows.find(item => item.slot === selected);
     if (ui.save) ui.save.disabled = !saveReady || selected === 'autosave';
-    if (ui.load) ui.load.disabled = !saveReady || !current?.ok;
+    if (ui.load) ui.load.disabled = !saveReady || !current?.ok || current?.compatible === false;
+    if (ui.titleContinue) {
+      ui.titleContinue.disabled = !saveReady || !rows.some(row => row.ok && row.compatible !== false && !row.empty);
+    }
+  }
+
+  function bestContinueSlot() {
+    if (!saveStore) return '';
+    const rows = saveStore.list()
+      .filter(row => row.ok && row.compatible !== false && !row.empty)
+      .sort((a, b) => Date.parse(b.savedAt || 0) - Date.parse(a.savedAt || 0));
+    return rows[0]?.slot || '';
   }
 
   function saveGame(slot = ui.saveSlot?.value || 'slot1', options = {}) {
@@ -899,6 +945,7 @@
     }
 
     try {
+      applyTitleResources();
       const [compat, shims, programRuntime, storyProgramCompat, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
@@ -952,10 +999,19 @@
       saveStore?.migrateLegacySingleSlot();
       saveReady = true;
       refreshSaveControls();
-      ui.start.textContent = originalProgramLoaded ? '开始原版开局' : '开始兼容层验证';
+      const startLabel = ui.start.querySelector('span');
+      if (startLabel) startLabel.textContent = originalProgramLoaded ? '开始原版游戏' : '开始游戏';
+      ui.start.setAttribute('aria-label', startLabel?.textContent || '开始游戏');
       ui.village.textContent = originalProgramLoaded ? '进入原版牛家村事件测试' : '直接进入牛家村测试';
 
       ui.start.onclick = () => freshRun('回答问题');
+      if (ui.titleContinue) {
+        ui.titleContinue.onclick = () => {
+          const slot = bestContinueSlot();
+          if (!slot) return false;
+          return loadGame(slot);
+        };
+      }
       ui.village.onclick = () => {
         resetJsState();
         resetLuaState();
