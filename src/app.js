@@ -1022,7 +1022,14 @@
   function freshRun(eventName) {
     resetJsState();
     resetLuaState();
-    if (eventName === '回答问题') ui.game?.classList.add('opening-flow');
+    if (eventName === '回答问题') {
+      ui.game?.classList.add('opening-flow');
+      const titleMenu = ui.scene?.querySelector('.title-menu');
+      if (titleMenu) {
+        titleMenu.style.display = 'none';
+        titleMenu.style.pointerEvents = 'none';
+      }
+    }
     runEvent(eventName);
   }
 
