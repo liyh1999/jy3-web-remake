@@ -9,6 +9,8 @@ globalThis.window = {};
 const upstreamRuntime = path.join(runtimeRoot, 'src', 'upstream.js');
 vm.runInThisContext(fs.readFileSync(upstreamRuntime, 'utf8'), { filename: upstreamRuntime });
 const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+const minigameSnapshot = snapshots.minigames;
 
 const sourceBase = process.env.JY3_MINIGAME_SOURCE_BASE || path.join('vendor', 'upstream', 'JY3', 'script');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-logging-ui-'));
@@ -38,6 +40,15 @@ for (const [name, relative] of Object.entries(targets)) {
   const normalized = normalizeLuaSource(fs.readFileSync(sourcePath, 'utf8'));
   fs.writeFileSync(path.join(temp, name + '.lua'), normalized, 'utf8');
 }
+
+
+fs.writeFileSync(path.join(temp, 'snapshot.lua'), `return {
+  logging = { strengthProgress = ${minigameSnapshot.logging.strengthProgress}, woodItemId = ${minigameSnapshot.logging.woodItemId}, woodCount = ${minigameSnapshot.logging.woodCount} },
+  mining = { strikeProgress = ${minigameSnapshot.mining.strikeProgress}, minOreCount = ${minigameSnapshot.mining.minOreCount} },
+  fishing = { progress = ${minigameSnapshot.fishing.progress}, shellItemId = ${minigameSnapshot.fishing.shellItemId}, shellCount = ${minigameSnapshot.fishing.shellCount}, wormItemId = ${minigameSnapshot.fishing.wormItemId}, wormDelta = ${minigameSnapshot.fishing.wormDelta}, score = ${minigameSnapshot.fishing.score} },
+  hunting = { itemId = ${minigameSnapshot.hunting.itemId}, itemCount = ${minigameSnapshot.hunting.itemCount}, score = ${minigameSnapshot.hunting.score}, totalScore = ${minigameSnapshot.hunting.totalScore}, progress = ${minigameSnapshot.hunting.progress} },
+  gambling = { playerMoneyStart = ${minigameSnapshot.gambling.playerMoneyStart}, houseMoneyStart = ${minigameSnapshot.gambling.houseMoneyStart}, afterTwoBets = ${minigameSnapshot.gambling.afterTwoBets}, afterWin = ${minigameSnapshot.gambling.afterWin}, houseAfterWin = ${minigameSnapshot.gambling.houseAfterWin}, achievementProgress = ${minigameSnapshot.gambling.achievementProgress} },
+}\n`, 'utf8');
 
 const run = spawnSync('lua5.3', ['tools/fixtures/smoke-logging-ui.lua'], {
   cwd: process.cwd(),
