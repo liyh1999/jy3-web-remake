@@ -380,6 +380,7 @@
     return canvas;
   }
   window.JYWeb = {
+    dialogueProtocolVersion: 2,
     reset: resetJsState,
     getSavePayload() { return pendingSavePayload; },
     legacyFilePath(scope, value) { return legacyVirtualPath(scope, value); },
