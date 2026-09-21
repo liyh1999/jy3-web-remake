@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "e5-v1",
+  "upstreamRevision": "c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8",
+  "packageVersion": "0.1.0",
+  "opening": {
+    "answers": [
+      5,
+      5,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      6
+    ],
+    "expected": {
+      "menus": 14,
+      "uiYields": 37,
+      "village": true,
+      "mapId": 268828674
+    }
+  },
+  "map": {
+    "niujiaVisibleHotspots": 8,
+    "niujiaHiddenHotspots": 7,
+    "worldInitialVisibleCities": 42,
+    "worldUnlockedVisibleCities": 43,
+    "huashanEventRecord": 13,
+    "worldMapId": 268828673,
+    "niujiaMapId": 268828675,
+    "juxianzhuangMapId": 268828676
+  },
+  "shop": {
+    "maxBuyQuantity": 99,
+    "sample": {
+      "prices": [
+        12,
+        30,
+        7
+      ],
+      "quantities": [
+        2,
+        3,
+        0
+      ],
+      "total": 114
+    }
+  },
+  "battle": {
+    "seed": 20260918,
+    "fixture": {
+      "skill": 13,
+      "maxActions": 32,
+      "timeoutSteps": 12000,
+      "enemy": 1
+    },
+    "expected": {
+      "result": 1,
+      "attacks": 3,
+      "damage": 739,
+      "lastEnemy": 1,
+      "lastSkill": 13,
+      "expBefore": 0,
+      "expAfter": 20,
+      "mpBefore": 5000,
+      "mpAfter": 4675,
+      "proficiencyBefore": 100,
+      "proficiencyAfter": 110,
+      "schedulerSteps": 642
+    }
+  }
+}
