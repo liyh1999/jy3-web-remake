@@ -564,12 +564,20 @@ function G.call(name, ...)
         else
             portrait_id = tonumber(body()["119"]) or 0
         end
-        web:showTalk(speaker ~= "" and speaker or "旁白", text, role_id, portrait_id, mod, function(v) resume_after_ui(v) end)
+        if tonumber(web.dialogueProtocolVersion) and tonumber(web.dialogueProtocolVersion) >= 2 then
+            web:showTalk(speaker ~= "" and speaker or "旁白", text, role_id, portrait_id, mod, function(v) resume_after_ui(v) end)
+        else
+            web:showTalk(speaker ~= "" and speaker or "旁白", text, function(v) resume_after_ui(v) end)
+        end
         return coroutine.yield()
     elseif name == "talk0" then
         local speaker = tostring(args[1] or "")
         local text = tostring(args[2] or "")
-        web:showTalk(speaker ~= "" and speaker or "旁白", text, 0, tonumber(body()["119"]) or 0, 0, function(v) resume_after_ui(v) end)
+        if tonumber(web.dialogueProtocolVersion) and tonumber(web.dialogueProtocolVersion) >= 2 then
+            web:showTalk(speaker ~= "" and speaker or "旁白", text, 0, tonumber(body()["119"]) or 0, 0, function(v) resume_after_ui(v) end)
+        else
+            web:showTalk(speaker ~= "" and speaker or "旁白", text, function(v) resume_after_ui(v) end)
+        end
         return coroutine.yield()
     elseif name == "menu" and not G.__original_dialogue_enabled then
         local speaker = tostring(args[1] or "")
@@ -585,10 +593,14 @@ function G.call(name, ...)
         else
             portrait_id = tonumber(body()["119"]) or 0
         end
-        web:showMenu(
-            question, js_array(options), role_id, portrait_id, dialogue_mod, menu_mod,
-            function(choice) resume_after_ui(tonumber(choice)) end
-        )
+        if tonumber(web.dialogueProtocolVersion) and tonumber(web.dialogueProtocolVersion) >= 2 then
+            web:showMenu(
+                question, js_array(options), role_id, portrait_id, dialogue_mod, menu_mod,
+                function(choice) resume_after_ui(tonumber(choice)) end
+            )
+        else
+            web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
+        end
         local choice = coroutine.yield()
         trace_runtime("menu:" .. tostring(choice))
         return choice
