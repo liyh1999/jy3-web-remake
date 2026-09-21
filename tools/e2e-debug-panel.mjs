@@ -28,12 +28,13 @@ try {
     { timeoutMs: 30000, label: 'debug runtime bootstrap' }
   );
 
-  const statePrepared = await evaluate("(() => { const enter = window.fengari.load(\"return __jy_enter_map(0x10060003)\", '@debug-e2e/map'); if (!enter()) return false; const exportState = window.fengari.load(\"return __jy_export_state()\", '@debug-e2e/save'); exportState(); window.JYDiagnostics.recordError(new Error('diagnostic stack probe'), 'debug-e2e'); window.JYResources.addImage(0xdeadbeef, 0xdeadbeef); window.JYDiagnostics.refresh(); return true; })()");
+  const statePrepared = await evaluate("(() => { const enter = window.fengari.load(\"return __jy_enter_map(0x10060003)\", '@debug-e2e/map'); if (!enter()) return false; const runEvent = window.fengari.load(\"return __jy_run('牛家村-黄蓉')\", '@debug-e2e/event'); if (!runEvent()) return false; const exportState = window.fengari.load(\"return __jy_export_state()\", '@debug-e2e/save'); exportState(); window.JYDiagnostics.recordError(new Error('diagnostic stack probe'), 'debug-e2e'); window.JYResources.addImage(0xdeadbeef, 0xdeadbeef); window.JYDiagnostics.refresh(); return true; })()");
   if (!statePrepared) throw new Error('failed to prepare diagnostics state');
 
   const report = await evaluate('window.JYDiagnostics.snapshot()');
   if (!report?.lua?.ready) throw new Error('diagnostics report did not read Lua runtime state');
   if (Number(report.lua.mapId) !== 0x10060003) throw new Error('diagnostics current map mismatch');
+  if (report.lua.eventName !== '牛家村-黄蓉') throw new Error('diagnostics current event mismatch: ' + report.lua.eventName);
   if (Number(report.lua.saveObjects) < 3) throw new Error('diagnostics save object count missing');
   if (Number(report.lua.runtimeObjects) <= 0) throw new Error('diagnostics runtime object count missing');
   if (typeof report.lua.missingCalls !== 'string' || typeof report.lua.missingObjects !== 'string') {
@@ -46,7 +47,8 @@ try {
     throw new Error('diagnostics resource failure list missing');
   }
 
-  const rendered = await evaluate("(() => ({ map: document.querySelector('#debugMap')?.textContent || '', save: Number(document.querySelector('#debugSaveObjects')?.textContent || 0), resources: document.querySelector('#debugResources')?.textContent || '', errors: document.querySelector('#debugErrors')?.textContent || '', copy: typeof window.JYDiagnostics?.copyReport === 'function' }))()");
+  const rendered = await evaluate("(() => ({ event: document.querySelector('#debugEvent')?.textContent || '', map: document.querySelector('#debugMap')?.textContent || '', save: Number(document.querySelector('#debugSaveObjects')?.textContent || 0), resources: document.querySelector('#debugResources')?.textContent || '', errors: document.querySelector('#debugErrors')?.textContent || '', copy: typeof window.JYDiagnostics?.copyReport === 'function' }))()");
+  if (rendered.event !== '牛家村-黄蓉') throw new Error('debug panel event rendering mismatch');
   if (rendered.map !== '0x10060003') throw new Error('debug panel map rendering mismatch');
   if (rendered.save < 3) throw new Error('debug panel save object rendering mismatch');
   if (!rendered.resources.includes('deadbeef') && !rendered.resources.includes('3735928559')) {
