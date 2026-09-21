@@ -49,14 +49,15 @@
   ],
   "platformCalls": [
     {
-      "name": "photo0",
-      "category": "visual-noop",
-      "issue": 18
+      "name": "地图系统_防修改监控",
+      "category": "intentional-web-replacement",
+      "issue": 23
     },
     {
-      "name": "photo0_off",
-      "category": "visual-noop",
-      "issue": 18
+      "name": "通用_存档",
+      "category": "intentional-web-replacement",
+      "owner": "src/save-store.js",
+      "issue": 27
     },
     {
       "name": "all_over",
@@ -69,9 +70,9 @@
       "issue": 18
     },
     {
-      "name": "notice1",
-      "category": "visual-noop",
-      "issue": 18
+      "name": "goto_map",
+      "category": "web-side-effect",
+      "owner": "lua/gf_web.lua / lua/runtime_shims.lua"
     },
     {
       "name": "list",
@@ -84,20 +85,24 @@
       "owner": "lua/runtime_shims.lua"
     },
     {
+      "name": "notice1",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "photo0",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "photo0_off",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
       "name": "turn_map",
       "category": "web-side-effect",
       "owner": "lua/runtime_shims.lua"
-    },
-    {
-      "name": "地图系统_防修改监控",
-      "category": "intentional-web-replacement",
-      "issue": 23
-    },
-    {
-      "name": "通用_存档",
-      "category": "intentional-web-replacement",
-      "owner": "src/save-store.js",
-      "issue": 27
     }
   ],
   "unsafeUnknownCallFallback": {
