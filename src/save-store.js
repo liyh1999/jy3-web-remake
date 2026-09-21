@@ -25,6 +25,8 @@
       return {
         schemaVersion: SCHEMA_VERSION,
         slot,
+        runtimeVersion: String(input.runtimeVersion || ''),
+        protocolVersion: Number.isFinite(Number(input.protocolVersion)) ? Number(input.protocolVersion) : 0,
         upstream: String(input.upstream || ''),
         savedAt: String(input.savedAt || ''),
         meta: cloneMeta(input.meta),
@@ -38,6 +40,8 @@
       return {
         schemaVersion: SCHEMA_VERSION,
         slot,
+        runtimeVersion: '',
+        protocolVersion: 0,
         upstream: String(input.upstream || ''),
         savedAt: String(input.savedAt || ''),
         meta: {
@@ -63,12 +67,57 @@
     }
   }
 
+  function compatibility(payload, current = {}) {
+    const savedProtocol = Number(payload?.protocolVersion || 0);
+    const currentProtocol = Number(current?.protocolVersion || 0);
+    const savedUpstream = String(payload?.upstream || '');
+    const currentUpstream = String(current?.upstream || '');
+    const savedRuntime = String(payload?.runtimeVersion || '');
+    const currentRuntime = String(current?.runtimeVersion || '');
+
+    if (savedProtocol > 0 && currentProtocol > 0 && savedProtocol !== currentProtocol) {
+      return {
+        compatible: false,
+        code: savedProtocol > currentProtocol ? 'protocol-newer' : 'protocol-mismatch',
+        message: `存档协议版本 ${savedProtocol} 与当前运行时协议 ${currentProtocol} 不兼容`,
+      };
+    }
+    if (savedUpstream && currentUpstream && savedUpstream !== currentUpstream) {
+      return {
+        compatible: false,
+        code: 'upstream-mismatch',
+        message: `存档原版数据版本 ${savedUpstream.slice(0, 12)} 与当前版本 ${currentUpstream.slice(0, 12)} 不一致`,
+      };
+    }
+    if (!savedProtocol) {
+      return {
+        compatible: true,
+        legacy: true,
+        code: 'legacy-unversioned',
+        message: '旧存档未记录运行时协议，将按兼容模式读取',
+      };
+    }
+    return {
+      compatible: true,
+      legacy: false,
+      code: savedRuntime && currentRuntime && savedRuntime !== currentRuntime ? 'runtime-different' : 'ok',
+      message: savedRuntime && currentRuntime && savedRuntime !== currentRuntime
+        ? `存档来自 runtime ${savedRuntime}，当前为 ${currentRuntime}；协议兼容`
+        : '',
+    };
+  }
+
   function create(storage, options = {}) {
     if (!storage || typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
       throw new Error('save storage adapter requires getItem/setItem');
     }
     const prefix = String(options.prefix || PREFIX);
     const legacyKey = String(options.legacyKey || LEGACY_SINGLE_KEY);
+    const currentVersion = {
+      runtimeVersion: String(options.runtimeVersion || ROOT.JYRuntimeVersion?.runtimeVersion || ''),
+      protocolVersion: Number(options.protocolVersion ?? ROOT.JYRuntimeVersion?.protocolVersion ?? 0),
+      upstream: String(options.upstream || ROOT.JYUpstream?.UPSTREAM_REV || ''),
+    };
 
     function key(slot) {
       slot = String(slot || '');
@@ -87,6 +136,7 @@
       }
       const result = parseRaw(raw, slot);
       if (result.ok) {
+        result.compatibility = compatibility(result.payload, currentVersion);
         // Persist a migrated payload back into the current schema lazily.
         try {
           const parsed = JSON.parse(raw);
@@ -103,7 +153,9 @@
       if (!isSlot(slot)) throw new Error(`未知存档槽：${slot}`);
       const payload = migratePayload({
         schemaVersion: SCHEMA_VERSION,
-        upstream: input?.upstream || '',
+        runtimeVersion: input?.runtimeVersion || currentVersion.runtimeVersion,
+        protocolVersion: input?.protocolVersion ?? currentVersion.protocolVersion,
+        upstream: input?.upstream || currentVersion.upstream,
         savedAt: input?.savedAt || new Date().toISOString(),
         meta: cloneMeta(input?.meta),
         luaState: input?.luaState,
@@ -126,6 +178,11 @@
           ok: result.ok,
           empty: !!result.empty,
           error: result.ok ? '' : result.error,
+          compatible: result.ok ? result.compatibility?.compatible !== false : false,
+          compatibility: result.ok ? { ...(result.compatibility || {}) } : null,
+          runtimeVersion: result.ok ? result.payload.runtimeVersion : '',
+          protocolVersion: result.ok ? result.payload.protocolVersion : 0,
+          upstream: result.ok ? result.payload.upstream : '',
           savedAt: result.ok ? result.payload.savedAt : '',
           meta: result.ok ? cloneMeta(result.payload.meta) : {},
         };
@@ -156,6 +213,7 @@
     SLOT_IDS,
     MANUAL_SLOT_IDS,
     migratePayload,
+    compatibility,
     create,
   });
 })();
