@@ -208,6 +208,15 @@ try {
   if (slotPayload.schemaVersion !== 2 || !slotPayload.luaState || !slotPayload.meta) {
     throw new Error('manual slot payload is incomplete');
   }
+  if (slotPayload.runtimeVersion !== window.JYRuntimeVersion?.runtimeVersion) {
+    throw new Error('manual slot runtimeVersion mismatch');
+  }
+  if (Number(slotPayload.protocolVersion) !== Number(window.JYRuntimeVersion?.protocolVersion)) {
+    throw new Error('manual slot protocolVersion mismatch');
+  }
+  if (slotPayload.upstream !== window.JYUpstream?.UPSTREAM_REV) {
+    throw new Error('manual slot upstream revision mismatch');
+  }
 
   const changed = before === 77 ? 76 : 77;
   await evaluate(`window.fengari.load("local G=require 'gf'; return G.call('set_point',15,${changed})", '@e2e/mutate-save')()`);
