@@ -113,10 +113,42 @@ try {
   await waitFor("document.querySelectorAll('#options button').length >= 2", { label: 'Mu Nianci menu' });
   await evaluate("document.querySelectorAll('#options button')[0].click()");
 
-  await waitFor(
-    "document.querySelector('#battle') && !document.querySelector('#battle').classList.contains('hidden')",
-    { timeoutMs: 30000, label: 'original battle UI' }
-  );
+  {
+    const deadline = Date.now() + 30000;
+    let battleVisible = false;
+    while (Date.now() < deadline) {
+      if (errors.length) {
+        throw new Error('browser errors while starting original battle:\n' + errors.join('\n'));
+      }
+      battleVisible = await evaluate(
+        "Boolean(document.querySelector('#battle') && !document.querySelector('#battle').classList.contains('hidden'))"
+      );
+      if (battleVisible) break;
+      await sleep(80);
+    }
+    if (!battleVisible) {
+      const snapshot = await evaluate(`(() => {
+        let battleActive = false;
+        let callBattleType = '';
+        let originalEnabled = false;
+        try {
+          battleActive = Boolean(window.fengari.load("return __jy_battle_browser_active()", '@e2e/battle-active')());
+          callBattleType = String(window.fengari.load("local G=require 'gf'; return type(G.api['call_battle'])", '@e2e/call-battle-type')() || '');
+          originalEnabled = Boolean(window.fengari.load("local G=require 'gf'; return G.__original_battle_enabled == true", '@e2e/battle-enabled')());
+        } catch (_) {}
+        return {
+          status: document.querySelector('#runtimeStatus')?.textContent || '',
+          battleClass: document.querySelector('#battle')?.className || '',
+          battleActive,
+          callBattleType,
+          originalEnabled,
+          dialogueHidden: document.querySelector('#dialogue')?.classList.contains('hidden'),
+          options: [...document.querySelectorAll('#options button')].map(node => node.textContent)
+        };
+      })()`);
+      throw new Error('timed out waiting for original battle UI: ' + JSON.stringify(snapshot));
+    }
+  }
   const battleTitle = await evaluate("document.querySelector('#battleTitle')?.textContent || ''");
   if (!battleTitle) throw new Error('battle UI title missing');
 
