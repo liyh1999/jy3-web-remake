@@ -18,6 +18,68 @@ button { font: inherit; cursor: pointer; }
 .runtime { font: 12px ui-monospace, monospace; padding: 7px 10px; border: 1px solid #695a43; background: #16110d; color: #c9ba95; border-radius: 3px; }
 .scene { position: absolute; inset: 72px 0 34px; overflow: hidden; }
 .title-scene, .village-scene { background: linear-gradient(180deg, #dfd3b0 0%, #baa77c 56%, #8c7954 100%); }
+
+#game.title-mode {
+  border: 0;
+  border-radius: 0;
+  background: #000;
+  box-shadow: 0 18px 55px #000b;
+}
+#game.title-mode .topbar,
+#game.title-mode .footer { display: none; }
+#game.title-mode .scene { inset: 0; }
+.title-scene { background: #000; }
+.title-original { position: absolute; inset: 0; overflow: hidden; background: #000; }
+.title-backdrop,
+.title-overlay { position: absolute; inset: 0; width: 853px; height: 480px; object-fit: cover; pointer-events: none; }
+.title-backdrop { z-index: 0; }
+.title-overlay { z-index: 1; object-fit: fill; }
+.title-logo { position: absolute; z-index: 2; left: 166px; top: 39px; width: 426px; height: 138px; object-fit: contain; pointer-events: none; }
+.title-mark { position: absolute; z-index: 2; left: 568px; top: 59px; width: 100px; height: 139px; object-fit: contain; pointer-events: none; }
+.title-menu { position: absolute; z-index: 4; inset: 0; }
+.title-menu-button {
+  position: absolute;
+  top: 224px;
+  width: 49px;
+  height: 193px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: var(--title-normal);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow: none;
+  cursor: pointer;
+}
+.title-menu-button:hover:not(:disabled) { background-image: var(--title-hover, var(--title-normal)); }
+.title-menu-button:active:not(:disabled) { background-image: var(--title-press, var(--title-normal)); }
+.title-menu-button:disabled { opacity: 1; cursor: default; }
+.title-menu-button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.title-start { left: 122px; }
+.title-continue { left: 202px; }
+.title-guide { left: 283px; width: 48px; }
+.title-exit { left: 363px; width: 48px; }
+.title-version {
+  position: absolute;
+  z-index: 5;
+  left: 6px;
+  top: 7px;
+  color: #eee7d7;
+  font: 16px/1 "STKaiti", KaiTi, "Noto Serif SC", serif;
+  text-shadow: 1px 1px 1px #000;
+  pointer-events: none;
+}
+.title-dev-hooks { display: none !important; }
 .mountains { position: absolute; inset: 0; opacity: .52; background: linear-gradient(145deg, transparent 50%, #625b4d 50.5%, transparent 51%) 0 45%/220px 160px, linear-gradient(35deg, transparent 50%, #77705e 50.5%, transparent 51%) 70px 35%/250px 190px; filter: blur(.3px); }
 .ink { position: absolute; border-radius: 50%; filter: blur(24px); background: #2a281f44; transform: rotate(-14deg); }
 .ink-a { width: 360px; height: 85px; left: -80px; bottom: 80px; }
