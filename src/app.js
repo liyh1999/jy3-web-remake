@@ -121,6 +121,7 @@
 
   function setScene(kind) {
     const title = kind !== 'village';
+    ui.game?.classList.remove('minigame-mode');
     ui.game?.classList.toggle('title-mode', title);
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -370,6 +371,7 @@
     closeDialogue();
     ui.battle.classList.add('hidden');
     setScene('village');
+    ui.game?.classList.add('minigame-mode');
     ui.scene.querySelector('.title-copy')?.remove();
     ui.actions.classList.add('hidden');
     ui.hud.classList.add('hidden');
