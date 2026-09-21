@@ -6,7 +6,13 @@ import { spawnSync } from 'node:child_process';
 
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
-const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
+const { RAW_BASE, UPSTREAM_REV, normalizeLuaSource } = globalThis.window.JYUpstream;
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+if (snapshots.upstreamRevision !== UPSTREAM_REV) {
+  throw new Error(`opening snapshot upstream mismatch: ${snapshots.upstreamRevision} != ${UPSTREAM_REV}`);
+}
+const openingSnapshot = snapshots.opening;
+const answersLua = openingSnapshot.answers.join(',');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-opening-flow-'));
 const FLOW_DATA = [
@@ -131,7 +137,7 @@ for _, file in ipairs({...}) do reg(file) end
 assert(loadfile('${tmp.replaceAll('\\','\\\\')}/p_order.lua'))()
 assert(loadfile('${tmp.replaceAll('\\','\\\\')}/p_newgame.lua'))()
 
-local answers={5,5,1,1,1,1,1,1,1,1,1,1,1,1,6}
+local answers={${answersLua}}
 local co=coroutine.create(G.api['回答问题'])
 local resume_value=nil
 local guard=0
@@ -149,9 +155,11 @@ while coroutine.status(co)~='dead' do
   end
 end
 
-assert(menu_count>=14, 'expected at least 14 opening menus, got '..menu_count)
-assert(entered_village, 'opening did not transition to 牛家村 map')
-assert(village_opened, 'opening did not finish 牛家村 intro/mapon')
+assert(menu_count==14, 'opening menu snapshot changed: '..menu_count)
+assert(ui_count==37, 'opening UI-yield snapshot changed: '..ui_count)
+assert(entered_village==true, 'opening village transition snapshot changed')
+assert(village_opened==true, 'opening village/mapon snapshot changed')
+assert(tonumber(body()['140'])==268828674, 'opening map snapshot changed: '..tostring(body()['140']))
 assert((tonumber(body()['16']) or 0) >= 2, 'questionnaire stat effects were not applied')
 print(string.format('original opening flow PASS: menus=%d ui=%d village=%s', menu_count, ui_count, tostring(village_opened)))
 `;
