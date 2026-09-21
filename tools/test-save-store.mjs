@@ -20,20 +20,28 @@ class MemoryStorage {
 }
 
 const storage = new MemoryStorage();
-const store = API.create(storage);
+const currentVersion = {
+  runtimeVersion: '0.1.0',
+  protocolVersion: 1,
+  upstream: 'fixed-upstream',
+};
+const store = API.create(storage, currentVersion);
 
 if (API.SLOT_IDS.join(',') !== saveSnapshot.slots.join(',')) throw new Error('save slot snapshot mismatch');
 
 for (const slot of API.SLOT_IDS) {
   const payload = store.write(slot, {
-    upstream: 'fixed-upstream',
     savedAt: '2026-09-20T10:00:00.000Z',
     meta: { characterName: slot, level: 9, gameDay: 12, mapId: 0x10060002 },
     luaState: 'return {[' + (slot === 'autosave' ? '4' : '1') + ']=true}',
   });
   if (payload.schemaVersion !== saveSnapshot.schemaVersion || payload.slot !== slot) throw new Error(slot + ': write schema snapshot mismatch');
+  if (payload.runtimeVersion !== currentVersion.runtimeVersion) throw new Error(slot + ': runtime version missing from save');
+  if (payload.protocolVersion !== currentVersion.protocolVersion) throw new Error(slot + ': protocol version missing from save');
+  if (payload.upstream !== currentVersion.upstream) throw new Error(slot + ': upstream version missing from save');
   const loaded = store.read(slot);
   if (!loaded.ok || loaded.payload.meta.characterName !== slot) throw new Error(slot + ': read roundtrip failed');
+  if (loaded.compatibility?.compatible !== true || loaded.compatibility?.code !== 'ok') throw new Error(slot + ': current save compatibility mismatch');
 }
 
 const listed = store.list();
@@ -49,6 +57,37 @@ storage.setItem(store.key('slot3'), JSON.stringify({ schemaVersion: 999, luaStat
 const future = store.read('slot3');
 if (future.ok || !future.error.includes('999')) throw new Error('future schema was not rejected');
 
+// Same schema but newer/different runtime protocol must parse safely and report a clear incompatibility.
+storage.setItem(store.key('slot3'), JSON.stringify({
+  schemaVersion: saveSnapshot.schemaVersion,
+  runtimeVersion: '9.0.0',
+  protocolVersion: 2,
+  upstream: currentVersion.upstream,
+  savedAt: '2026-09-21T00:00:00.000Z',
+  meta: {},
+  luaState: 'return {}',
+}));
+const newerProtocol = store.read('slot3');
+if (!newerProtocol.ok || newerProtocol.compatibility?.compatible !== false) throw new Error('newer protocol incompatibility was not reported');
+if (newerProtocol.compatibility?.code !== 'protocol-newer' || !newerProtocol.compatibility?.message.includes('不兼容')) {
+  throw new Error('newer protocol incompatibility reason is unclear');
+}
+
+storage.setItem(store.key('slot3'), JSON.stringify({
+  schemaVersion: saveSnapshot.schemaVersion,
+  runtimeVersion: currentVersion.runtimeVersion,
+  protocolVersion: currentVersion.protocolVersion,
+  upstream: 'different-upstream',
+  savedAt: '2026-09-21T00:00:00.000Z',
+  meta: {},
+  luaState: 'return {}',
+}));
+const wrongUpstream = store.read('slot3');
+if (!wrongUpstream.ok || wrongUpstream.compatibility?.compatible !== false) throw new Error('upstream incompatibility was not reported');
+if (wrongUpstream.compatibility?.code !== 'upstream-mismatch' || !wrongUpstream.compatibility?.message.includes('不一致')) {
+  throw new Error('upstream incompatibility reason is unclear');
+}
+
 // Legacy v1 single-slot migration lands in slot1 and keeps its Lua state.
 const legacyStorage = new MemoryStorage();
 legacyStorage.setItem(API.LEGACY_SINGLE_KEY, JSON.stringify({
@@ -57,17 +96,18 @@ legacyStorage.setItem(API.LEGACY_SINGLE_KEY, JSON.stringify({
   savedAt: '2026-01-01T00:00:00.000Z',
   luaState: 'return {[123]=456}',
 }));
-const legacyStore = API.create(legacyStorage);
+const legacyStore = API.create(legacyStorage, currentVersion);
 const migration = legacyStore.migrateLegacySingleSlot();
 if (!migration.migrated) throw new Error('legacy single-slot save did not migrate');
 const migrated = legacyStore.read('slot1');
 if (!migrated.ok || migrated.payload.schemaVersion !== saveSnapshot.schemaVersion) throw new Error('migrated schema snapshot mismatch');
 if (migrated.payload.luaState !== 'return {[123]=456}') throw new Error('legacy Lua state changed during migration');
 if (migrated.payload.meta.migratedFrom !== saveSnapshot.legacySchemaVersion) throw new Error('legacy migration snapshot changed');
+if (migrated.compatibility?.compatible !== true || migrated.compatibility?.legacy !== true) throw new Error('legacy unversioned save was not kept compatible');
 
 // Existing slot1 always wins over the prototype key.
 legacyStore.write('slot1', { luaState: 'return {current=true}', meta: { characterName: 'current' } });
 const secondMigration = legacyStore.migrateLegacySingleSlot();
 if (secondMigration.migrated || secondMigration.reason !== 'slot1-exists') throw new Error('legacy migration overwrote slot1');
 
-console.log('save-store PASS: 3 manual + autosave slots, v1 migration, corruption/future-version isolation');
+console.log('save-store PASS: slots + version metadata + legacy migration + explicit protocol/upstream compatibility');
