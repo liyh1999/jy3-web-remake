@@ -15,6 +15,7 @@ local active_event_info = nil
 local queued_story_events = {}
 local missing_calls = {}
 local missing_objects = {}
+local strict_missing_calls = false
 
 package.preload["gf"] = function() return G end
 package.preload["gfbase"] = function() return G end
@@ -669,6 +670,9 @@ function G.call(name, ...)
 
     missing_calls[name] = (missing_calls[name] or 0) + 1
     print("[jy3-web] unimplemented G.call:", name)
+    if strict_missing_calls then
+        error("unimplemented G.call: " .. tostring(name), 2)
+    end
     return 0
 end
 
@@ -696,6 +700,11 @@ function __jy_data_stats()
     for _ in pairs(templates) do object_count = object_count + 1 end
     for _ in pairs(table_ids) do table_count = table_count + 1 end
     return object_count, table_count
+end
+
+function __jy_set_strict_missing_calls(value)
+    strict_missing_calls = value == true
+    return strict_missing_calls
 end
 
 function __jy_missing_calls()
