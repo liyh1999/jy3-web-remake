@@ -132,6 +132,7 @@ jobs:
           node --check tools/e2e-dialogue-visual.mjs
           node --check tools/e2e-panel-visual.mjs
           node --check tools/e2e-battle-minigame-visual.mjs
+          node --check tools/e2e-browser-compat.mjs
           node --check tools/e2e-keybindings.mjs
           node --check tools/test-keybindings.mjs
           node --check tools/e2e-debug-panel.mjs
@@ -701,6 +702,16 @@ jobs:
 
       - name: Smoke D4 cross-module long flow from offline dist
         run: JY3_RUNTIME_ROOT=dist JY3_LONGFLOW_PROGRAM_BASE="dist/vendor/upstream/JY3/script/04_program" JY3_LONGFLOW_DATA_BASE="dist/vendor/upstream/JY3/script/01_data" node tools/smoke-d4-long-flow.mjs
+
+      - name: Install cross-browser compatibility runners
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps firefox msedge
+
+      - name: Chrome Edge Firefox compatibility gate on offline dist
+        env:
+          JY3_BROWSER_COMPAT_DIST: "1"
+        run: node tools/e2e-browser-compat.mjs
 
       - name: Browser E2E core flow on offline dist
         env:

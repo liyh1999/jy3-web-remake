@@ -10,6 +10,10 @@
     "build": "npm run build:offline",
     "package": "npm run cache:offline && npm run scan:resources && npm run build:offline",
     "verify:offline": "node tools/verify-offline-dist.mjs",
-    "serve:dist": "python3 -m http.server 8080 --directory dist --bind 0.0.0.0"
+    "serve:dist": "python3 -m http.server 8080 --directory dist --bind 0.0.0.0",
+    "test:browser-compat": "node tools/e2e-browser-compat.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
   }
 }
