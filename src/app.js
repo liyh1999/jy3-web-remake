@@ -17,7 +17,8 @@
     village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'), saveSlot: $('#saveSlotSelect'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
-    dialogue: $('#dialogue'), speaker: $('#speaker'), text: $('#dialogueText'),
+    dialogue: $('#dialogue'), dialogueFrame: $('#dialogueFrame'), dialoguePortrait: $('#dialoguePortrait'),
+    dialogueHint: $('#dialogueContinueHint'), speaker: $('#speaker'), text: $('#dialogueText'),
     options: $('#options'), cont: $('#continueBtn'), actions: $('#villageActions'),
     battle: $('#battle'), battleTitle: $('#battleTitle'), enemyName: $('#enemyName'),
     playerBar: $('#playerHpBar'), enemyBar: $('#enemyHpBar'), playerText: $('#playerHpText'),
@@ -73,11 +74,22 @@
     window.JYRenderer?.resizeCanvas?.();
     return canvas;
   }
-  function titleResourceUrl(id) {
+  function absoluteResourceUrl(id) {
     const value = window.JYResources?.url?.(id) || '';
     if (!value) return '';
     try { return new URL(value, document.baseURI).href; }
     catch (_) { return value; }
+  }
+
+  function titleResourceUrl(id) {
+    return absoluteResourceUrl(id);
+  }
+
+  function applyDialogueResources() {
+    const frame = absoluteResourceUrl(0x56160047);
+    const optionHover = absoluteResourceUrl(0x56032003);
+    if (ui.dialogueFrame && frame) ui.dialogueFrame.src = frame;
+    if (ui.dialogue && optionHover) ui.dialogue.style.setProperty('--dialogue-option-hover', `url("${optionHover}")`);
   }
 
   function applyTitleResources() {
@@ -112,13 +124,11 @@
     ui.game?.classList.toggle('title-mode', title);
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
-      const villageBackground = window.JYResources?.url(0x56050001);
-      ui.scene.style.backgroundImage = villageBackground
-        ? `linear-gradient(90deg, rgba(18,16,12,.40), rgba(18,16,12,.08)), url("${villageBackground}")`
-        : '';
+      const villageBackground = absoluteResourceUrl(0x56050001);
+      ui.scene.style.backgroundImage = villageBackground ? `url("${villageBackground}")` : '';
       ui.scene.style.backgroundSize = 'cover';
       ui.scene.style.backgroundPosition = 'center';
-      replaceSceneMarkup(`<div class="title-copy" style="left:28%;top:20%;width:58%"><div class="seal">村</div><h1 style="font-size:42px">牛家村</h1><p>背景已通过原资源 ID <code>0x56050001</code> 解析；NPC 按钮直接触发原版 <code>p_niujiacun.lua</code>。</p></div>`);
+      replaceSceneMarkup('');
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
     } else {
@@ -137,8 +147,16 @@
 
   function closeDialogue() {
     ui.dialogue.classList.add('hidden');
+    ui.dialogue.classList.remove('menu-mode');
+    ui.dialogue.dataset.mod = '0';
+    ui.dialogue.dataset.roleId = '0';
     ui.options.innerHTML = '';
     ui.cont.classList.add('hidden');
+    ui.dialogueHint?.classList.remove('hidden');
+    if (ui.dialoguePortrait) {
+      ui.dialoguePortrait.classList.add('hidden');
+      ui.dialoguePortrait.removeAttribute('src');
+    }
   }
 
   function invokeInteropCallback(callback, ...args) {
@@ -813,21 +831,47 @@
       state.team = next;
       if (changed) emitTeamChanged();
     },
-    story(text, resume) { this.showTalk('旁白', text, resume); },
-    showTalk(speaker, text, resume) {
+    story(text, resume) { this.showTalk('旁白', text, 0, 0, 0, resume); },
+    showTalk(speaker, text, roleId = 0, portraitId = 0, mod = 0, resume) {
+      if (typeof roleId === 'function') {
+        resume = roleId; roleId = 0; portraitId = 0; mod = 0;
+      }
       closeDialogue();
       modalCallback = resume;
+      const role = Number(roleId) || 0;
+      const position = Number(mod) || 0;
+      ui.dialogue.dataset.roleId = String(role);
+      ui.dialogue.dataset.mod = String(position);
       ui.speaker.textContent = speaker || '旁白';
       ui.text.textContent = String(text || '').replace(/\[[^\]]+\]/g, '');
+      const portraitUrl = absoluteResourceUrl(Number(portraitId) || 0);
+      if (ui.dialoguePortrait && portraitUrl) {
+        ui.dialoguePortrait.src = portraitUrl;
+        ui.dialoguePortrait.alt = speaker || '人物头像';
+        ui.dialoguePortrait.classList.remove('hidden');
+      }
       ui.dialogue.classList.remove('hidden');
       ui.cont.classList.remove('hidden');
+      ui.dialogueHint?.classList.remove('hidden');
     },
-    showMenu(question, options, resume) {
+    showMenu(question, options, roleId = 0, portraitId = 0, dialogueMod = 0, menuMod = 0, resume) {
+      if (typeof roleId === 'function') {
+        resume = roleId; roleId = 0; portraitId = 0; dialogueMod = 0; menuMod = 0;
+      }
       closeDialogue();
       modalCallback = resume;
-      ui.speaker.textContent = '选择';
+      ui.dialogue.classList.add('menu-mode');
+      ui.dialogue.dataset.mod = String(Number(menuMod) || Number(dialogueMod) || 0);
+      ui.speaker.textContent = question ? '选择' : '';
       ui.text.textContent = question || '';
+      const portraitUrl = absoluteResourceUrl(Number(portraitId) || 0);
+      if (ui.dialoguePortrait && portraitUrl) {
+        ui.dialoguePortrait.src = portraitUrl;
+        ui.dialoguePortrait.alt = '人物头像';
+        ui.dialoguePortrait.classList.remove('hidden');
+      }
       ui.dialogue.classList.remove('hidden');
+      ui.dialogueHint?.classList.add('hidden');
       [...options].forEach((opt, idx) => {
         const rawOption = String(opt);
         const encodedChoice = rawOption.match(/^\s*(\d+)\s*,/);
@@ -847,7 +891,7 @@
     showShop(names, prices, resume) {
       const products = [...names].map((name, idx) => `${name}　${Number(prices[idx]) || 0} 两`);
       products.push('离开商店');
-      this.showMenu('选择要购买的物品（当前 Web 商店一次购买 1 件）', products, (choice) => {
+      this.showMenu('选择要购买的物品（当前 Web 商店一次购买 1 件）', products, 0, 0, 0, 0, (choice) => {
         invokeInteropCallback(resume, choice > products.length - 1 ? 0 : choice);
       });
     },
@@ -949,6 +993,7 @@
 
     try {
       applyTitleResources();
+      applyDialogueResources();
       const [compat, shims, programRuntime, storyProgramCompat, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
         fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
         fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
