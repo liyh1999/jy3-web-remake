@@ -276,6 +276,7 @@ assert(ui_resumes > 20, 'long flow did not exercise enough UI coroutine resume t
 assert(minigame_count >= 1 and battle_count >= 4, 'long flow did not cross mini-game/battle systems')
 assert(__jy_missing_calls() == '', 'D4 long flow used missing calls: ' .. __jy_missing_calls())
 local missing_objects = __jy_missing_objects()
+assert(missing_objects == '', 'D4 long flow used missing objects: ' .. missing_objects)
 
 print('D4 cross-module original long flow PASS')
 print('  missing calls: none')
