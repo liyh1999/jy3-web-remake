@@ -41,7 +41,7 @@ button { font: inherit; cursor: pointer; }
 #game.opening-flow .title-menu { display: none; }
 #game.opening-flow .title-original,
 #game.opening-flow .scene { pointer-events: none; }
-#game.opening-flow .dialogue,
+#game.opening-flow .dialogue { pointer-events: none; }
 #game.opening-flow .options,
 #game.opening-flow .options button,
 #game.opening-flow .dialogue-continue { pointer-events: auto; }
