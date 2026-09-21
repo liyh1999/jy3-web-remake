@@ -6,7 +6,14 @@ import { spawnSync } from 'node:child_process';
 
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
-const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
+const { RAW_BASE, UPSTREAM_REV, normalizeLuaSource } = globalThis.window.JYUpstream;
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+if (snapshots.upstreamRevision !== UPSTREAM_REV) {
+  throw new Error(`battle snapshot upstream mismatch: ${snapshots.upstreamRevision} != ${UPSTREAM_REV}`);
+}
+const battleSnapshot = snapshots.battle;
+const battleFixture = battleSnapshot.fixture;
+const battleExpected = battleSnapshot.expected;
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-battle-1v1-'));
 const SOURCES = [
@@ -356,8 +363,8 @@ enemy['技能1']=0x1005000d
 enemy['10']=280
 enemy['8']=8
 
-math.randomseed(20260918)
-assert(__jy_battle_headless_begin(13,32,12000,true))
+math.randomseed(${battleSnapshot.seed})
+assert(__jy_battle_headless_begin(${battleFixture.skill},${battleFixture.maxActions},${battleFixture.timeoutSteps},true))
 
 -- Fixed upstream typo aliases must resolve to the authoritative original API.
 G.call('ser_point',81,2)
@@ -386,12 +393,12 @@ local notebook_before=#notebook['记事本']
 G.call('call_battle',1,10,1,0,1,0,0,0,0,0,0,0,0)
 
 local attacks,damage,last_enemy,last_skill,skipped,steps,full_flow=__jy_battle_headless_stats()
-assert(G.call('get_battle')==1,'original get_battle did not report victory')
-assert(tonumber(body['235'])==1,'original victory monitor did not write body[235]')
-assert(attacks>=1 and attacks<=32,'headless action count invalid')
-assert(damage>0,'original magic_power1 produced no damage')
-assert(last_enemy==1 and last_skill==13,'headless action used unexpected enemy/skill')
-assert(steps>0,'battle scheduler never advanced')
+assert(G.call('get_battle')==${battleExpected.result},'battle result snapshot changed')
+assert(tonumber(body['235'])==${battleExpected.result},'original victory monitor result snapshot changed')
+assert(attacks==${battleExpected.attacks},'battle attack-count snapshot changed: '..tostring(attacks))
+assert(damage==${battleExpected.damage},'battle damage snapshot changed: '..tostring(damage))
+assert(last_enemy==${battleExpected.lastEnemy} and last_skill==${battleExpected.lastSkill},'battle target/skill snapshot changed')
+assert(steps==${battleExpected.schedulerSteps},'battle scheduler-step snapshot changed: '..tostring(steps))
 assert(full_flow==true,'full original battle event flow was not enabled')
 assert((tonumber(body['3']) or 0)>exp_before,'original victory monitor did not award player EXP')
 assert((tonumber(body['46']) or 0)<mp_before,'player MP was not spent on original battle action')
@@ -407,6 +414,9 @@ assert(__jy_missing_calls()=='','minimal original battle hit unimplemented G.cal
 local exp_after=tonumber(body['3'])
 local mp_after=tonumber(body['46'])
 local prof_after=tonumber(skill['当前熟练度'])
+assert(exp_before==${battleExpected.expBefore} and exp_after==${battleExpected.expAfter},'battle EXP snapshot changed: '..tostring(exp_before)..'->'..tostring(exp_after))
+assert(mp_before==${battleExpected.mpBefore} and mp_after==${battleExpected.mpAfter},'battle MP snapshot changed: '..tostring(mp_before)..'->'..tostring(mp_after))
+assert(prof_before==${battleExpected.proficiencyBefore} and prof_after==${battleExpected.proficiencyAfter},'battle proficiency snapshot changed: '..tostring(prof_before)..'->'..tostring(prof_after))
 local body_ref,skill_ref,enemy_ref=body,skill,enemy
 
 -- Battle mutations must round-trip through the same original object graph.
