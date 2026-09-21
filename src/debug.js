@@ -27,42 +27,26 @@
     return row;
   }
 
+  function luaScalar(source, chunkName) {
+    return window.fengari.load(source, chunkName)();
+  }
+
   function luaSnapshot() {
     if (!window.fengari?.load) return { ready: false, error: 'Fengari not ready' };
     try {
-      const probe = window.fengari.load(`
-        local event_name, event_status, last_event, wait_event = "", "none", "", ""
-        if type(__jy_debug_event_state) == "function" then
-          event_name, event_status, last_event, wait_event = __jy_debug_event_state()
-        end
-        local map_id = type(__jy_current_map) == "function" and __jy_current_map() or 0
-        local missing_calls = type(__jy_missing_calls) == "function" and __jy_missing_calls() or ""
-        local missing_objects = type(__jy_missing_objects) == "function" and __jy_missing_objects() or ""
-        local save_objects = type(__jy_tracked_save_objects) == "function" and __jy_tracked_save_objects() or 0
-        local runtime_objects = type(__jy_runtime_object_count) == "function" and __jy_runtime_object_count() or 0
-        local trace_status, trace = "none", ""
-        if type(__jy_debug_runtime_trace) == "function" then
-          trace_status, trace = __jy_debug_runtime_trace()
-        end
-        return event_name, event_status, last_event, wait_event, map_id,
-               missing_calls, missing_objects, save_objects, runtime_objects,
-               trace_status, trace
-      `, '@debug/runtime-snapshot');
-      const result = probe();
-      const values = Array.isArray(result) ? result : [result];
       return {
         ready: true,
-        eventName: String(values[0] || ''),
-        eventStatus: String(values[1] || 'none'),
-        lastEvent: String(values[2] || ''),
-        waitEvent: String(values[3] || ''),
-        mapId: Number(values[4] || 0) >>> 0,
-        missingCalls: String(values[5] || ''),
-        missingObjects: String(values[6] || ''),
-        saveObjects: Number(values[7] || 0),
-        runtimeObjects: Number(values[8] || 0),
-        traceStatus: String(values[9] || 'none'),
-        trace: String(values[10] || ''),
+        eventName: String(luaScalar("return type(__jy_debug_event_state)=='function' and __jy_debug_event_state('current') or ''", '@debug/event-current') || ''),
+        eventStatus: String(luaScalar("return type(__jy_debug_event_state)=='function' and __jy_debug_event_state('status') or 'none'", '@debug/event-status') || 'none'),
+        lastEvent: String(luaScalar("return type(__jy_debug_event_state)=='function' and __jy_debug_event_state('last') or ''", '@debug/event-last') || ''),
+        waitEvent: String(luaScalar("return type(__jy_debug_event_state)=='function' and __jy_debug_event_state('wait') or ''", '@debug/event-wait') || ''),
+        mapId: Number(luaScalar("return type(__jy_current_map)=='function' and __jy_current_map() or 0", '@debug/current-map') || 0) >>> 0,
+        missingCalls: String(luaScalar("return type(__jy_missing_calls)=='function' and __jy_missing_calls() or ''", '@debug/missing-calls') || ''),
+        missingObjects: String(luaScalar("return type(__jy_missing_objects)=='function' and __jy_missing_objects() or ''", '@debug/missing-objects') || ''),
+        saveObjects: Number(luaScalar("return type(__jy_tracked_save_objects)=='function' and __jy_tracked_save_objects() or 0", '@debug/save-objects') || 0),
+        runtimeObjects: Number(luaScalar("return type(__jy_runtime_object_count)=='function' and __jy_runtime_object_count() or 0", '@debug/runtime-objects') || 0),
+        traceStatus: String(luaScalar("local s=type(__jy_debug_runtime_trace)=='function' and select(1,__jy_debug_runtime_trace()) or 'none'; return s", '@debug/trace-status') || 'none'),
+        trace: String(luaScalar("local _,t='', ''; if type(__jy_debug_runtime_trace)=='function' then _,t=__jy_debug_runtime_trace() end; return t", '@debug/trace') || ''),
       };
     } catch (error) {
       return { ready: false, error: stringifyError(error) };
