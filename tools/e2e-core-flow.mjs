@@ -225,6 +225,7 @@ try {
       : { calls: String(values || ''), objects: '' };
   })()`);
   if (runtimeGaps.calls) throw new Error('browser E2E used missing calls: ' + runtimeGaps.calls);
+  if (runtimeGaps.objects) throw new Error('browser E2E used missing objects: ' + runtimeGaps.objects);
 
   console.log('browser E2E core flow PASS');
   console.log('  missing calls:', runtimeGaps.calls || 'none');
