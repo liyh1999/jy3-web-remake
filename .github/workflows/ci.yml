@@ -122,6 +122,7 @@ jobs:
           node --check tools/smoke-d4-long-flow.mjs
           node --check tools/browser-e2e-core.mjs
           node --check tools/e2e-core-flow.mjs
+          node --check tools/test-strict-missing-calls.mjs
           node --check tools/smoke-quanzhen-gumu-transition.mjs
           node --check tools/smoke-gumu-limochou.mjs
           node --check tools/test-story-program-runtime.mjs
@@ -231,6 +232,9 @@ jobs:
 
       - name: Validate original typo call aliases
         run: node tools/test-original-call-aliases.mjs
+
+      - name: Validate strict missing-call policy
+        run: node tools/test-strict-missing-calls.mjs
 
       - name: Validate original string and log runtime helpers
         run: node tools/test-runtime-string-utils.mjs
