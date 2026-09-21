@@ -559,8 +559,12 @@
 
   function resizeCanvas() {
     if (!canvas || !host) return;
-    const rect = host.getBoundingClientRect?.() || { width: host.clientWidth || 0, height: host.clientHeight || 0 };
-    const fit = computeViewportFit(rect.width || host.clientWidth, rect.height || host.clientHeight);
+    // Use untransformed layout dimensions. #game may be uniformly scaled for
+    // desktop presentation; getBoundingClientRect() would include that transform
+    // and cause the gcore canvas to be scaled twice.
+    const layoutWidth = host.clientWidth || 0;
+    const layoutHeight = host.clientHeight || 0;
+    const fit = computeViewportFit(layoutWidth, layoutHeight);
     canvas.style.width = `${fit.width}px`;
     canvas.style.height = `${fit.height}px`;
     canvas.style.left = `${fit.left}px`;
