@@ -19,7 +19,7 @@ try {
 
   const village = await evaluate("(() => { const scene=document.querySelector('#scene'); const stage=window.JYRenderer?.snapshot?.(); const bg=stage?.children?.find(node=>node.name==='__background'); return { titleCards:scene.querySelectorAll('.title-copy').length, backgroundId:Number(bg?.img||0), canvas:Boolean(document.querySelector('#gcoreCanvas')), gameTitle:document.querySelector('#game').classList.contains('title-mode') }; })()");
   if (village.titleCards !== 0) throw new Error('Web explanatory village card is still visible');
-  if (village.backgroundId !== 0x56050001 || !village.canvas) throw new Error('village is not using original gcore background: ' + JSON.stringify(village));
+  if (village.backgroundId !== 0x56050029 || !village.canvas) throw new Error('village is not using original gcore background: ' + JSON.stringify(village));
   if (village.gameTitle) throw new Error('game remained in title-mode after entering village');
 
   await evaluate("window.JYWeb.showTalk('黄蓉','测试原版对话框与人物头像',43,0x5608002b,1,()=>{})");
