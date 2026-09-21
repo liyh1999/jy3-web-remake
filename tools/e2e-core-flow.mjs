@@ -217,8 +217,18 @@ try {
   if (errors.length) {
     throw new Error(`browser errors captured:\n${errors.join('\n')}`);
   }
+  const runtimeGaps = await evaluate(`(() => {
+    const probe = window.fengari.load("return __jy_missing_calls(), __jy_missing_objects()", '@e2e/runtime-gaps');
+    const values = probe();
+    return Array.isArray(values)
+      ? { calls: String(values[0] || ''), objects: String(values[1] || '') }
+      : { calls: String(values || ''), objects: '' };
+  })()`);
+  if (runtimeGaps.calls) throw new Error('browser E2E used missing calls: ' + runtimeGaps.calls);
 
   console.log('browser E2E core flow PASS');
+  console.log('  missing calls:', runtimeGaps.calls || 'none');
+  console.log('  missing objects:', runtimeGaps.objects || 'none');
   console.log('  page load -> original new game -> Niujia NPC dialogue -> original battle escape -> slot1 save/load');
   console.log('  console errors / Runtime.exceptionThrown: 0');
 } finally {
