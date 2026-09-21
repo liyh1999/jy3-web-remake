@@ -82,19 +82,21 @@
         message: `存档协议版本 ${savedProtocol} 与当前运行时协议 ${currentProtocol} 不兼容`,
       };
     }
-    if (savedUpstream && currentUpstream && savedUpstream !== currentUpstream) {
-      return {
-        compatible: false,
-        code: 'upstream-mismatch',
-        message: `存档原版数据版本 ${savedUpstream.slice(0, 12)} 与当前版本 ${currentUpstream.slice(0, 12)} 不一致`,
-      };
-    }
     if (!savedProtocol) {
       return {
         compatible: true,
         legacy: true,
         code: 'legacy-unversioned',
-        message: '旧存档未记录运行时协议，将按兼容模式读取',
+        message: savedUpstream && currentUpstream && savedUpstream !== currentUpstream
+          ? `旧存档未记录运行时协议，且原版数据版本为 ${savedUpstream.slice(0, 12)}；将按兼容模式读取`
+          : '旧存档未记录运行时协议，将按兼容模式读取',
+      };
+    }
+    if (savedUpstream && currentUpstream && savedUpstream !== currentUpstream) {
+      return {
+        compatible: false,
+        code: 'upstream-mismatch',
+        message: `存档原版数据版本 ${savedUpstream.slice(0, 12)} 与当前版本 ${currentUpstream.slice(0, 12)} 不一致`,
       };
     }
     return {
