@@ -162,10 +162,15 @@ button:disabled { opacity: .45; cursor: wait; }
 @keyframes battle-skill-name { 0% { opacity: 0; transform: translate(-50%,-35%) scale(.88); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1.04); } }
 
 
-.audio-settings { margin-left: auto; position: relative; }
-.audio-settings-toggle, .audio-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 2px; }
-.audio-settings-toggle:hover, .audio-reset:hover { background: #30261d; color: #eee0bd; }
-.audio-settings-panel { position: absolute; z-index: 40; right: 0; bottom: 28px; width: 224px; padding: 10px; border: 1px solid #6d5a40; background: #18120ef2; box-shadow: 0 8px 22px #0008; color: #d8c8a5; }
+.display-settings { margin-left: auto; position: relative; }
+.display-settings-toggle, .audio-settings-toggle, .audio-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 2px; }
+.display-settings-toggle:hover, .audio-settings-toggle:hover, .audio-reset:hover { background: #30261d; color: #eee0bd; }
+.display-settings-panel, .audio-settings-panel { position: absolute; z-index: 40; right: 0; bottom: 28px; width: 224px; padding: 10px; border: 1px solid #6d5a40; background: #18120ef2; box-shadow: 0 8px 22px #0008; color: #d8c8a5; }
+.display-settings-panel { width: 190px; display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+.display-settings-panel label { color: #b9a98a; }
+.display-settings-panel select { min-width: 0; border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 4px 6px; font: 10px ui-monospace, Consolas, monospace; }
+.display-settings-panel output { grid-column: 1 / -1; color: #9f9075; font: 9px ui-monospace, Consolas, monospace; }
+.audio-settings { position: relative; }
 .audio-settings-panel label { display: grid; grid-template-columns: 54px 1fr 34px; align-items: center; gap: 7px; margin: 7px 0; }
 .audio-settings-panel input[type="range"] { width: 100%; accent-color: #a98c55; }
 .audio-settings-panel output { text-align: right; color: #eee0bd; }
