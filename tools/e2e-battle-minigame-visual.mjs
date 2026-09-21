@@ -90,6 +90,10 @@ try {
   const hidden = await evaluate("document.querySelector('#battle').classList.contains('hidden') && !document.querySelector('#game').classList.contains('battle-mode')");
   if (!hidden) throw new Error('battle visual mode did not cleanly exit');
 
+  // Match the real game path: the mini-game coroutine uses the shared
+  // 地图系统_小游戏 dispatcher registered by the story runtime.
+  await evaluate("JYWeb.prepareOriginalStory()");
+
   const minigames = [
     ['logging', 'startOriginalLogging', '原版伐木程序运行中'],
     ['dig', 'startOriginalDig', '原版采矿程序运行中'],
@@ -136,6 +140,13 @@ try {
     }
     if (state.topbar !== 'none' || state.footer !== 'none') throw new Error(name + ' Web chrome still visible');
     if (state.painted < 24) throw new Error(name + ' original gcore UI did not paint visible content');
+
+    // This is a visual sample, not a fake gameplay completion. Remove the
+    // current original view and reset only the mini-game scheduler before
+    // sampling the next one.
+    await evaluate(
+      "fengari.load(\"local G=require 'gf'; G.removeUI('v_" + name + "'); return __jy_minigame_reset()\", '@e2e/reset-minigame-visual')()"
+    );
   }
 
   const unexpected = errors.filter(row => !row.includes('favicon'));
