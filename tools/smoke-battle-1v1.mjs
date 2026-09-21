@@ -182,6 +182,17 @@ for _,name in ipairs({
 }) do reg(name) end
 assert(__jy_reset_runtime())
 
+-- Raw o_role.lua omits zero-valued abnormal-state fields, while the original
+-- gcore data objects expose them numerically as 0. The Web compatibility layer
+-- must preserve that contract before p_battle.lua starts its timer comparisons.
+local mu_defaults=G.QueryName(0x10040082)
+for p=81,115 do
+    assert(tonumber(mu_defaults[tostring(p)])==0,'missing default o_role status field '..tostring(p))
+end
+for p=240,259 do
+    assert(tonumber(mu_defaults[tostring(p)])==0,'missing default o_role extended status field '..tostring(p))
+end
+
 assert(loadfile('${temp}/p_order.lua'))()
 assert(loadfile('${temp}/p_battle.lua'))()
 assert(type(G.api['call_battle'])=='function','original call_battle missing')
