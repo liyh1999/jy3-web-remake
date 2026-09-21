@@ -163,13 +163,21 @@ button:disabled { opacity: .45; cursor: wait; }
 
 
 .display-settings { margin-left: auto; position: relative; }
-.display-settings-toggle, .audio-settings-toggle, .audio-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 2px; }
-.display-settings-toggle:hover, .audio-settings-toggle:hover, .audio-reset:hover { background: #30261d; color: #eee0bd; }
-.display-settings-panel, .audio-settings-panel { position: absolute; z-index: 40; right: 0; bottom: 28px; width: 224px; padding: 10px; border: 1px solid #6d5a40; background: #18120ef2; box-shadow: 0 8px 22px #0008; color: #d8c8a5; }
+.display-settings-toggle, .key-settings-toggle, .audio-settings-toggle, .audio-reset, .keybindings-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 2px; }
+.display-settings-toggle:hover, .key-settings-toggle:hover, .audio-settings-toggle:hover, .audio-reset:hover, .keybindings-reset:hover { background: #30261d; color: #eee0bd; }
+.display-settings-panel, .key-settings-panel, .audio-settings-panel { position: absolute; z-index: 40; right: 0; bottom: 28px; width: 224px; padding: 10px; border: 1px solid #6d5a40; background: #18120ef2; box-shadow: 0 8px 22px #0008; color: #d8c8a5; }
 .display-settings-panel { width: 190px; display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
 .display-settings-panel label { color: #b9a98a; }
 .display-settings-panel select { min-width: 0; border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 4px 6px; font: 10px ui-monospace, Consolas, monospace; }
 .display-settings-panel output { grid-column: 1 / -1; color: #9f9075; font: 9px ui-monospace, Consolas, monospace; }
+.key-settings { position: relative; }
+.key-settings-panel { width: 250px; max-height: 360px; overflow: auto; }
+.keybindings-list { display: grid; gap: 3px; }
+.keybinding-row { display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center; font-size: 10px; }
+.keybinding-key { border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 3px 5px; font: 9px ui-monospace, Consolas, monospace; }
+.keybindings-status { min-height: 14px; margin: 7px 0 4px; color: #9f9075; font: 9px ui-monospace, Consolas, monospace; }
+.keybindings-status.error { color: #e08b72; }
+.keybindings-reset { width: 100%; }
 .audio-settings { position: relative; }
 .audio-settings-panel label { display: grid; grid-template-columns: 54px 1fr 34px; align-items: center; gap: 7px; margin: 7px 0; }
 .audio-settings-panel input[type="range"] { width: 100%; accent-color: #a98c55; }
