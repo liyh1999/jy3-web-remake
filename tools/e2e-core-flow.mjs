@@ -1,4 +1,8 @@
+import fs from 'node:fs';
 import { launchBrowserHarness } from './browser-e2e-core.mjs';
+
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+const openingSnapshot = snapshots.opening;
 
 const browser = await launchBrowserHarness({
   port: Number(process.env.JY3_E2E_PORT || 8092),
@@ -73,9 +77,9 @@ try {
 
   // 1) Real page new-game button + original questionnaire menus.
   await click('#startBtn');
-  const openingAnswers = [5,5,1,1,1,1,1,1,1,1,1,1,1,1];
+  const openingAnswers = openingSnapshot.answers.slice(0, -1);
   await drainDialogueUntil(
-    "document.querySelector('#scene')?.classList.contains('village-scene') && document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0 && (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === 0x10060002; } catch (_) { return false; } })()",
+    "document.querySelector('#scene')?.classList.contains('village-scene') && document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0 && (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === ${openingSnapshot.expected.mapId}; } catch (_) { return false; } })()",
     openingAnswers,
     30000
   );
@@ -87,7 +91,7 @@ try {
     money: Number(document.querySelector('#money')?.textContent || 0)
   }))()`);
   const openingMap = await evaluate("Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map-check')())");
-  if (openingMap !== 0x10060002) throw new Error('new game did not reach Niujia Village map state');
+  if (openingMap !== openingSnapshot.expected.mapId) throw new Error('new game opening-map snapshot changed: ' + openingMap);
   if (!openingState.scene.includes('village-scene')) {
     throw new Error('new game reached Niujia Village state but browser scene did not render village');
   }
