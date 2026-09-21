@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+const profileSnapshot = snapshots.person.profile;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-person-'));
 const adapter = path.resolve('lua/person_web.lua').replaceAll('\\', '\\\\');
 const harness = `
@@ -49,20 +51,21 @@ package.preload['js']=function() return {global={JYPersonBridge=bridge}} end
 assert(dofile('${adapter}') == nil)
 assert(__jy_person_refresh()==true,'profile refresh failed')
 assert(bridge.finished,'bridge finish missing')
-assert(bridge.header.name=='令狐冲','fullname mismatch')
-assert(bridge.header.nickname=='浪子','nickname mismatch')
-assert(bridge.header.school=='华山派','school mapping mismatch')
-assert(bridge.header.rank=='大弟子' and bridge.header.master=='岳不群','rank/master mismatch')
+assert(bridge.header.name=='${profileSnapshot.fullName}','fullname snapshot changed')
+assert(bridge.header.nickname=='${profileSnapshot.nickname}','nickname snapshot changed')
+assert(bridge.header.school=='${profileSnapshot.school}','school snapshot changed')
+assert(bridge.header.rank=='${profileSnapshot.rank}' and bridge.header.master=='${profileSnapshot.master}','rank/master snapshot changed')
 assert(#bridge.vitals==7,'expected 7 vital rows')
-assert(bridge.vitals[4].label=='生命' and bridge.vitals[4].value==321 and bridge.vitals[4].max==500,'HP mismatch')
-assert(bridge.vitals[5].label=='内力' and bridge.vitals[5].value==222 and bridge.vitals[5].max==400,'MP mismatch')
+assert(bridge.vitals[4].label=='生命' and bridge.vitals[4].value==${profileSnapshot.hp.current} and bridge.vitals[4].max==${profileSnapshot.hp.max},'HP snapshot changed')
+assert(bridge.vitals[5].label=='内力' and bridge.vitals[5].value==${profileSnapshot.mp.current} and bridge.vitals[5].max==${profileSnapshot.mp.max},'MP snapshot changed')
 local expected={'力道','根骨','悟性','福缘','灵敏','定力'}
+local expected_values={${profileSnapshot.qualities.join(',')}}
 assert(#bridge.qualities==6,'expected six qualities')
 for i,name in ipairs(expected) do
   assert(bridge.qualities[i].label==name,'quality label mismatch at '..i)
-  assert(bridge.qualities[i].value==60+i,'quality value mismatch at '..i)
+  assert(bridge.qualities[i].value==expected_values[i],'quality snapshot changed at '..i)
 end
-assert(#bridge.slots==8,'expected eight equipment slots')
+assert(#bridge.slots==${profileSnapshot.equipmentSlots},'equipment-slot snapshot changed')
 assert(bridge.slots[1].label=='武器' and bridge.slots[1].name=='木剑','weapon slot mismatch')
 assert(bridge.slots[5].label=='头戴' and bridge.slots[5].name=='头巾','special slot mismatch')
 assert(bridge.slots[8].label=='印记' and bridge.slots[8].name=='侠印','mark slot mismatch')
