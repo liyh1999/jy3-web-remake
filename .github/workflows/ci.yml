@@ -9,7 +9,7 @@ on:
 jobs:
   static-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -151,6 +151,8 @@ jobs:
           node --check tools/smoke-map-event-routing.mjs
           node --check tools/vendor-upstream.mjs
           node --check tools/verify-offline-dist.mjs
+          node --check tools/prepare-release.mjs
+          node --check tools/verify-release-package.mjs
 
       - name: Validate shared regression snapshot dataset
         run: node tools/validate-regression-snapshots.mjs
@@ -900,3 +902,24 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/lua/shop_web.lua >/dev/null
           grep -q '"offline": true' dist/runtime-config.js
           grep -q "./vendor/upstream/JY3" dist/runtime-config.js
+
+      - name: Prepare versioned static release package
+        id: release_package
+        run: |
+          npm run release:prepare
+          npm run release:verify
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "artifact_name=jy3-web-remake-v$VERSION" >> "$GITHUB_OUTPUT"
+          test -f "release/jy3-web-remake-v$VERSION/release-manifest.json"
+          test -f "release/jy3-web-remake-v$VERSION/SHA256SUMS"
+          test -f "release/jy3-web-remake-v$VERSION/DEPLOY.md"
+
+      - name: Upload versioned static release package
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.release_package.outputs.artifact_name }}
+          path: release/${{ steps.release_package.outputs.artifact_name }}/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30

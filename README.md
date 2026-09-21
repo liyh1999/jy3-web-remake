@@ -134,6 +134,22 @@ http://服务器IP:8080
 
 CI 还会用一个禁止外部 `fetch` 的模拟环境逐个读取当前全部核心 Lua/程序，并检查牛家村背景、音频和页面依赖都来自 `dist/`。
 
+## 版本化发布包
+
+生成可直接部署的版本化目录：
+
+```bash
+npm run release:package
+```
+
+输出位置：
+
+```text
+release/jy3-web-remake-v<版本号>/
+```
+
+发布目录会附带 `VERSION`、`release-manifest.json` 和 `SHA256SUMS`，CI 成功后也会上传同名 GitHub Actions artifact。服务器部署、HTTPS、Nginx 缓存和回滚方式见 [docs/DEPLOY.md](docs/DEPLOY.md)。
+
 ## 完全复刻路线
 
 总验收：[#19](https://github.com/liyh1999/jy3-web-remake/issues/19)
