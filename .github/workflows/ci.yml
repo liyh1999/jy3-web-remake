@@ -39,6 +39,7 @@ jobs:
           node --check src/renderer.js
           node --check src/upstream.js
           node --check tools/audit-minigames.mjs
+          node --check tools/audit-runtime-compat-policy.mjs
           node --check tools/audit-newgame.mjs
           node --check tools/build-offline.mjs
           node --check tools/check-normalized-upstream.mjs
@@ -462,6 +463,11 @@ jobs:
         run: |
           node tools/audit-program-api-coverage.mjs
           sed -n '1,220p' reports/program-api-coverage.md
+
+      - name: Audit runtime compatibility debt policy
+        run: |
+          node tools/audit-runtime-compat-policy.mjs
+          sed -n '1,160p' reports/runtime-compat-policy.md
 
       - name: Audit original map and NPC mini-game entries
         run: node tools/audit-minigame-entrypoints.mjs
