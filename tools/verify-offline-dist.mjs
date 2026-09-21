@@ -59,6 +59,11 @@ vm.runInContext(fs.readFileSync(path.join(dist, 'runtime-config.js'), 'utf8'), c
   filename: 'runtime-config.js'
 });
 if (context.window.JY_CONFIG?.offline !== true) throw new Error('dist runtime config is not offline');
+if (!context.window.JY_CONFIG?.runtimeVersion) throw new Error('dist runtime config missing runtimeVersion');
+if (!Number.isInteger(Number(context.window.JY_CONFIG?.protocolVersion)) || Number(context.window.JY_CONFIG.protocolVersion) <= 0) {
+  throw new Error('dist runtime config missing protocolVersion');
+}
+if (!context.window.JY_CONFIG?.buildGeneratedAt) throw new Error('dist runtime config missing buildGeneratedAt');
 
 vm.runInContext(fs.readFileSync(path.join(dist, 'src/upstream.js'), 'utf8'), context, {
   filename: 'src/upstream.js'
@@ -144,6 +149,9 @@ if (externalFetchAttempts !== 0) {
 
 const buildInfo = JSON.parse(fs.readFileSync(path.join(dist, 'build-info.json'), 'utf8'));
 if (buildInfo.upstreamRevision !== upstream.UPSTREAM_REV) throw new Error('build-info upstream revision mismatch');
+if (buildInfo.runtimeVersion !== context.window.JY_CONFIG.runtimeVersion) throw new Error('build-info runtimeVersion mismatch');
+if (Number(buildInfo.protocolVersion) !== Number(context.window.JY_CONFIG.protocolVersion)) throw new Error('build-info protocolVersion mismatch');
+if (buildInfo.generatedAt !== context.window.JY_CONFIG.buildGeneratedAt) throw new Error('build-info generatedAt mismatch');
 if (buildInfo.fengariVersion !== '0.1.4') throw new Error('unexpected Fengari version in build-info');
 
 console.log(`offline dist PASS: ${upstream.CORE_DATA.length} boot data + ${upstream.ON_DEMAND_DATA.length} on-demand data, ${upstream.CORE_PROGRAMS.length} boot programs + ${upstream.ON_DEMAND_PROGRAMS.length} on-demand programs, ${refs.length} local page dependencies`);
