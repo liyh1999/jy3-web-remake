@@ -152,13 +152,9 @@ try {
           battleActive = Boolean(window.fengari.load("return __jy_battle_browser_active()", '@e2e/battle-active')());
           callBattleType = String(window.fengari.load("local G=require 'gf'; return type(G.api['call_battle'])", '@e2e/call-battle-type')() || '');
           originalEnabled = Boolean(window.fengari.load("local G=require 'gf'; return G.__original_battle_enabled == true", '@e2e/battle-enabled')());
-          const trace = window.fengari.load("return __jy_debug_runtime_trace()", '@e2e/runtime-trace')();
-          if (Array.isArray(trace)) {
-            storyStatus = String(trace[0] || '');
-            runtimeTrace = String(trace[1] || '');
-          } else {
-            storyStatus = String(trace || '');
-          }
+          const trace = window.fengari.load("local s,t=__jy_debug_runtime_trace(); return tostring(s)..' || '..tostring(t)", '@e2e/runtime-trace')();
+          runtimeTrace = String(trace || '');
+          storyStatus = runtimeTrace.split(' || ')[0] || '';
         } catch (_) {}
         return {
           status: document.querySelector('#runtimeStatus')?.textContent || '',
@@ -172,7 +168,7 @@ try {
           options: [...document.querySelectorAll('#options button')].map(node => node.textContent)
         };
       })()`);
-      throw new Error('timed out waiting for original battle UI: ' + JSON.stringify(snapshot));
+      throw new Error('timed out waiting for original battle UI: ' + JSON.stringify({ snapshot, muOptions, marriageIndex }));
     }
   }
   const battleTitle = await evaluate("document.querySelector('#battleTitle')?.textContent || ''");
