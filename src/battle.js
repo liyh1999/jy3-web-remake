@@ -267,6 +267,7 @@
     ensureEffectLayer();
     const panel = $('battle');
     applyOriginalBattleResources(panel, background);
+    $('game')?.classList.remove('minigame-mode');
     $('game')?.classList.add('battle-mode');
     panel?.classList.remove('hidden');
     if ($('battleTitle')) $('battleTitle').textContent = Number(mode) === 1 ? '单挑战斗' : '战斗';
