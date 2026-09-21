@@ -124,11 +124,11 @@
     ui.game?.classList.toggle('title-mode', title);
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
-      const villageBackground = absoluteResourceUrl(0x56050001);
-      ui.scene.style.backgroundImage = villageBackground ? `url("${villageBackground}")` : '';
-      ui.scene.style.backgroundSize = 'cover';
-      ui.scene.style.backgroundPosition = 'center';
+      ui.scene.style.backgroundImage = '';
+      ui.scene.style.backgroundSize = '';
+      ui.scene.style.backgroundPosition = '';
       replaceSceneMarkup('');
+      window.JYRenderer?.setBackground?.(0x56050001);
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
     } else {
