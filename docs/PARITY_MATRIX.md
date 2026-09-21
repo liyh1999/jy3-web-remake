@@ -21,7 +21,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 开局问答 / 建角 | 行为一致 | 可玩 | 原 `p_newgame.lua` 完整问答；真实浏览器从“开始”走到牛家村；属性写回原 `o_body`；标题页已直接复用原 `v_title.lua` 对应背景/Logo/按钮资源并按原 853×480 坐标布局，CI #844 浏览器视觉结构回归通过 | 标题页已收口；问答框、字体和选项排版仍需按原版逐项视觉对照 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 | Lua 数据对象 / QueryName | 行为一致 | — | 原 `o_*` 数据注册；`QueryName / DBTable`；动态对象、deepcopy、存档对象图回归 | 仍需在最终阶段把关键 missing object / placeholder 阈值收紧到 0 | [#23](https://github.com/liyh1999/jy3-web-remake/issues/23) |
-| 牛家村 / NPC / 对话事件 | 行为一致 | 可玩 | 原 `p_niujiacun.lua`；黄蓉、穆念慈等真实事件；E2 浏览器对话与菜单回归 | 对话框、头像布局、文字节奏和部分原 UI 动效尚未做视觉基准比对 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
+| 牛家村 / NPC / 对话事件 | 行为一致 | 可玩 | 原 `p_niujiacun.lua`；黄蓉、穆念慈等真实事件；牛家村使用原 `0x56050029` gcore 背景；Web 对话桥保留 roleId/portraitId/dialogueMod/menuMod；复用原 `0x56160047` 对话框，完整 `image/head` 333 张头像进入离线包；CI #860 原牛家村/对话视觉 E2E 全绿 | 对话框已完成主要资源与布局收口；逐字文字节奏、好感图标及少数特殊 dialogue UI 变体仍可在最终视觉验收中微调 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 | 城镇地图 / 世界地图 / 热点 | 行为一致 | 可玩 | 原 `o_citymap_system_*`、`p_citymap_system.lua`；43 个世界地图节点、隐藏/解锁、往返及存档回归 | 地图热点和背景已经使用原资源，但 UI 层、缩放、反馈仍缺像素级原版验收 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 | 人物面板 / 背包 / 装备 | 行为一致 | 可玩 | 原 `o_body/o_item/o_equip`；使用、装备、卸下、秘籍条件链及存档回归 | 当前人物/背包面板为 Web 重建布局，不是原界面逐像素还原 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 | 商店 / 经济 | 行为一致 | 可玩 | 原 `o_shop`、`p_order.lua`；买卖、数量、讲价、库存边界、牛家村真实事件回归 | 购物车交互是 Web 等价实现；原窗口布局与交互细节仍需视觉对照 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
