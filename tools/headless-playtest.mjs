@@ -86,7 +86,11 @@ async function drainUntilVillage() {
           "local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0",
           '@playtest/opening-map'
         )()) || 0;
-        return scene?.classList.contains('village-scene') && mapId === expectedMap;
+        return scene?.classList.contains('village-scene')
+          && mapId === expectedMap
+          && document.querySelector('#dialogue')?.classList.contains('hidden')
+          && !document.querySelector('#continueBtn:not(.hidden):not(:disabled)')
+          && document.querySelectorAll('#options button').length === 0;
       } catch (_) { return false; }
     }, snapshots.opening.expected.mapId);
     if (arrived) return answerIndex;
