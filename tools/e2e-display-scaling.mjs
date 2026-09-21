@@ -20,6 +20,7 @@ try {
     "window.JYDisplay && document.querySelector('#game') && document.querySelector('#gcoreCanvas')",
     { timeoutMs: 30000, label: 'logical display runtime' }
   );
+  await evaluate("window.JYDisplay.setPreference('auto')");
 
   for (const [width, height] of [[1280,720],[1024,768],[800,600]]) {
     await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
@@ -36,8 +37,32 @@ try {
     if (state.canvas.width > state.scene.width + 2 || state.canvas.height > state.scene.height + 2) throw new Error('gcore canvas escaped scene bounds at ' + width + 'x' + height);
   }
 
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 720, deviceScaleFactor: 1, mobile: false });
+  await evaluate("window.JYDisplay.setPreference('1')");
+  await sleep(100);
+  let manual = await evaluate("({ scale: window.JYDisplay.scale(), pref: window.JYDisplay.preference(), stored: localStorage.getItem(window.JYDisplay.STORAGE_KEY), label: document.querySelector('#displaySettingsBtn')?.textContent || '', selected: document.querySelector('#displayScaleSelect')?.value || '' })");
+  if (Math.abs(manual.scale - 1) > 0.01 || manual.pref !== '1' || manual.stored !== '1') {
+    throw new Error('100% display preference was not applied/persisted: ' + JSON.stringify(manual));
+  }
+  if (!manual.label.includes('100%') || manual.selected !== '1') throw new Error('display settings UI did not sync to 100%');
+
+  await cdp.send('Page.reload');
+  await waitFor("window.JYDisplay && document.querySelector('#displayScaleSelect')?.value === '1'", { timeoutMs: 30000, label: 'display preference reload' });
+  manual = await evaluate("({ scale: window.JYDisplay.scale(), pref: window.JYDisplay.preference() })");
+  if (Math.abs(manual.scale - 1) > 0.01 || manual.pref !== '1') throw new Error('display preference did not survive reload');
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 800, height: 600, deviceScaleFactor: 1, mobile: false });
+  await evaluate("window.JYDisplay.setPreference('1.5')");
+  await sleep(100);
+  const capped = await evaluate("({ scale: window.JYDisplay.scale(), fit: window.JYDisplay.fitScale(), pref: window.JYDisplay.preference() })");
+  if (capped.pref !== '1.5' || Math.abs(capped.scale - capped.fit) > 0.01 || capped.scale >= 1.5) {
+    throw new Error('oversized manual scale was not capped to viewport: ' + JSON.stringify(capped));
+  }
+  await evaluate("window.JYDisplay.setPreference('auto')");
+
   console.log('853x480 desktop scaling E2E PASS');
   console.log('  1280x720 / 1024x768 / 800x600 preserve one uniform transform');
+  console.log('  auto/manual scale preferences persist and oversized zoom is viewport-capped');
   console.log('  gcore canvas remains in logical coordinates and is not double-scaled');
 } finally {
   await cleanup();
