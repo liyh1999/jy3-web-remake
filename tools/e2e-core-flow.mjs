@@ -141,10 +141,19 @@ try {
         let battleActive = false;
         let callBattleType = '';
         let originalEnabled = false;
+        let storyStatus = '';
+        let runtimeTrace = '';
         try {
           battleActive = Boolean(window.fengari.load("return __jy_battle_browser_active()", '@e2e/battle-active')());
           callBattleType = String(window.fengari.load("local G=require 'gf'; return type(G.api['call_battle'])", '@e2e/call-battle-type')() || '');
           originalEnabled = Boolean(window.fengari.load("local G=require 'gf'; return G.__original_battle_enabled == true", '@e2e/battle-enabled')());
+          const trace = window.fengari.load("return __jy_debug_runtime_trace()", '@e2e/runtime-trace')();
+          if (Array.isArray(trace)) {
+            storyStatus = String(trace[0] || '');
+            runtimeTrace = String(trace[1] || '');
+          } else {
+            storyStatus = String(trace || '');
+          }
         } catch (_) {}
         return {
           status: document.querySelector('#runtimeStatus')?.textContent || '',
@@ -152,6 +161,8 @@ try {
           battleActive,
           callBattleType,
           originalEnabled,
+          storyStatus,
+          runtimeTrace,
           dialogueHidden: document.querySelector('#dialogue')?.classList.contains('hidden'),
           options: [...document.querySelectorAll('#options button')].map(node => node.textContent)
         };
