@@ -230,6 +230,25 @@ try {
   await click('#loadBtn');
   await waitFor(`Number(window.JYWeb.getPoint(15)) === ${before}`, { timeoutMs: 20000, label: 'manual slot restored morality' });
 
+  // A syntactically valid but newer protocol save must be reported as incompatible
+  // and must never reach Lua state import.
+  const blockedValue = before === 88 ? 87 : 88;
+  await evaluate(`window.fengari.load("local G=require 'gf'; return G.call('set_point',15,${blockedValue})", '@e2e/incompatible-mutate')()`);
+  await waitFor(`Number(window.JYWeb.getPoint(15)) === ${blockedValue}`, { label: 'pre-incompatible-load mutation visible' });
+  await evaluate(`(() => {
+    const key = 'jy3-web-remake:save:v2:slot1';
+    const payload = JSON.parse(localStorage.getItem(key));
+    payload.protocolVersion = Number(window.JYRuntimeVersion?.protocolVersion || 0) + 1;
+    localStorage.setItem(key, JSON.stringify(payload));
+    const select = document.querySelector('#saveSlotSelect');
+    select.dispatchEvent(new Event('change', { bubbles:true }));
+  })()`);
+  await waitFor("document.querySelector('#saveSlotSelect option[value=\"slot1\"]')?.textContent.includes('不兼容')", { label: 'incompatible slot label' });
+  await click('#loadBtn');
+  await waitFor("document.querySelector('#runtimeStatus')?.textContent.includes('无法读取存档 1') && document.querySelector('#runtimeStatus')?.textContent.includes('不兼容')", { label: 'incompatible save explanation' });
+  const afterBlockedLoad = await evaluate("Number(window.JYWeb.getPoint(15) || 0)");
+  if (afterBlockedLoad !== blockedValue) throw new Error('incompatible save reached Lua state import');
+
   // Let late async browser tasks settle before evaluating errors.
   await sleep(750);
   if (errors.length) {
