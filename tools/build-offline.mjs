@@ -43,6 +43,11 @@ vm.runInThisContext(fs.readFileSync(path.join(root, 'src/upstream.js'), 'utf8'),
   filename: 'src/upstream.js'
 });
 const { UPSTREAM_REV, CACHED_DATA, CACHED_PROGRAMS } = globalThis.window.JYUpstream;
+
+vm.runInThisContext(fs.readFileSync(path.join(root, 'src/version.js'), 'utf8'), {
+  filename: 'src/version.js'
+});
+const { runtimeVersion, protocolVersion } = globalThis.window.JYRuntimeVersion;
 const requiredScripts = [...new Set([...CACHED_DATA, ...CACHED_PROGRAMS])];
 const requiredAssets = JSON.parse(fs.readFileSync(path.join(root, 'tools/offline-assets.json'), 'utf8'));
 
@@ -123,6 +128,8 @@ const runtimeConfig = {
   upstreamScriptBase: './vendor/upstream/JY3/script',
   assetBase: './vendor/upstream/JY3',
   upstreamRevision: UPSTREAM_REV,
+  runtimeVersion,
+  protocolVersion,
   fengariVersion: manifest.fengariVersion,
   imageSizes,
 };
@@ -132,8 +139,12 @@ writeFile(
 );
 
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+if (packageJson.version !== runtimeVersion) {
+  throw new Error(`package/runtime version mismatch: ${packageJson.version} != ${runtimeVersion}`);
+}
 const buildInfo = {
-  runtimeVersion: packageJson.version,
+  runtimeVersion,
+  protocolVersion,
   upstreamRevision: UPSTREAM_REV,
   fengariVersion: manifest.fengariVersion,
   generatedAt: new Date().toISOString(),
