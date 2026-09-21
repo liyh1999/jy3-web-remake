@@ -38,6 +38,10 @@ try {
   const directMap = await evaluate("Number(window.fengari.load('return __jy_current_map()', '@debug-e2e/direct-map')())");
   const report = await evaluate('window.JYDiagnostics.snapshot()');
   if (!report?.lua?.ready) throw new Error('diagnostics report did not read Lua runtime state: ' + JSON.stringify(report?.lua));
+  if (!report.runtimeVersion || Number(report.protocolVersion) <= 0) throw new Error('diagnostics version protocol missing');
+  if (browser.baseUrl.includes('8093') && process.env.JY3_DEBUG_E2E_DIST === '1' && !report.buildGeneratedAt) {
+    throw new Error('offline diagnostics build timestamp missing');
+  }
   if (Number(directMap) !== expectedMapId) throw new Error('direct Lua current map mismatch: ' + directMap + ' expected=' + expectedMapId);
   if (Number(report.lua.mapId) !== expectedMapId) throw new Error('diagnostics current map mismatch: report=' + report.lua.mapId + ' direct=' + directMap + ' expected=' + expectedMapId);
   if (report.lua.eventName !== '牛家村-黄蓉') throw new Error('diagnostics current event mismatch: ' + report.lua.eventName);
@@ -53,11 +57,17 @@ try {
     throw new Error('diagnostics resource failure list missing');
   }
 
-  const rendered = await evaluate("(() => ({ event: document.querySelector('#debugEvent')?.textContent || '', map: document.querySelector('#debugMap')?.textContent || '', save: Number(document.querySelector('#debugSaveObjects')?.textContent || 0), resources: document.querySelector('#debugResources')?.textContent || '', errors: document.querySelector('#debugErrors')?.textContent || '', copy: typeof window.JYDiagnostics?.copyReport === 'function' }))()");
+  const rendered = await evaluate("(() => ({ event: document.querySelector('#debugEvent')?.textContent || '', map: document.querySelector('#debugMap')?.textContent || '', save: Number(document.querySelector('#debugSaveObjects')?.textContent || 0), runtime: document.querySelector('#debugRuntimeVersion')?.textContent || '', protocol: Number(document.querySelector('#debugProtocolVersion')?.textContent || 0), build: document.querySelector('#debugBuildTime')?.textContent || '', resources: document.querySelector('#debugResources')?.textContent || '', errors: document.querySelector('#debugErrors')?.textContent || '', copy: typeof window.JYDiagnostics?.copyReport === 'function' }))()");
   if (rendered.event !== '牛家村-黄蓉') throw new Error('debug panel event rendering mismatch');
   const expectedMapHex = '0x' + expectedMapId.toString(16).padStart(8, '0');
   if (rendered.map !== expectedMapHex) throw new Error('debug panel map rendering mismatch: ' + rendered.map + ' expected=' + expectedMapHex);
   if (rendered.save < 3) throw new Error('debug panel save object rendering mismatch');
+  if (rendered.runtime !== report.runtimeVersion || rendered.protocol !== Number(report.protocolVersion)) {
+    throw new Error('debug panel runtime/protocol rendering mismatch');
+  }
+  if (process.env.JY3_DEBUG_E2E_DIST === '1' && rendered.build !== report.buildGeneratedAt) {
+    throw new Error('debug panel build timestamp rendering mismatch');
+  }
   if (!rendered.resources.includes('deadbeef') && !rendered.resources.includes('3735928559')) {
     throw new Error('debug panel did not render resource failure');
   }
