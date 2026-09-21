@@ -26,7 +26,12 @@
     defeat: 0x5616004d,
   });
 
-  const resourceUrl = id => window.JYResources?.url?.(Number(id) >>> 0) || '';
+  const resourceUrl = id => {
+    const value = window.JYResources?.url?.(Number(id) >>> 0) || '';
+    if (!value) return '';
+    try { return new URL(value, document.baseURI).href; }
+    catch (_) { return value; }
+  };
 
   function setCssResource(node, property, id) {
     if (!node) return '';
