@@ -209,6 +209,51 @@
     </section>
   </main>
 
+  <aside id="debugPanel" class="debug-panel hidden" aria-label="开发者诊断">
+    <header class="debug-header">
+      <div>
+        <strong>开发者诊断</strong>
+        <span id="debugMode">source/dev</span>
+      </div>
+      <div class="debug-actions">
+        <button id="debugRefresh" type="button">刷新</button>
+        <button id="debugCopy" type="button">复制报告</button>
+        <button id="debugClear" type="button">清错</button>
+      </div>
+    </header>
+    <div class="debug-grid">
+      <span>当前事件</span><b id="debugEvent">—</b>
+      <span>事件状态</span><b id="debugEventState">none</b>
+      <span>最近事件</span><b id="debugLastEvent">—</b>
+      <span>等待事件</span><b id="debugWaitEvent">—</b>
+      <span>当前地图</span><b id="debugMap">0x00000000</b>
+      <span>存档对象</span><b id="debugSaveObjects">0</b>
+      <span>运行对象</span><b id="debugRuntimeObjects">0</b>
+      <span>Upstream</span><b id="debugUpstream">unknown</b>
+    </div>
+    <section>
+      <h3>Missing calls</h3>
+      <pre id="debugMissingCalls">none</pre>
+    </section>
+    <section>
+      <h3>Missing objects</h3>
+      <pre id="debugMissingObjects">none</pre>
+    </section>
+    <section>
+      <h3>Lua runtime trace</h3>
+      <pre id="debugTrace">none</pre>
+    </section>
+    <section>
+      <h3>异常 / 堆栈</h3>
+      <pre id="debugErrors">none</pre>
+    </section>
+    <section>
+      <h3>资源加载失败</h3>
+      <pre id="debugResources">none</pre>
+    </section>
+    <div id="debugCopyStatus" class="debug-copy-status"></div>
+  </aside>
+
   <script src="./vendor/fengari/fengari-web.min.js"></script>
   <script>
     if (!window.fengari) {
@@ -218,6 +263,7 @@
   <script src="./src/resource-catalog.js"></script>
   <script src="./src/resources.js"></script>
   <script src="./src/audio.js"></script>
+  <script src="./src/debug.js"></script>
   <script src="./src/audio-controls.js"></script>
   <script src="./src/animation-resources.js"></script>
   <script src="./src/renderer.js"></script>
