@@ -171,3 +171,34 @@ button:disabled { opacity: .45; cursor: wait; }
 .audio-settings-panel input[type="range"] { width: 100%; accent-color: #a98c55; }
 .audio-settings-panel output { text-align: right; color: #eee0bd; }
 .audio-settings-panel .audio-reset { width: 100%; margin-top: 5px; }
+
+
+/* E6 developer diagnostics; hidden unless ?debug=1 or explicit local debug flag. */
+.debug-panel {
+  position: fixed;
+  z-index: 120;
+  top: 8px;
+  right: 8px;
+  width: min(390px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  border: 1px solid #756141;
+  background: #120f0deb;
+  box-shadow: 0 12px 36px #000b;
+  color: #d9c9a4;
+  padding: 10px;
+  font: 10px/1.35 ui-monospace, Consolas, monospace;
+  backdrop-filter: blur(6px);
+}
+.debug-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; border-bottom: 1px solid #4d402e; padding-bottom: 7px; }
+.debug-header strong { display: block; color: #f0d492; font-size: 12px; }
+.debug-header span { color: #8f8168; }
+.debug-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.debug-actions button { border: 1px solid #66543a; background: #211a13; color: #cfbe97; padding: 3px 6px; font: inherit; }
+.debug-grid { display: grid; grid-template-columns: 74px minmax(0,1fr); gap: 3px 8px; margin: 8px 0; }
+.debug-grid span { color: #8f8168; }
+.debug-grid b { overflow-wrap: anywhere; color: #e8d9b7; }
+.debug-panel section { margin-top: 7px; }
+.debug-panel h3 { margin: 0 0 3px; color: #aa956d; font-size: 10px; font-weight: 700; }
+.debug-panel pre { margin: 0; max-height: 112px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #3d3326; background: #0b0908d9; padding: 5px; color: #c8baa0; }
+.debug-copy-status { min-height: 14px; margin-top: 6px; color: #d5b76f; }
