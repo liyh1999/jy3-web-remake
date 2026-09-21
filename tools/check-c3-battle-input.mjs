@@ -4,6 +4,7 @@ const read = p => fs.readFileSync(p, 'utf8');
 const runtime = read('lua/battle_web.lua');
 const app = read('src/app.js');
 const view = read('src/battle.js');
+const keybindings = read('src/keybindings.js');
 const html = read('index.html');
 
 function must(source, pattern, message) {
@@ -39,9 +40,12 @@ for (const name of [
   'originalBattleEscape'
 ]) must(app, name, `JYWeb missing input action: ${name}`);
 
-must(view, '/^[1-8]$/.test(event.key)', '1..8 skill keyboard binding missing');
-must(view, '/^[qwer]$/i.test(event.key)', 'QWER item keyboard binding missing');
-must(view, "event.key === 'Escape'", 'escape keyboard binding missing');
+must(keybindings, "defaultKey: String(index + 1)", 'default 1..8 skill keyboard bindings missing');
+must(keybindings, "['q', 'w', 'e', 'r'].map", 'default QWER item keyboard bindings missing');
+must(keybindings, "defaultKey: 'a'", 'default auto keyboard binding missing');
+must(keybindings, "defaultKey: 'Escape'", 'default escape keyboard binding missing');
+must(view, 'Keybindings.actionForKey(event.key)', 'battle view does not resolve configured keyboard bindings');
+must(view, 'bindingLabel(', 'battle hotkey labels do not use configured bindings');
 must(view, "classList.toggle('targetable'", 'enemy target highlight class missing');
 must(view, 'chooseOriginalBattleTarget', 'enemy click target bridge missing');
 must(view, 'chooseOriginalBattleSkill', 'skill click bridge missing');
@@ -53,4 +57,4 @@ for (const id of ['battleSkills','battleItems','battleAutoBtn','battleEscapeBtn'
 
 if (/localStorage|sessionStorage/.test(view)) throw new Error('battle input view must not persist gameplay state');
 
-console.log('C3-2 battle input bridge PASS: original hotkeys, code/target fields, auto toggle, QWER items and escape');
+console.log('C3-2 battle input bridge PASS: original default hotkeys preserved through configurable keybinding registry');
