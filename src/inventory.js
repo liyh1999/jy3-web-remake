@@ -11,6 +11,25 @@
     return Number(id) ? window.JYResources?.url(Number(id)) : null;
   }
 
+  function absoluteResourceUrl(id) {
+    const value = resourceUrl(id);
+    if (!value) return '';
+    try { return new URL(value, document.baseURI).href; }
+    catch (_) { return value; }
+  }
+
+  function applyOriginalSkin() {
+    const panel = $('#inventoryPanel');
+    if (!panel) return;
+    const set = (name, id) => {
+      const url = absoluteResourceUrl(id);
+      if (url) panel.style.setProperty(name, `url("${url}")`);
+    };
+    set('--inventory-main', 0x56160076);
+    set('--inventory-figure', 0x56160033);
+    set('--inventory-detail', 0x56059002);
+  }
+
   function setStatus(message) {
     const status = $('#inventoryStatus');
     if (status) status.textContent = message || '';
@@ -181,6 +200,7 @@
   function open() {
     const panel = $('#inventoryPanel');
     if (!panel) return;
+    applyOriginalSkin();
     panel.classList.remove('hidden');
     refresh();
   }
@@ -198,6 +218,7 @@
       if (!response.ok) throw new Error(`inventory_web.lua HTTP ${response.status}`);
       runLua(await response.text(), '@inventory_web.lua');
       installed = true;
+      applyOriginalSkin();
       const button = $('#inventoryBtn');
       if (button) button.disabled = false;
       return true;

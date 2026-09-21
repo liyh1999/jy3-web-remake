@@ -15,6 +15,25 @@
     return Number(id) ? window.JYResources?.url(Number(id)) : null;
   }
 
+  function absoluteResourceUrl(id) {
+    const value = resourceUrl(id);
+    if (!value) return '';
+    try { return new URL(value, document.baseURI).href; }
+    catch (_) { return value; }
+  }
+
+  function applyOriginalSkin() {
+    const panel = $('#personPanel');
+    if (!panel) return;
+    const set = (name, id) => {
+      const url = absoluteResourceUrl(id);
+      if (url) panel.style.setProperty(name, `url("${url}")`);
+    };
+    set('--person-book-foreground', 0x56050058);
+    set('--person-book-background', 0x56160020);
+    set('--person-attribute-panel', 0x56160024);
+  }
+
   function renderHeader() {
     const portrait = $('#personPortrait');
     const url = resourceUrl(model.portrait);
@@ -362,6 +381,7 @@
   function open() {
     const panel = $('#personPanel');
     if (!panel) return;
+    applyOriginalSkin();
     panel.classList.remove('hidden');
     refresh();
   }
@@ -379,6 +399,7 @@
       if (!response.ok) throw new Error(`person_web.lua HTTP ${response.status}`);
       runLua(await response.text(), '@person_web.lua');
       installed = true;
+      applyOriginalSkin();
       const button = $('#personBtn');
       if (button) button.disabled = false;
       return true;

@@ -34,3 +34,52 @@
   .inventory-list { grid-template-columns: 1fr; }
   .inventory-slots { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+
+
+/* E8-4C: original v_item composition. */
+.inventory-panel { font-family:"STKaiti", KaiTi, "Noto Serif SC", serif; }
+.inventory-backdrop { background:rgba(5,4,3,.38); }
+.inventory-window {
+  left:0; right:auto; top:0; bottom:auto; width:853px; height:480px; padding:0;
+  display:block; box-sizing:border-box; border:0; box-shadow:none; background:transparent; color:#eadfc9;
+}
+.inventory-window::before {
+  content:""; position:absolute; z-index:0; left:127px; top:42px; width:600px; height:420px;
+  background-image:var(--inventory-main); background-repeat:no-repeat; background-size:100% 100%;
+  pointer-events:none;
+}
+.inventory-window::after {
+  content:""; position:absolute; z-index:0; left:592px; top:5px; width:258px; height:470px;
+  background-image:var(--inventory-detail); background-repeat:no-repeat; background-size:100% 100%;
+  pointer-events:none;
+}
+.inventory-header {
+  position:absolute; z-index:3; left:151px; top:54px; width:520px; height:38px;
+  padding:0; border:0; color:#f1e4c5; text-shadow:1px 1px 2px #000;
+}
+.inventory-header strong { font-size:18px; }
+.inventory-header span { color:#dac68f; }
+.inventory-close { border:0; background:transparent; color:#f0dfb8; box-shadow:none; }
+.inventory-close:hover { background:#4e331f55; }
+.inventory-slots {
+  position:absolute; z-index:2; left:153px; top:101px; width:242px; height:112px;
+  grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; padding:0; overflow:auto;
+}
+.inventory-slot { min-height:48px; padding:4px; background:#eadbb8d9; border:1px solid #806844aa; }
+.inventory-slot img { width:34px; height:34px; image-rendering:auto; }
+.inventory-status {
+  position:absolute; z-index:3; left:153px; top:398px; width:430px; min-height:20px;
+  padding:0; color:#f0c68e; text-shadow:1px 1px 2px #000;
+}
+.inventory-list {
+  position:absolute; z-index:2; left:405px; top:102px; width:260px; height:286px;
+  display:grid; grid-template-columns:1fr; gap:4px; padding:0 3px 0 0; overflow:auto;
+}
+.inventory-item {
+  min-height:66px; grid-template-columns:42px minmax(0,1fr) auto; gap:7px; padding:5px;
+  background:#eadbb8dd; border:1px solid #806844aa; color:#302318;
+}
+.inventory-icon { width:40px; height:40px; background:#3b2e21aa; }
+.inventory-icon img { max-width:38px; max-height:38px; image-rendering:auto; }
+.inventory-item p { max-height:28px; }
+.inventory-action { min-width:44px; padding:5px 6px; }

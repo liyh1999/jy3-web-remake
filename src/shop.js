@@ -14,6 +14,13 @@
   let session = null;
   let ui = null;
 
+  function absoluteResourceUrl(id) {
+    const value = Number(id) ? window.JYResources?.url(Number(id)) : '';
+    if (!value) return '';
+    try { return new URL(value, document.baseURI).href; }
+    catch (_) { return value; }
+  }
+
   function ensureUi() {
     if (ui) return ui;
     const panel = document.createElement('section');
@@ -35,7 +42,10 @@
           <button id="shopCheckout" class="primary" type="button">结账</button>
         </footer>
       </div>`;
-    document.body.appendChild(panel);
+    const host = document.querySelector('#game') || document.body;
+    host.appendChild(panel);
+    const background = absoluteResourceUrl(0x56160036);
+    if (background) panel.style.setProperty('--shop-background', `url("${background}")`);
 
     ui = {
       panel,
