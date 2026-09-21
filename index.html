@@ -71,11 +71,14 @@
         </div>
       </section>
 
-      <section id="dialogue" class="dialogue hidden">
+      <section id="dialogue" class="dialogue hidden" aria-label="剧情对话">
+        <img id="dialogueFrame" class="dialogue-frame" alt="">
+        <img id="dialoguePortrait" class="dialogue-portrait hidden" alt="">
         <div class="speaker" id="speaker">旁白</div>
         <div class="dialogue-text" id="dialogueText"></div>
         <div id="options" class="options"></div>
-        <button id="continueBtn" class="primary hidden">继续</button>
+        <button id="continueBtn" class="dialogue-continue hidden" type="button" aria-label="继续"></button>
+        <span id="dialogueContinueHint" class="dialogue-continue-hint" aria-hidden="true">◆</span>
       </section>
 
       <section id="personPanel" class="person-panel hidden" aria-label="人物属性">
