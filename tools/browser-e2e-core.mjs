@@ -220,16 +220,30 @@ export async function launchBrowserHarness({
     }
   }
 
+  async function removeProfileBestEffort() {
+    let lastError = null;
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      try {
+        fs.rmSync(profile, { recursive: true, force: true });
+        return true;
+      } catch (error) {
+        lastError = error;
+        if (!['ENOTEMPTY', 'EBUSY', 'EPERM'].includes(error?.code)) throw error;
+        await sleep(100 + attempt * 75);
+      }
+    }
+    // Chrome may leave short-lived helper processes holding files under Default/.
+    // The profile lives under the OS temp directory; cleanup failure must not turn
+    // an otherwise successful browser regression into a product test failure.
+    console.warn('browser E2E temp profile cleanup deferred:', lastError?.code || lastError?.message || lastError);
+    return false;
+  }
+
   async function cleanup() {
     cdp.close();
     await stopProcess(browser);
     await stopProcess(server);
-    fs.rmSync(profile, {
-      recursive: true,
-      force: true,
-      maxRetries: 6,
-      retryDelay: 100,
-    });
+    await removeProfileBestEffort();
   }
 
   return {
