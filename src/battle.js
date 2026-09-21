@@ -539,7 +539,9 @@
 
   document.addEventListener('keydown', event => {
     if ($('battle')?.classList.contains('hidden')) return;
-    const action = Keybindings?.actionForKey?.(event.key) || fallbackActionForKey(event.key);
+    const action = Keybindings?.actionForKey
+      ? Keybindings.actionForKey(event.key)
+      : fallbackActionForKey(event.key);
     if (/^skill[1-8]$/.test(action)) {
       const slot = Number(action.slice(5));
       if (skillState.get(slot)?.enabled) {
