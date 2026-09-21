@@ -81,7 +81,19 @@ local function resume_active(...)
     return true
 end
 
+local runtime_trace = {}
+local function trace_runtime(value)
+    runtime_trace[#runtime_trace + 1] = tostring(value)
+    while #runtime_trace > 16 do table.remove(runtime_trace, 1) end
+end
+
+function __jy_debug_runtime_trace()
+    local status = active and coroutine.status(active) or "none"
+    return status, table.concat(runtime_trace, " | ")
+end
+
 local function resume_after_ui(value)
+    trace_runtime("resume:" .. tostring(value))
     return resume_active(value)
 end
 
@@ -530,10 +542,13 @@ function G.call(name, ...)
         local question = tostring(args[3] or "")
         local options = first_array_arg(args, 4)
         web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
-        return coroutine.yield()
+        local choice = coroutine.yield()
+        trace_runtime("menu:" .. tostring(choice))
+        return choice
     elseif name == "shop" then
         return open_web_shop(args[1])
     elseif name == "call_battle" then
+        trace_runtime("call_battle")
         if web and web.startOriginalBattle then
             web:startOriginalBattle(
                 args[1], args[2], args[3], args[4], args[5], args[6], args[7],
