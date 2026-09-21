@@ -7,6 +7,9 @@ import { spawnSync } from 'node:child_process';
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
 const normalizeLuaSource = window.JYUpstream.normalizeLuaSource;
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+const openingAnswersLua = snapshots.opening.answers.join(',');
+const openingMapId = snapshots.opening.expected.mapId;
 
 const runtimeRoot = process.env.JY3_RUNTIME_ROOT || '.';
 const programBase = process.env.JY3_LONGFLOW_PROGRAM_BASE || path.join('vendor', 'upstream', 'JY3', 'script', '04_program');
@@ -191,10 +194,10 @@ local function team_has(role_no)
 end
 
 -- 1) Original opening questionnaire -> 牛家村.
-local opening_answers = {5,5,1,1,1,1,1,1,1,1,1,1,1,1,6}
+local opening_answers = {${openingAnswersLua}}
 drive('回答问题', opening_answers)
 assert(entered_village >= 1, 'opening did not enter 牛家村 through Web map bridge')
-assert(tonumber(body()['140']) == 0x10060002, 'opening final map is not 牛家村')
+assert(tonumber(body()['140']) == ${openingMapId}, 'opening final-map snapshot changed')
 assert((tonumber(body()['16']) or 0) >= 2, 'opening questionnaire stat effects missing')
 local opening_stat16 = tonumber(body()['16']) or 0
 
