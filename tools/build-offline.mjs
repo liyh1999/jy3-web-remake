@@ -115,6 +115,7 @@ if (indexHtml.includes('cdn.jsdelivr.net/npm/fengari-web')) {
 }
 writeFile(path.join(dist, 'index.html'), indexHtml);
 
+const generatedAt = new Date().toISOString();
 const imageSizes = {};
 for (const relativePath of requiredAssets) {
   if (!relativePath.toLowerCase().endsWith('.png')) continue;
@@ -130,6 +131,7 @@ const runtimeConfig = {
   upstreamRevision: UPSTREAM_REV,
   runtimeVersion,
   protocolVersion,
+  buildGeneratedAt: generatedAt,
   fengariVersion: manifest.fengariVersion,
   imageSizes,
 };
@@ -147,7 +149,7 @@ const buildInfo = {
   protocolVersion,
   upstreamRevision: UPSTREAM_REV,
   fengariVersion: manifest.fengariVersion,
-  generatedAt: new Date().toISOString(),
+  generatedAt,
   cacheGeneratedAt: manifest.generatedAt,
   cachedScripts: requiredScripts,
   cachedAssets: requiredAssets,
