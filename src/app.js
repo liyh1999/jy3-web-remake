@@ -1198,7 +1198,7 @@
         }
       };
 
-      $('.village-actions button').forEach(b => b.onclick = () => runEvent(b.dataset.event));
+      $$('.village-actions button').forEach(b => b.onclick = () => runEvent(b.dataset.event));
       markBootReady(originalProgramLoaded ? 'original' : 'compat');
     } catch (e) {
       recordDiagnostic(e, 'runtime-bootstrap');
