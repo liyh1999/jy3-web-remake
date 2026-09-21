@@ -135,6 +135,8 @@ for _, name in ipairs({
     assert(loadfile(temp .. '/' .. name))()
 end
 
+assert(__jy_set_strict_missing_calls(true), 'D4 long flow could not enable strict missing-call mode')
+
 local menu_answers = {}
 local menu_index = 1
 
