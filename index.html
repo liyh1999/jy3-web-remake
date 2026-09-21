@@ -196,6 +196,20 @@
         <span>逻辑：Lua 5.3 / Fengari</span>
         <span>运行时：HTML5 / JS</span>
         <span>原设计：853 × 480</span>
+        <div class="display-settings">
+          <button id="displaySettingsBtn" class="display-settings-toggle" type="button" aria-expanded="false" aria-controls="displaySettingsPanel">画面 自动</button>
+          <div id="displaySettingsPanel" class="display-settings-panel hidden" aria-label="画面设置">
+            <label for="displayScaleSelect">缩放</label>
+            <select id="displayScaleSelect">
+              <option value="auto">自动适配</option>
+              <option value="0.75">75%</option>
+              <option value="1">100%</option>
+              <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
+            </select>
+            <output id="displayScaleEffective">当前 100%</output>
+          </div>
+        </div>
         <div class="audio-settings">
           <button id="audioSettingsBtn" class="audio-settings-toggle" type="button" aria-expanded="false" aria-controls="audioSettingsPanel">音频 100%</button>
           <div id="audioSettingsPanel" class="audio-settings-panel hidden" aria-label="音频设置">
@@ -269,6 +283,7 @@
   <script src="./src/resources.js"></script>
   <script src="./src/audio.js"></script>
   <script src="./src/debug.js"></script>
+  <script src="./src/display-controls.js"></script>
   <script src="./src/audio-controls.js"></script>
   <script src="./src/animation-resources.js"></script>
   <script src="./src/renderer.js"></script>
