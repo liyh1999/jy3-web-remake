@@ -275,8 +275,11 @@ assert((tonumber(body()['16']) or 0) == opening_stat16, 'cross-module flow unexp
 assert(ui_resumes > 20, 'long flow did not exercise enough UI coroutine resume transitions')
 assert(minigame_count >= 1 and battle_count >= 4, 'long flow did not cross mini-game/battle systems')
 assert(__jy_missing_calls() == '', 'D4 long flow used missing calls: ' .. __jy_missing_calls())
+local missing_objects = __jy_missing_objects()
 
 print('D4 cross-module original long flow PASS')
+print('  missing calls: none')
+print('  missing objects: ' .. (missing_objects ~= '' and missing_objects or 'none'))
 print('  opening -> 牛家村黄蓉 -> 渡口采矿 -> 武当入门/切磋 -> 昆仑冰蚕 -> 连城诀完美完成')
 print('  player/team/item/magic/story state persisted across one Lua runtime lifecycle')
 `;
