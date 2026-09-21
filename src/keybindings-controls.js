@@ -88,7 +88,11 @@
     setOpen(false);
   });
   document.addEventListener('keydown', event => {
-    if (!captureAction && event.key === 'Escape') setOpen(false);
+    if (captureAction || panel.classList.contains('hidden') || event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    setOpen(false);
   });
   window.addEventListener('jy3:keybindings-changed', render);
 
