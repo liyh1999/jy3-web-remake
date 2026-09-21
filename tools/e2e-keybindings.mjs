@@ -46,7 +46,6 @@ try {
   const unexpected = errors.filter(row => !row.includes('favicon'));
   if (unexpected.length) throw new Error('unexpected browser keybinding errors:\n' + unexpected.join('\n'));
 
-  await evaluate("window.JYKeybindings.reset()");
   console.log('battle keybindings browser E2E PASS');
   console.log('  UI capture + conflict rejection + battle action remap + persistence');
 } finally {
