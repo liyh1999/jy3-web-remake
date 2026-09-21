@@ -97,53 +97,33 @@ async function drainUntilVillage() {
       if (answerIndex >= openingAnswers.length) throw new Error('opening answer fixture exhausted');
       const choice = Number(openingAnswers[answerIndex++]);
       if (choice < 1 || choice > count) throw new Error(`invalid opening answer ${choice}/${count}`);
-      if (answerIndex === 1) {
-        const hit = await page.evaluate(index => {
-          const button = document.querySelectorAll('#options button')[index];
-          const rectOf = node => {
-            if (!node) return null;
-            const r = node.getBoundingClientRect();
-            return { left:r.left, top:r.top, right:r.right, bottom:r.bottom, width:r.width, height:r.height };
-          };
-          const styleOf = node => node ? {
-            pointerEvents:getComputedStyle(node).pointerEvents,
-            display:getComputedStyle(node).display,
-            visibility:getComputedStyle(node).visibility,
-            zIndex:getComputedStyle(node).zIndex,
-            transform:getComputedStyle(node).transform,
-          } : null;
-          const rect = button?.getBoundingClientRect();
-          const x = rect ? rect.left + rect.width / 2 : 0;
-          const y = rect ? rect.top + rect.height / 2 : 0;
-          const hitNode = rect ? document.elementFromPoint(x, y) : null;
-          return {
-            choice:index + 1,
-            text:button?.textContent || '',
-            viewport:{ width:innerWidth, height:innerHeight },
-            display:window.JYDisplay?.settings?.() || null,
-            rect:rectOf(button),
-            hit:{ tag:hitNode?.tagName || '', id:hitNode?.id || '', className:String(hitNode?.className || ''), text:String(hitNode?.textContent || '').slice(0,80) },
-            styles:{
-              button:styleOf(button),
-              options:styleOf(document.querySelector('#options')),
-              dialogue:styleOf(document.querySelector('#dialogue')),
-              scene:styleOf(document.querySelector('#scene')),
-              game:styleOf(document.querySelector('#game')),
-              shell:styleOf(document.querySelector('#shell')),
-            },
-            rects:{
-              options:rectOf(document.querySelector('#options')),
-              dialogue:rectOf(document.querySelector('#dialogue')),
-              scene:rectOf(document.querySelector('#scene')),
-              game:rectOf(document.querySelector('#game')),
-              shell:rectOf(document.querySelector('#shell')),
-            },
-          };
-        }, choice - 1);
-        await note('opening-hit-test', hit);
+      const target = await page.evaluate(({ index, answerNumber }) => {
+        const buttons = [...document.querySelectorAll('#options button')];
+        const button = buttons[index];
+        if (!button) return { ok:false, answerNumber, choice:index + 1, reason:'button missing' };
+        const rect = button.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const hit = document.elementFromPoint(x, y);
+        const ok = hit === button || button.contains(hit);
+        return {
+          ok,
+          answerNumber,
+          choice:index + 1,
+          text:button.textContent || '',
+          x,
+          y,
+          rect:{ left:rect.left, top:rect.top, width:rect.width, height:rect.height },
+          hit:{ tag:hit?.tagName || '', id:hit?.id || '', className:String(hit?.className || ''), text:String(hit?.textContent || '').slice(0,80) },
+          display:window.JYDisplay?.settings?.() || null,
+        };
+      }, { index:choice - 1, answerNumber:answerIndex });
+      await note('opening-choice-target', target);
+      if (!target.ok) {
+        throw new Error('opening choice is not physically hittable: ' + JSON.stringify(target));
       }
-      await options.nth(choice - 1).click({ timeout: 5000 });
-      await page.waitForTimeout(60);
+      await page.mouse.click(target.x, target.y);
+      await page.waitForTimeout(80);
       continue;
     }
 
