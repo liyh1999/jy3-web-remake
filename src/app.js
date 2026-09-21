@@ -911,6 +911,13 @@
         const loaded = await window.JYUpstream.bootstrapData((message) => { ui.status.textContent = message; });
         originalProgramLoaded = loaded.loadedPrograms === window.JYUpstream.CORE_PROGRAMS.length;
         const story = await window.JYUpstream.prepareBookLakesRuntime((message) => { ui.status.textContent = message; });
+        if (originalProgramLoaded) {
+          const strictMissing = fengari.load(
+            'return __jy_set_strict_missing_calls(true)',
+            '@web/enable-strict-missing-calls'
+          )();
+          if (!strictMissing) throw new Error('无法启用严格缺失调用检查');
+        }
         ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${story.storyPrograms.length} 个 / 已接门派 ${story.allSectPrograms.length} 个 / 天书任务 ${story.bookLakesPrograms.length} 个已就绪`;
       } catch (dataError) {
         console.warn('upstream data bootstrap failed', dataError);
