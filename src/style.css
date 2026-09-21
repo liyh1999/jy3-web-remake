@@ -37,6 +37,7 @@ button { font: inherit; cursor: pointer; }
 .title-logo { position: absolute; z-index: 2; left: 166px; top: 39px; width: 426px; height: 138px; object-fit: contain; pointer-events: none; }
 .title-mark { position: absolute; z-index: 2; left: 568px; top: 59px; width: 100px; height: 139px; object-fit: contain; pointer-events: none; }
 .title-menu { position: absolute; z-index: 4; inset: 0; }
+#game.opening-flow .title-menu { display: none; }
 .title-menu-button {
   position: absolute;
   top: 224px;
