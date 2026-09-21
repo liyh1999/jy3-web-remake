@@ -128,7 +128,7 @@
       ui.scene.style.backgroundSize = '';
       ui.scene.style.backgroundPosition = '';
       replaceSceneMarkup('');
-      window.JYRenderer?.setBackground?.(0x56050001);
+      window.JYRenderer?.setBackground?.(0x56050029);
       ui.actions.classList.remove('hidden');
       ui.hud.classList.remove('hidden');
     } else {
