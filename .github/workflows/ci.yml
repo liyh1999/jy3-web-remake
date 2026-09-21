@@ -22,6 +22,8 @@ jobs:
         run: |
           node --check src/app.js
           node --check src/debug.js
+          node --check src/display.js
+          node --check src/display-controls.js
           node --check src/save-store.js
           node --check src/audio.js
           node --check src/audio-controls.js
