@@ -1025,6 +1025,17 @@
     runEvent(eventName);
   }
 
+  async function fetchBootLua(filename) {
+    const url = `./lua/${filename}`;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText || ''}`.trim());
+      return await response.text();
+    } catch (error) {
+      throw new Error(`${filename} 加载失败：${error?.message || error}`);
+    }
+  }
+
   async function boot() {
     resetJsState();
     if (!window.fengari) {
@@ -1041,14 +1052,14 @@
       applyTitleResources();
       applyDialogueResources();
       const [compat, shims, programRuntime, storyProgramCompat, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
-        fetch('./lua/gf_web.lua').then(r => { if (!r.ok) throw new Error('gf_web.lua'); return r.text(); }),
-        fetch('./lua/runtime_shims.lua').then(r => { if (!r.ok) throw new Error('runtime_shims.lua'); return r.text(); }),
-        fetch('./lua/program_runtime.lua').then(r => { if (!r.ok) throw new Error('program_runtime.lua'); return r.text(); }),
-        fetch('./lua/story_program_web.lua').then(r => { if (!r.ok) throw new Error('story_program_web.lua'); return r.text(); }),
-        fetch('./lua/minigame_web.lua').then(r => { if (!r.ok) throw new Error('minigame_web.lua'); return r.text(); }),
-        fetch('./lua/battle_web.lua').then(r => { if (!r.ok) throw new Error('battle_web.lua'); return r.text(); }),
-        fetch('./lua/save_state.lua').then(r => { if (!r.ok) throw new Error('save_state.lua'); return r.text(); }),
-        fetch('./lua/jy3_demo.lua').then(r => { if (!r.ok) throw new Error('jy3_demo.lua'); return r.text(); })
+        fetchBootLua('gf_web.lua'),
+        fetchBootLua('runtime_shims.lua'),
+        fetchBootLua('program_runtime.lua'),
+        fetchBootLua('story_program_web.lua'),
+        fetchBootLua('minigame_web.lua'),
+        fetchBootLua('battle_web.lua'),
+        fetchBootLua('save_state.lua'),
+        fetchBootLua('jy3_demo.lua')
       ]);
 
       fengari.load(compat, '@gf_web.lua')();
