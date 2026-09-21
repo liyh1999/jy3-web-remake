@@ -1,5 +1,6 @@
 local temp = assert(os.getenv('JY3_LOGGING_TMP'), 'JY3_LOGGING_TMP missing')
 local runtime_root = os.getenv('JY3_RUNTIME_ROOT') or '.'
+local snapshot = assert(dofile(temp .. '/snapshot.lua'))
 local nodes, next_handle = {}, 1
 local scheduled, cancelled, finished = {}, {}, nil
 local web_host = {}
@@ -343,8 +344,8 @@ settle_timer = latest_live_timer(500)
 assert(settle_timer, 'success chop settle timer missing')
 __jy_program_browser_pump(settle_timer)
 
-assert((reward_points[101] or 0) == 70, 'original logging reward path did not award expected point progress')
-assert((reward_items[280] or 0) == 1, 'original logging success did not award one wood item')
+assert((reward_points[101] or 0) == snapshot.logging.strengthProgress, 'logging strength-progress snapshot changed')
+assert((reward_items[snapshot.logging.woodItemId] or 0) == snapshot.logging.woodCount, 'logging wood-reward snapshot changed')
 assert(not __jy_minigame_has('logging'), 'logging program remained after 伐木结束')
 assert(not __jy_minigame_has('伐木条') and not __jy_minigame_has('伐木提示'), 'logging child programs leaked')
 assert(__jy_minigame_pending_timers() == 0, 'logging timers leaked after cleanup')
@@ -394,7 +395,7 @@ local strike_timer = latest_live_timer(1000)
 assert(strike_timer, 'mining strike timer missing')
 __jy_program_browser_pump(strike_timer)
 assert(tonumber(dig_ui.getChildByName('耐久').text) == 0, 'successful mining strike did not reduce durability to zero')
-assert((reward_points[102] or 0) == 10, 'original mining strike did not award palm progress')
+assert((reward_points[102] or 0) == snapshot.mining.strikeProgress, 'mining strike-progress snapshot changed')
 kind, value = __jy_minigame_status('地图系统_小游戏')
 assert(kind == 'time' and value == '300', 'mining dispatcher did not enter 300ms recovery wait')
 
@@ -407,7 +408,7 @@ local ore_total = 0
 local progress_total = 0
 for id = 310, 317 do ore_total = ore_total + (reward_items[id] or 0) end
 for i = 1, 8 do progress_total = progress_total + (mining_progress[i]['当前进度'] or 0) end
-assert(ore_total >= 1, 'original mining success did not award ore')
+assert(ore_total >= snapshot.mining.minOreCount, 'mining ore-count snapshot changed')
 assert(progress_total == ore_total, 'mining achievement progress did not match ore rewards')
 
 local reward_timer = latest_live_timer(500)
@@ -462,15 +463,15 @@ math.random = saved_random
 kind, value = __jy_minigame_status('地图系统_小游戏')
 assert(kind == 'time' and value == '1000', 'fishing dispatcher did not enter original 1000ms result wait')
 assert(not __jy_minigame_has('钓鱼水花'), 'fishing ripple program was not stopped during reel-in')
-assert((reward_points[106] or 0) == 10, 'small fishing result did not award fishing progress')
-assert((reward_items[319] or 0) == 1, 'small fishing result did not award original shell item')
-assert(tonumber(fish_ui.getChildByName('显示').getChildByName('积分').text) == 5, 'small fishing result did not update score')
+assert((reward_points[106] or 0) == snapshot.fishing.progress, 'fishing progress snapshot changed')
+assert((reward_items[snapshot.fishing.shellItemId] or 0) == snapshot.fishing.shellCount, 'fishing shell-reward snapshot changed')
+assert(tonumber(fish_ui.getChildByName('显示').getChildByName('积分').text) == snapshot.fishing.score, 'fishing score snapshot changed')
 
 local fish_result_timer = latest_live_timer(1000)
 assert(fish_result_timer, 'fishing result display timer missing')
 __jy_program_browser_pump(fish_result_timer)
 assert(worm_item['数量'] == 0, 'fishing did not consume one worm')
-assert((reward_items[318] or 0) == -1, 'worm inventory mutation did not use original add_item path')
+assert((reward_items[snapshot.fishing.wormItemId] or 0) == snapshot.fishing.wormDelta, 'fishing worm-delta snapshot changed')
 assert(fishing_count['进度列表'][1]['当前进度'] == 1, 'fishing count achievement was not updated')
 kind, value = __jy_minigame_status('地图系统_小游戏')
 assert(kind == 'time' and value == '500', 'worm exhaustion did not enter original 500ms finish wait')
@@ -539,10 +540,10 @@ assert(tonumber(hunting_ui.getChildByName('目标').text) == 1 and tonumber(hunt
 __jy_program_browser_pump(0)
 math.random = hunting_random
 
-assert((reward_items[291] or 0) == 1, 'original capture path did not award the first hunting creature item')
-assert(tonumber(hunting_ui.getChildByName('得分').text) == 5, 'original hunting capture did not update score')
-assert(tonumber(hunting_ui.getChildByName('总分').text) == 20, 'original hunting capture did not update total score with experience')
-assert((reward_points[103] or 0) == 15, 'original hunting capture did not award hunting experience')
+assert((reward_items[snapshot.hunting.itemId] or 0) == snapshot.hunting.itemCount, 'hunting item-reward snapshot changed')
+assert(tonumber(hunting_ui.getChildByName('得分').text) == snapshot.hunting.score, 'hunting score snapshot changed')
+assert(tonumber(hunting_ui.getChildByName('总分').text) == snapshot.hunting.totalScore, 'hunting total-score snapshot changed')
+assert((reward_points[103] or 0) == snapshot.hunting.progress, 'hunting progress snapshot changed')
 assert(tostring(animal.getChildByName('dead').text) == '1', 'captured hunting target was not marked dead')
 
 hunting_ui.getChildByName('时间').width = 0.5
@@ -569,8 +570,8 @@ assert(__jy_minigame_signal_count('打猎动画关闭') == 0, 'queued hunting an
 
 scheduled, cancelled, finished = {}, {}, nil
 misc_state = {}
-reward_points[110] = 100
-reward_points[130] = 100
+reward_points[110] = snapshot.gambling.playerMoneyStart
+reward_points[130] = snapshot.gambling.houseMoneyStart
 newbody['80'] = 0
 newbody['110'] = 0
 newbody['130'] = 0
@@ -604,8 +605,8 @@ assert(__jy_minigame_has('地图系统_小游戏'), 'gambling dispatcher did not
 
 local gambling_ui = G.getUI('v_gambling')
 assert(gambling_ui and gambling_ui.c_gambling and gambling_ui.c_gambling.obj == gambling_ui, 'original v_gambling/c_gambling failed to mount')
-assert(gambling_ui.getChildByName('显示').getChildByName('银两').text == '100', 'gambling UI did not initialize player money')
-assert(gambling_ui.getChildByName('显示').getChildByName('本金').text == '100', 'gambling UI did not initialize house bankroll')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('银两').text) == snapshot.gambling.playerMoneyStart, 'gambling player-money snapshot changed')
+assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('本金').text) == snapshot.gambling.houseMoneyStart, 'gambling house-money snapshot changed')
 assert(G.misc()['下注'] == 0, 'gambling did not start in betting mode')
 
 local bet_panel = gambling_ui.getChildByName('下注')
@@ -618,7 +619,7 @@ assert(roll_button and roll_button.mouseEnabled == true and exit_button and exit
 
 __jy_input_event('click', bet_single.__handle, 0, 0, '', 0)
 __jy_input_event('click', bet_small.__handle, 0, 0, '', 0)
-assert(reward_points[110] == 90, 'two gambling bets did not deduct 10 money through original component logic')
+assert(reward_points[110] == snapshot.gambling.afterTwoBets, 'gambling after-bets snapshot changed')
 assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('单').text) == 1, 'single bet count did not increment')
 assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('小').text) == 1, 'small bet count did not increment')
 
@@ -644,9 +645,9 @@ assert(dice_settle_timer, 'gambling pre-settlement timer missing')
 __jy_program_browser_pump(dice_settle_timer)
 
 assert(gambling_ui.getChildByName('一').text == '1' and gambling_ui.getChildByName('二').text == '2', 'deterministic gambling dice result did not reach original UI')
-assert(reward_points[110] == 110, 'winning single+small bets did not settle original 2x payout')
-assert(reward_points[130] == 90, 'house bankroll did not track original gambling settlement')
-assert(gambling_spend['进度列表'][1]['当前进度'] == 10, 'gambling achievement progress did not track house loss')
+assert(reward_points[110] == snapshot.gambling.afterWin, 'gambling player settlement snapshot changed')
+assert(reward_points[130] == snapshot.gambling.houseAfterWin, 'gambling house settlement snapshot changed')
+assert(gambling_spend['进度列表'][1]['当前进度'] == snapshot.gambling.achievementProgress, 'gambling achievement snapshot changed')
 kind, value = __jy_minigame_status('地图系统_小游戏')
 assert(kind == 'time' and value == '1500', 'gambling result did not enter original 1500ms display wait')
 
@@ -661,10 +662,10 @@ assert(kind == 'case', 'gambling dispatcher did not return to wait_case after se
 
 local bet_double = bet_panel.getChildByName('双')
 __jy_input_event('click', bet_double.__handle, 0, 0, '', 0)
-assert(reward_points[110] == 105, 'exit-refund setup bet did not deduct 5 money')
+assert(reward_points[110] == snapshot.gambling.afterWin - 5, 'gambling exit-refund setup snapshot changed')
 assert(tonumber(gambling_ui.getChildByName('显示').getChildByName('双').text) == 1, 'exit-refund bet count did not increment')
 __jy_input_event('click', exit_button.__handle, 0, 0, '', 0)
-assert(reward_points[110] == 110, 'gambling exit did not refund unresolved player bet')
+assert(reward_points[110] == snapshot.gambling.afterWin, 'gambling exit-refund snapshot changed')
 assert(__jy_minigame_signal_count('赌博结束') == 0, '赌博结束 event was queued instead of consumed by gambling root')
 __jy_program_browser_pump(0)
 math.random = gambling_random
