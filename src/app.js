@@ -98,7 +98,10 @@
   function invokeInteropCallback(callback, ...args) {
     if (typeof callback !== 'function') return undefined;
     if (typeof callback.invoke === 'function') {
-      const result = callback.invoke(undefined, args);
+      // fengari-interop maps the JavaScript `thisArg` to Lua argument #1.
+      // Passing undefined here therefore turns callback(value) into callback(nil, value).
+      const [first, ...rest] = args;
+      const result = callback.invoke(first, rest);
       return Array.isArray(result) ? result[0] : result;
     }
     return callback(...args);
