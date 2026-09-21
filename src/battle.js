@@ -7,6 +7,7 @@
 
   const $ = id => document.getElementById(id);
   const BattleEffects = window.JYBattleEffects;
+  const Keybindings = window.JYKeybindings;
   const pct = (value, max) => {
     const n = Number(value) || 0;
     const m = Math.max(1, Number(max) || 1);
@@ -144,6 +145,11 @@
     });
   }
 
+  function bindingLabel(action, fallback) {
+    const key = Keybindings?.binding?.(action) || fallback;
+    return Keybindings?.keyLabel?.(key) || String(key || '').toUpperCase();
+  }
+
   function ensureSkills() {
     const host = $('battleSkills');
     if (!host || host.children.length) return;
@@ -152,7 +158,7 @@
       button.type = 'button';
       button.className = 'battle-skill';
       button.dataset.slot = String(slot);
-      button.innerHTML = `<kbd>${slot}</kbd><span>空</span><small></small>`;
+      button.innerHTML = `<kbd>${bindingLabel(`skill${slot}`, String(slot))}</kbd><span>空</span><small></small>`;
       button.addEventListener('click', () => {
         if (button.disabled) return;
         window.JYWeb?.chooseOriginalBattleSkill?.(slot);
@@ -164,13 +170,14 @@
   function ensureItems() {
     const host = $('battleItems');
     if (!host || host.children.length) return;
-    ['q','w','e','r'].forEach((key, index) => {
+    const defaults = ['q','w','e','r'];
+    defaults.forEach((fallback, index) => {
       const slot = index + 1;
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'battle-item';
       button.dataset.slot = String(slot);
-      button.innerHTML = `<kbd>${key.toUpperCase()}</kbd><span>空</span><small></small>`;
+      button.innerHTML = `<kbd>${bindingLabel(`item${slot}`, fallback)}</kbd><span>空</span><small></small>`;
       button.addEventListener('click', () => {
         if (button.disabled) return;
         window.JYWeb?.chooseOriginalBattleItem?.(slot);
@@ -179,11 +186,38 @@
     });
   }
 
+  function refreshHotkeys() {
+    ensureSkills();
+    ensureItems();
+    for (let slot = 1; slot <= 8; slot += 1) {
+      const key = bindingLabel(`skill${slot}`, String(slot));
+      const button = $('battleSkills')?.querySelector(`button[data-slot="${slot}"]`);
+      const kbd = button?.querySelector('kbd');
+      if (kbd) kbd.textContent = key;
+      const data = skillState.get(slot);
+      if (data) data.hotkey = key;
+    }
+    ['q','w','e','r'].forEach((fallback, index) => {
+      const slot = index + 1;
+      const key = bindingLabel(`item${slot}`, fallback);
+      const button = $('battleItems')?.querySelector(`button[data-slot="${slot}"]`);
+      const kbd = button?.querySelector('kbd');
+      if (kbd) kbd.textContent = key;
+      const data = itemState.get(slot);
+      if (data) data.hotkey = key;
+    });
+    const auto = $('battleAutoBtn');
+    if (auto) auto.title = `快捷键：${bindingLabel('auto', 'a')}`;
+    const escape = $('battleEscapeBtn');
+    if (escape) escape.title = `快捷键：${bindingLabel('escape', 'Escape')}`;
+  }
+
   function begin(background, mode) {
     ensureSlots();
     ensureSkills();
     ensureItems();
     bindControls();
+    refreshHotkeys();
     stopBattleAnimations();
     slotState.clear();
     skillState.clear();
@@ -408,7 +442,7 @@
   function skillOption(slot, skillId, name, range, enabled, hotkey) {
     ensureSkills();
     const n = Number(slot) || 0;
-    const data = { slot:n, skillId:Number(skillId)||0, name:String(name||''), range:Number(range)||0, enabled:Boolean(enabled), hotkey:String(hotkey||n) };
+    const data = { slot:n, skillId:Number(skillId)||0, name:String(name||''), range:Number(range)||0, enabled:Boolean(enabled), hotkey:bindingLabel(`skill${n}`, String(hotkey||n)) };
     skillState.set(n, data);
     const button = $('battleSkills')?.querySelector(`button[data-slot="${n}"]`);
     if (!button) return;
@@ -422,13 +456,13 @@
   function itemOption(slot, itemId, name, count, enabled, hotkey) {
     ensureItems();
     const n = Number(slot) || 0;
-    const data = { slot:n, itemId:Number(itemId)||0, name:String(name||''), count:Number(count)||0, enabled:Boolean(enabled), hotkey:String(hotkey||'') };
+    const data = { slot:n, itemId:Number(itemId)||0, name:String(name||''), count:Number(count)||0, enabled:Boolean(enabled), hotkey:bindingLabel(`item${n}`, String(hotkey||'')) };
     itemState.set(n, data);
     const button = $('battleItems')?.querySelector(`button[data-slot="${n}"]`);
     if (!button) return;
     button.disabled = !data.enabled;
     button.classList.toggle('empty', !data.itemId);
-    button.querySelector('kbd').textContent = data.hotkey.toUpperCase();
+    button.querySelector('kbd').textContent = data.hotkey;
     button.querySelector('span').textContent = data.name || '空';
     button.querySelector('small').textContent = data.itemId ? `×${data.count}` : '';
   }
@@ -494,28 +528,40 @@
     $('battle')?.classList.add('hidden');
   }
 
+  function fallbackActionForKey(key) {
+    const value = String(key || '');
+    if (/^[1-8]$/.test(value)) return `skill${value}`;
+    if (/^[qwer]$/i.test(value)) return `item${({q:1,w:2,e:3,r:4})[value.toLowerCase()]}`;
+    if (value.toLowerCase() === 'a') return 'auto';
+    if (value === 'Escape') return 'escape';
+    return '';
+  }
+
   document.addEventListener('keydown', event => {
     if ($('battle')?.classList.contains('hidden')) return;
-    if (/^[1-8]$/.test(event.key)) {
-      const slot = Number(event.key);
+    const action = Keybindings?.actionForKey?.(event.key) || fallbackActionForKey(event.key);
+    if (/^skill[1-8]$/.test(action)) {
+      const slot = Number(action.slice(5));
       if (skillState.get(slot)?.enabled) {
         event.preventDefault();
         window.JYWeb?.chooseOriginalBattleSkill?.(slot);
       }
-    } else if (/^[qwer]$/i.test(event.key)) {
-      const slot = ({q:1,w:2,e:3,r:4})[event.key.toLowerCase()];
+    } else if (/^item[1-4]$/.test(action)) {
+      const slot = Number(action.slice(4));
       if (itemState.get(slot)?.enabled) {
         event.preventDefault();
         window.JYWeb?.chooseOriginalBattleItem?.(slot);
       }
-    } else if (event.key.toLowerCase() === 'a') {
+    } else if (action === 'auto') {
       event.preventDefault();
       window.JYWeb?.setOriginalBattleAuto?.(!controlsState.autoEnabled);
-    } else if (event.key === 'Escape') {
+    } else if (action === 'escape') {
       event.preventDefault();
       window.JYWeb?.originalBattleEscape?.();
     }
   });
+
+  window.addEventListener('jy3:keybindings-changed', refreshHotkeys);
 
   window.JYBattleView = Object.freeze({
     begin, slot, appearance, status, effect, dialogue, slotStatus, action, skillEffect, audio, audioStop,
