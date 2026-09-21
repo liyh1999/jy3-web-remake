@@ -97,7 +97,52 @@ async function drainUntilVillage() {
       if (answerIndex >= openingAnswers.length) throw new Error('opening answer fixture exhausted');
       const choice = Number(openingAnswers[answerIndex++]);
       if (choice < 1 || choice > count) throw new Error(`invalid opening answer ${choice}/${count}`);
-      await options.nth(choice - 1).click();
+      if (answerIndex === 1) {
+        const hit = await page.evaluate(index => {
+          const button = document.querySelectorAll('#options button')[index];
+          const rectOf = node => {
+            if (!node) return null;
+            const r = node.getBoundingClientRect();
+            return { left:r.left, top:r.top, right:r.right, bottom:r.bottom, width:r.width, height:r.height };
+          };
+          const styleOf = node => node ? {
+            pointerEvents:getComputedStyle(node).pointerEvents,
+            display:getComputedStyle(node).display,
+            visibility:getComputedStyle(node).visibility,
+            zIndex:getComputedStyle(node).zIndex,
+            transform:getComputedStyle(node).transform,
+          } : null;
+          const rect = button?.getBoundingClientRect();
+          const x = rect ? rect.left + rect.width / 2 : 0;
+          const y = rect ? rect.top + rect.height / 2 : 0;
+          const hitNode = rect ? document.elementFromPoint(x, y) : null;
+          return {
+            choice:index + 1,
+            text:button?.textContent || '',
+            viewport:{ width:innerWidth, height:innerHeight },
+            display:window.JYDisplay?.settings?.() || null,
+            rect:rectOf(button),
+            hit:{ tag:hitNode?.tagName || '', id:hitNode?.id || '', className:String(hitNode?.className || ''), text:String(hitNode?.textContent || '').slice(0,80) },
+            styles:{
+              button:styleOf(button),
+              options:styleOf(document.querySelector('#options')),
+              dialogue:styleOf(document.querySelector('#dialogue')),
+              scene:styleOf(document.querySelector('#scene')),
+              game:styleOf(document.querySelector('#game')),
+              shell:styleOf(document.querySelector('#shell')),
+            },
+            rects:{
+              options:rectOf(document.querySelector('#options')),
+              dialogue:rectOf(document.querySelector('#dialogue')),
+              scene:rectOf(document.querySelector('#scene')),
+              game:rectOf(document.querySelector('#game')),
+              shell:rectOf(document.querySelector('#shell')),
+            },
+          };
+        }, choice - 1);
+        await note('opening-hit-test', hit);
+      }
+      await options.nth(choice - 1).click({ timeout: 5000 });
       await page.waitForTimeout(60);
       continue;
     }
