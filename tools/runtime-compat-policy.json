@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "bootstrapFallbacks": [
+    {
+      "name": "G.Play",
+      "owner": "lua/runtime_shims.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.Stop",
+      "owner": "lua/runtime_shims.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.wait_time",
+      "owner": "lua/story_program_web.lua / lua/minigame_web.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.addUI",
+      "owner": "lua/runtime_shims.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.removeUI",
+      "owner": "lua/runtime_shims.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.getUI",
+      "owner": "lua/runtime_shims.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.start_program",
+      "owner": "lua/story_program_web.lua / lua/minigame_web.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.stop_program",
+      "owner": "lua/story_program_web.lua / lua/minigame_web.lua",
+      "category": "bootstrap-fallback"
+    },
+    {
+      "name": "G.remove_program",
+      "owner": "lua/story_program_web.lua / lua/minigame_web.lua",
+      "category": "bootstrap-fallback"
+    }
+  ],
+  "platformCalls": [
+    {
+      "name": "photo0",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "photo0_off",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "all_over",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "dark",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "notice1",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "list",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "mapon",
+      "category": "web-side-effect",
+      "owner": "lua/runtime_shims.lua"
+    },
+    {
+      "name": "turn_map",
+      "category": "web-side-effect",
+      "owner": "lua/runtime_shims.lua"
+    },
+    {
+      "name": "地图系统_防修改监控",
+      "category": "intentional-web-replacement",
+      "issue": 23
+    },
+    {
+      "name": "通用_存档",
+      "category": "intentional-web-replacement",
+      "owner": "src/save-store.js",
+      "issue": 27
+    }
+  ],
+  "unsafeUnknownCallFallback": {
+    "currentBehavior": "count + console print + return 0",
+    "desiredBehavior": "critical paths throw with call name and runtime context",
+    "issue": 23
+  }
+}
