@@ -95,19 +95,26 @@ try {
   await evaluate("JYWeb.prepareOriginalStory()");
 
   const minigames = [
-    ['logging', 'startOriginalLogging', '原版伐木程序运行中'],
-    ['dig', 'startOriginalDig', '原版采矿程序运行中'],
-    ['fishing', 'startOriginalFishing', '原版钓鱼程序运行中'],
-    ['hunting', 'startOriginalHunting', '原版打猎程序运行中'],
-    ['gambling', 'startOriginalGambling', '原版押宝程序运行中'],
+    ['logging', 'startOriginalLogging'],
+    ['dig', 'startOriginalDig'],
+    ['fishing', 'startOriginalFishing'],
+    ['hunting', 'startOriginalHunting'],
+    ['gambling', 'startOriginalGambling'],
   ];
 
-  for (const [name, method, status] of minigames) {
-    await evaluate(`JYWeb[${JSON.stringify(method)}]()`);
-    await waitFor(
-      `document.querySelector('#runtimeStatus')?.textContent.includes(${JSON.stringify(status)}) && document.querySelector('#game').classList.contains('minigame-mode')`,
-      { timeoutMs: 30000, label: name + ' original UI start' }
-    );
+  for (const [name, method] of minigames) {
+    const view = 'v_' + name;
+    const hasUiLua = "local G=require 'gf'; return G.getUI('" + view + "') ~= nil";
+    const started = await evaluate(`(async () => {
+      await JYWeb[${JSON.stringify(method)}]();
+      return {
+        mode: document.querySelector('#game').classList.contains('minigame-mode'),
+        hasUi: fengari.load(${JSON.stringify(hasUiLua)}, '@e2e/check-minigame-view')(),
+      };
+    })()`);
+    if (!started.mode || !started.hasUi) {
+      throw new Error(name + ' original UI was not instantiated: ' + JSON.stringify(started));
+    }
     await sleep(150);
     const state = await evaluate(`(() => {
       const game=document.querySelector('#game');
