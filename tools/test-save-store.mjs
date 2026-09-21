@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+const saveSnapshot = snapshots.save;
 const source = fs.readFileSync('src/save-store.js', 'utf8');
 const context = { globalThis: {}, console };
 context.globalThis = context;
@@ -20,7 +22,7 @@ class MemoryStorage {
 const storage = new MemoryStorage();
 const store = API.create(storage);
 
-if (API.SLOT_IDS.join(',') !== 'slot1,slot2,slot3,autosave') throw new Error('slot list mismatch');
+if (API.SLOT_IDS.join(',') !== saveSnapshot.slots.join(',')) throw new Error('save slot snapshot mismatch');
 
 for (const slot of API.SLOT_IDS) {
   const payload = store.write(slot, {
@@ -29,7 +31,7 @@ for (const slot of API.SLOT_IDS) {
     meta: { characterName: slot, level: 9, gameDay: 12, mapId: 0x10060002 },
     luaState: 'return {[' + (slot === 'autosave' ? '4' : '1') + ']=true}',
   });
-  if (payload.schemaVersion !== 2 || payload.slot !== slot) throw new Error(slot + ': write schema mismatch');
+  if (payload.schemaVersion !== saveSnapshot.schemaVersion || payload.slot !== slot) throw new Error(slot + ': write schema snapshot mismatch');
   const loaded = store.read(slot);
   if (!loaded.ok || loaded.payload.meta.characterName !== slot) throw new Error(slot + ': read roundtrip failed');
 }
@@ -59,9 +61,9 @@ const legacyStore = API.create(legacyStorage);
 const migration = legacyStore.migrateLegacySingleSlot();
 if (!migration.migrated) throw new Error('legacy single-slot save did not migrate');
 const migrated = legacyStore.read('slot1');
-if (!migrated.ok || migrated.payload.schemaVersion !== 2) throw new Error('migrated schema mismatch');
+if (!migrated.ok || migrated.payload.schemaVersion !== saveSnapshot.schemaVersion) throw new Error('migrated schema snapshot mismatch');
 if (migrated.payload.luaState !== 'return {[123]=456}') throw new Error('legacy Lua state changed during migration');
-if (migrated.payload.meta.migratedFrom !== 1) throw new Error('legacy migration metadata missing');
+if (migrated.payload.meta.migratedFrom !== saveSnapshot.legacySchemaVersion) throw new Error('legacy migration snapshot changed');
 
 // Existing slot1 always wins over the prototype key.
 legacyStore.write('slot1', { luaState: 'return {current=true}', meta: { characterName: 'current' } });
