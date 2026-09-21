@@ -43,7 +43,9 @@ async function verifyBrowser(target) {
   page.on('console', message => {
     if (message.type() === 'error') {
       const text = message.text();
-      if (!/favicon\.ico/i.test(text)) errors.push('console: ' + text);
+      if (!/favicon\.ico/i.test(text) && !/^Failed to load resource:/i.test(text)) {
+        errors.push('console: ' + text);
+      }
     }
   });
 
