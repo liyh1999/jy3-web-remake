@@ -77,3 +77,13 @@ E4 后续按以下顺序收紧：
 - runtime/build/save 版本协议：#27。
 
 E4 只负责“调用语义不能静默错误”，不在这里重新实现已经由这些 Issue 管理的 UI 或产品功能。
+
+
+## E4 当前落地状态（2026-09-21）
+
+- strict missing-call：已加入 `gf_web.lua`。
+- 浏览器 E2E strict：通过。
+- D4 source/offline long-flow strict：通过。
+- 完整浏览器 runtime 启动成功后默认 strict；降级模式保持兼容。
+- 直接宿主空壳已加入 `runtime-compat-policy.json` 分类。
+- 下一项只剩 runtime missing-object 计数基线与阈值收紧。
