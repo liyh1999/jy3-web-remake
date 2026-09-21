@@ -109,5 +109,49 @@
     "currentBehavior": "count + console print + return 0",
     "desiredBehavior": "critical paths throw with call name and runtime context",
     "issue": 23
-  }
+  },
+  "directHostSurfaces": [
+    {
+      "name": "G.GetDeviceInfo",
+      "file": "lua/gf_web.lua",
+      "category": "intentional-host-neutral",
+      "issue": 23
+    },
+    {
+      "name": "G.NewTab",
+      "file": "lua/runtime_shims.lua",
+      "category": "semantic-shim",
+      "owner": "Lua table"
+    },
+    {
+      "name": "G.ReleaseTab",
+      "file": "lua/runtime_shims.lua",
+      "category": "intentional-host-noop",
+      "issue": 23
+    },
+    {
+      "name": "G.SetResourceSize",
+      "file": "lua/runtime_shims.lua",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "G.SetSizeMode",
+      "file": "lua/runtime_shims.lua",
+      "category": "visual-noop",
+      "issue": 18
+    },
+    {
+      "name": "c.SetTextRecording",
+      "file": "lua/gcore_web.lua",
+      "category": "debug-noop",
+      "issue": 25
+    },
+    {
+      "name": "c.SetDefaultAnim",
+      "file": "lua/gcore_web.lua",
+      "category": "visual-noop",
+      "issue": 18
+    }
+  ]
 }
