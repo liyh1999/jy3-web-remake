@@ -11,7 +11,7 @@
 </head>
 <body>
   <main id="shell">
-    <section id="game" aria-label="JY3 web runtime">
+    <section id="game" class="title-mode" aria-label="JY3 web runtime">
       <header class="topbar">
         <div>
           <div class="brand">金庸群侠传 3</div>
@@ -20,22 +20,36 @@
         <div class="runtime" id="runtimeStatus">加载 Lua Runtime…</div>
       </header>
 
-      <section id="scene" class="scene title-scene">
-        <div class="mountains"></div>
-        <div class="ink ink-a"></div>
-        <div class="ink ink-b"></div>
-        <div class="title-copy">
-          <div class="seal">叁</div>
-          <h1>金庸群侠传</h1>
-          <p>保留 jy3-mirror 原 Lua 剧情/数据，替换缺失的 gcore 桌面运行时。</p>
-          <button id="startBtn" class="primary" disabled>开始兼容层验证</button>
-          <button id="villageBtn" class="ghost" disabled>直接进入牛家村测试</button>
-          <button id="loggingBtn" class="ghost" disabled>伐木小游戏测试</button>
-          <button id="digBtn" class="ghost" disabled>采矿小游戏测试</button>
-          <button id="fishingBtn" class="ghost" disabled>钓鱼小游戏测试</button>
-          <button id="huntingBtn" class="ghost" disabled>打猎小游戏测试</button>
-          <button id="gamblingBtn" class="ghost" disabled>押宝小游戏测试</button>
-          <button id="originalBtn" class="ghost" disabled>运行原 p_newgame.lua</button>
+      <section id="scene" class="scene title-scene" aria-label="原版标题界面">
+        <div id="titleVisual" class="title-original">
+          <img id="titleBackdrop" class="title-backdrop" alt="">
+          <img id="titleOverlay" class="title-overlay" alt="">
+          <img id="titleLogo" class="title-logo" alt="金庸群侠传 3">
+          <img id="titleMark" class="title-mark" alt="">
+          <div class="title-menu" aria-label="标题菜单">
+            <button id="startBtn" class="title-menu-button title-start" type="button" disabled>
+              <span>开始原版游戏</span>
+            </button>
+            <button id="titleContinueBtn" class="title-menu-button title-continue" type="button" disabled>
+              <span>继续游戏</span>
+            </button>
+            <button id="titleGuideBtn" class="title-menu-button title-guide" type="button" disabled>
+              <span>游戏指引</span>
+            </button>
+            <button id="titleExitBtn" class="title-menu-button title-exit" type="button" disabled>
+              <span>返回标题</span>
+            </button>
+          </div>
+          <div class="title-version">ver3.10</div>
+        </div>
+        <div class="title-dev-hooks" aria-hidden="true">
+          <button id="villageBtn" disabled>牛家村测试</button>
+          <button id="loggingBtn" disabled>伐木测试</button>
+          <button id="digBtn" disabled>采矿测试</button>
+          <button id="fishingBtn" disabled>钓鱼测试</button>
+          <button id="huntingBtn" disabled>打猎测试</button>
+          <button id="gamblingBtn" disabled>押宝测试</button>
+          <button id="originalBtn" disabled>原 p_newgame.lua</button>
         </div>
       </section>
 
