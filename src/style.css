@@ -103,12 +103,141 @@ button:disabled { opacity: .45; cursor: wait; }
 .save-actions button:hover:not(:disabled) { background: #d7c29a; }
 .save-actions .save-slot { grid-column: 1 / -1; min-width: 0; width: 100%; }
 .save-actions .save-slot:disabled { opacity: .55; }
-.dialogue { position: absolute; z-index: 20; left: 14%; right: 7%; bottom: 54px; min-height: 150px; padding: 20px 23px; background: #e8dab7f2; border: 2px solid #58462e; box-shadow: 7px 8px 0 #21190f88; }
-.speaker { display: inline-block; margin-top: -36px; padding: 5px 15px; background: #36291e; color: #eadbb6; border: 1px solid #8c7651; }
-.dialogue-text { padding: 10px 4px; min-height: 55px; line-height: 1.75; font-size: 16px; }
-.options { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; }
-.options button { margin: 0; text-align: left; background: #f0e3c3; color: #392b1b; }
-.options button:hover { background: #d7c29a; }
+.dialogue {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+.dialogue-frame {
+  position: absolute;
+  z-index: 1;
+  left: 212px;
+  top: 320px;
+  width: 432px;
+  height: 140px;
+  object-fit: fill;
+  opacity: .92;
+  pointer-events: auto;
+}
+.dialogue-portrait {
+  position: absolute;
+  z-index: 3;
+  left: 132px;
+  top: 244px;
+  width: 72px;
+  height: 86px;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: auto;
+  filter: drop-shadow(1px 2px 1px #0008);
+  pointer-events: none;
+}
+.dialogue[data-mod="2"] .dialogue-frame { transform: translate(12px, -5px); }
+.dialogue[data-mod="2"] .dialogue-portrait { transform: translate(12px, -5px); }
+.dialogue[data-mod="3"] .dialogue-frame { transform: translate(60px, 10px); }
+.dialogue[data-mod="3"] .dialogue-portrait { transform: translate(60px, 10px); }
+.dialogue[data-mod="4"] .dialogue-frame { transform: translateY(20px); }
+.dialogue[data-mod="4"] .dialogue-portrait { transform: translateY(20px); }
+.speaker {
+  position: absolute;
+  z-index: 4;
+  left: 181px;
+  top: 397px;
+  min-width: 84px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #f0e4c8;
+  font: 700 14px/1.2 "STKaiti", KaiTi, "Noto Serif SC", serif;
+  text-shadow: 1px 1px 1px #000, 0 0 2px #000;
+  pointer-events: none;
+}
+.dialogue-text {
+  position: absolute;
+  z-index: 4;
+  left: 282px;
+  top: 335px;
+  width: 326px;
+  min-height: 82px;
+  padding: 0;
+  color: #f1e5ca;
+  font: 15px/1.55 "STKaiti", KaiTi, "Noto Serif SC", serif;
+  text-shadow: 1px 1px 1px #000b;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+.dialogue-continue {
+  position: absolute;
+  z-index: 6;
+  left: 212px;
+  top: 320px;
+  width: 432px;
+  height: 140px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+  pointer-events: auto;
+}
+.dialogue-continue-hint {
+  position: absolute;
+  z-index: 7;
+  left: 616px;
+  top: 429px;
+  color: #e9d4a2;
+  font-size: 10px;
+  text-shadow: 1px 1px 2px #000;
+  animation: dialogue-hint 1s steps(2,end) infinite;
+  pointer-events: none;
+}
+.options {
+  position: absolute;
+  z-index: 8;
+  left: 371px;
+  top: 294px;
+  width: 330px;
+  max-height: 150px;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: end;
+  gap: 4px;
+  overflow: auto;
+  pointer-events: auto;
+}
+.options button {
+  min-height: 22px;
+  margin: 0;
+  padding: 3px 8px;
+  border: 0;
+  background: transparent;
+  color: #f2e8d0;
+  text-align: left;
+  font: 14px/1.35 "STKaiti", KaiTi, "Noto Serif SC", serif;
+  text-shadow: 1px 1px 1px #000;
+  box-shadow: none;
+}
+.options button:hover,
+.options button:focus-visible {
+  outline: none;
+  background-image: var(--dialogue-option-hover);
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 100% 100%;
+  color: #fff5d9;
+}
+.dialogue.menu-mode .dialogue-frame,
+.dialogue.menu-mode .dialogue-portrait,
+.dialogue.menu-mode .speaker,
+.dialogue.menu-mode .dialogue-text { opacity: .96; }
+.dialogue.menu-mode .dialogue-continue-hint { display: none; }
+@keyframes dialogue-hint { 0%,49% { opacity: 1; } 50%,100% { opacity: .3; } }
 .battle { position: absolute; z-index: 30; inset: 106px 12% 70px; padding: 25px; background: #211913ef; color: #e9ddc2; border: 2px solid #8a7047; box-shadow: 0 15px 40px #0009; }
 .battle-title { text-align: center; font-size: 27px; letter-spacing: .2em; margin-bottom: 30px; }
 .fighters { display: flex; align-items: center; gap: 25px; }
@@ -125,8 +254,6 @@ button:disabled { opacity: .45; cursor: wait; }
 @media (max-width: 760px) {
   .title-copy { width: 82%; left: 9%; }
   .hud { width: 180px; }
-  .dialogue { left: 5%; right: 5%; }
-  .options { grid-template-columns: 1fr; }
 }
 
 /* C3 original battle projection */
