@@ -74,7 +74,10 @@
     return canvas;
   }
   function titleResourceUrl(id) {
-    return window.JYResources?.url?.(id) || '';
+    const value = window.JYResources?.url?.(id) || '';
+    if (!value) return '';
+    try { return new URL(value, document.baseURI).href; }
+    catch (_) { return value; }
   }
 
   function applyTitleResources() {
