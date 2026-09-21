@@ -6,7 +6,12 @@ import { spawnSync } from 'node:child_process';
 
 globalThis.window = {};
 vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src/upstream.js' });
-const { RAW_BASE, normalizeLuaSource } = globalThis.window.JYUpstream;
+const { RAW_BASE, UPSTREAM_REV, normalizeLuaSource } = globalThis.window.JYUpstream;
+const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 'utf8'));
+if (snapshots.upstreamRevision !== UPSTREAM_REV) {
+  throw new Error(`map snapshot upstream mismatch: ${snapshots.upstreamRevision} != ${UPSTREAM_REV}`);
+}
+const mapSnapshot = snapshots.map;
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-map-'));
 const SOURCES = [
   '01_data/o_body.lua',
@@ -80,23 +85,23 @@ local function hotspot(city_id)
 end
 
 -- Niujia regression remains intact.
-G.QueryName(0x10030001)['140']=0x10060003
+G.QueryName(0x10030001)['140']=${mapSnapshot.niujiaMapId}
 assert(__jy_render_map()==true,'Niujia map render failed')
 assert(host.maps[#host.maps].portrait==G.QueryName(0x10030001)['119'],'map HUD portrait did not come from original o_body[119]')
-assert(host.count==8,'expected 8 visible Niujia hotspots, got '..tostring(host.count))
+assert(host.count==${mapSnapshot.niujiaVisibleHotspots},'Niujia visible-hotspot snapshot changed: '..tostring(host.count))
 local mu=hotspot(0x10070061)
 assert(mu,'Mu Nianci hotspot missing')
 assert(mu.event=='牛家村-穆念慈','wrong original event name: '..tostring(mu.event))
 assert(mu.x==200 and mu.y==280,'wrong original coordinates')
-G.QueryName(0x10060003)['城市列表'][8]['隐藏']=1
+G.QueryName(${mapSnapshot.niujiaMapId})['城市列表'][8]['隐藏']=1
 assert(__jy_render_map()==true,'Niujia map refresh failed')
-assert(host.count==7,'hidden Niujia hotspot was not removed')
-G.QueryName(0x10060003)['城市列表'][8]['隐藏']=0
+assert(host.count==${mapSnapshot.niujiaHiddenHotspots},'Niujia hidden-hotspot snapshot changed: '..tostring(host.count))
+G.QueryName(${mapSnapshot.niujiaMapId})['城市列表'][8]['隐藏']=0
 
 -- Niujia -> world map uses the original 大地图 city object and original p_citymap_system entry API.
 assert(__jy_activate_city(0x10070025)==true,'Niujia -> world map failed')
-assert(G.QueryName(0x10030001)['140']==0x10060001,'current map id did not become world map')
-assert(host.count==42,'expected 42 initially visible world-map cities, got '..tostring(host.count))
+assert(G.QueryName(0x10030001)['140']==${mapSnapshot.worldMapId},'world map id snapshot changed')
+assert(host.count==${mapSnapshot.worldInitialVisibleCities},'world initial-visible snapshot changed: '..tostring(host.count))
 assert(host.maps[#host.maps].bg==0x56050029,'wrong world map background')
 local niujia=hotspot(0x10070012)
 assert(niujia and niujia.show==1,'world-map names should be visible when 显示名称 is nil')
@@ -105,27 +110,27 @@ assert(niujia and niujia.show==1,'world-map names should be visible when 显示�
 local shenlong=hotspot(0x10070019)
 assert(shenlong and shenlong.locked==1,'locked 神龙教 hotspot missing')
 assert(__jy_activate_city(0x10070019)==false,'locked world-map destination unexpectedly entered')
-assert(G.QueryName(0x10030001)['140']==0x10060001,'locked destination changed current map')
+assert(G.QueryName(0x10030001)['140']==${mapSnapshot.worldMapId},'locked destination changed current map')
 
 -- Dynamic unlock/hide mutations must be reflected by a refresh.
 G.QueryName(0x10070019)['锁定']=false
-G.QueryName(0x10060001)['城市列表'][41]['隐藏']=0
+G.QueryName(${mapSnapshot.worldMapId})['城市列表'][41]['隐藏']=0
 assert(__jy_render_map()==true,'world map refresh failed')
-assert(host.count==43,'unhidden world-map city did not appear')
+assert(host.count==${mapSnapshot.worldUnlockedVisibleCities},'world unlocked-visible snapshot changed: '..tostring(host.count))
 assert(hotspot(0x10070019).locked==0,'dynamic city unlock did not refresh')
 
 -- Sect destinations preserve the original 事件记录 side effect before entering.
 assert(__jy_activate_city(0x10070008)==true,'Huashan destination failed')
-assert(G.QueryName(0x10030001)['190']==13,'Huashan event record was not stored')
+assert(G.QueryName(0x10030001)['190']==${mapSnapshot.huashanEventRecord},'Huashan event-record snapshot changed')
 assert(G.QueryName(0x10030001)['140']==0x1006000a,'Huashan linked map was not entered')
 
 -- Representative round trip: world map -> 聚贤庄 -> world map.
-assert(__jy_enter_map(0x10060001)==true,'return to world map failed')
+assert(__jy_enter_map(${mapSnapshot.worldMapId})==true,'return to world map failed')
 assert(__jy_activate_city(0x10070024)==true,'world map -> 聚贤庄 failed')
-assert(G.QueryName(0x10030001)['140']==0x10060004,'聚贤庄 map id mismatch')
+assert(G.QueryName(0x10030001)['140']==${mapSnapshot.juxianzhuangMapId},'聚贤庄 map snapshot changed')
 assert(hotspot(0x10070025),'聚贤庄 return-to-world hotspot missing')
 assert(__jy_activate_city(0x10070025)==true,'聚贤庄 -> world map failed')
-assert(G.QueryName(0x10030001)['140']==0x10060001,'round trip did not return to world map')
+assert(G.QueryName(0x10030001)['140']==${mapSnapshot.worldMapId},'round trip did not return to world map')
 
 print('map runtime PASS: Niujia, 43-node world map, locks, event records, round trip')
 `;
