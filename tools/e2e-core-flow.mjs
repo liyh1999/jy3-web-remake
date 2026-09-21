@@ -111,7 +111,17 @@ try {
   await waitFor("document.querySelector('#continueBtn:not(.hidden)')", { label: 'Mu Nianci opening talk' });
   await click('#continueBtn');
   await waitFor("document.querySelectorAll('#options button').length >= 2", { label: 'Mu Nianci menu' });
-  await evaluate("document.querySelectorAll('#options button')[0].click()");
+  const muOptions = await evaluate("[...document.querySelectorAll('#options button')].map(node => node.textContent)");
+  const marriageIndex = muOptions.findIndex(text => String(text).includes('相公'));
+  if (marriageIndex < 0) throw new Error('Mu Nianci battle option missing: ' + JSON.stringify(muOptions));
+  const muClicked = await evaluate(`(() => {
+    const buttons = [...document.querySelectorAll('#options button')];
+    const button = buttons[${marriageIndex}];
+    if (!button || button.disabled) return false;
+    button.click();
+    return true;
+  })()`);
+  if (!muClicked) throw new Error('Mu Nianci battle option click failed');
 
   {
     const deadline = Date.now() + 30000;
