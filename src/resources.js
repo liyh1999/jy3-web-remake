@@ -8,6 +8,7 @@
   if (!Catalog) throw new Error('JYResourceCatalog must be loaded before resources.js');
 
   const images = new Map();
+  const resolutionFailures = new Map();
 
   function u32(value) {
     return Number(value) >>> 0;
@@ -36,7 +37,16 @@
   function addImage(id, sourceId = id) {
     const targetId = u32(id);
     const source = resolve(sourceId);
-    if (!source || source.kind !== 'image' || !source.resolvableFile) return false;
+    if (!source || source.kind !== 'image' || !source.resolvableFile) {
+      resolutionFailures.set(targetId, {
+        kind: 'image',
+        id: targetId,
+        sourceId: u32(sourceId),
+        reason: 'unresolvable',
+      });
+      return false;
+    }
+    resolutionFailures.delete(targetId);
 
     const size = IMAGE_SIZES[source.relativePath] || null;
     const entry = {
@@ -85,6 +95,21 @@
     return images.has(u32(id));
   }
 
+  function failures() {
+    const rows = [...resolutionFailures.values()].map(row => ({ ...row }));
+    for (const entry of images.values()) {
+      if (!entry.error) continue;
+      rows.push({
+        kind: 'image',
+        id: entry.id,
+        sourceId: entry.sourceId,
+        url: entry.url,
+        reason: 'load-error',
+      });
+    }
+    return rows.slice(-64);
+  }
+
   function play(resourceId, group = 1, loop = false, rawVolume = 1) {
     return window.JYAudio?.play?.(resourceId, group, loop, rawVolume) === true;
   }
@@ -115,6 +140,7 @@
     imageHeight,
     imageSize,
     hasImage,
+    failures,
     play,
     stop,
     activeAudio,
