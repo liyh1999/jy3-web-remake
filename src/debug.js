@@ -65,7 +65,10 @@
       enabled,
       location: window.location.href,
       userAgent: navigator.userAgent,
+      runtimeVersion: window.JYRuntimeVersion?.runtimeVersion || window.JY_CONFIG?.runtimeVersion || '',
+      protocolVersion: Number(window.JYRuntimeVersion?.protocolVersion ?? window.JY_CONFIG?.protocolVersion ?? 0),
       upstreamRevision: window.JYUpstream?.UPSTREAM_REV || window.JYResources?.UPSTREAM_REV || '',
+      buildGeneratedAt: window.JY_CONFIG?.buildGeneratedAt || '',
       offline: window.JY_CONFIG?.offline === true,
       lua: luaSnapshot(),
       resourceFailures: resourceFailures(),
@@ -113,7 +116,10 @@
     text('debugResources', data.resourceFailures.length
       ? data.resourceFailures.map(row => JSON.stringify(row)).join('\n')
       : 'none');
+    text('debugRuntimeVersion', data.runtimeVersion || 'unknown');
+    text('debugProtocolVersion', data.protocolVersion || 0);
     text('debugUpstream', data.upstreamRevision || 'unknown');
+    text('debugBuildTime', data.buildGeneratedAt || (data.offline ? 'unknown' : 'source/dev'));
     text('debugMode', data.offline ? 'offline dist' : 'source/dev');
     return data;
   }
