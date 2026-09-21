@@ -2,7 +2,7 @@
 
 > 基线更新时间：2026-09-21  
 > 固定上游：`ssz66666/jy3-mirror@c7b6180b9d79aa5df33f7e8375d6dd88d67a8cc8`  
-> 浏览器长流程基线：CI #738 / `51a1fbaf152c1af4124860321eaacdffc566db0b`
+> 浏览器长流程 / E5 snapshot 基线：CI #775 / `4170f389cf169b6979828a7a968387c1f129a99d`
 
 本文件只记录“与固定原版相比已经一致到什么程度”，不因为某个实现 Issue 已关闭就自动标记为一致。  
 行为与视觉分开评价：原 Lua / 原数据仍是权威状态，并且已有自动回归支撑时，才允许标为“行为一致”；没有原版界面或参考图逐项验收时，不标“视觉一致”。
@@ -36,7 +36,7 @@
 | 浏览器 E2E | 行为一致 | — | #21 已完成；真实 headless Chrome：开局 → 牛家村 → NPC → 穆念慈原战斗 → 逃跑 → slot1 保存 → 状态修改 → 读档恢复；console/exception 监控 | 后续新关键系统改动必须追加页面级路径，不能只靠 Lua harness | [#24](https://github.com/liyh1999/jy3-web-remake/issues/24) |
 | 完全离线部署 | 行为一致 | — | 固定 Fengari / upstream；SHA-256 cache；`build:offline`；断网 runtime；CI 最终 offline smoke | 版本化发布包、构建信息和部署验收尚未最终收口 | [#27](https://github.com/liyh1999/jy3-web-remake/issues/27) [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 | 关键 G.call / 平台占位 | 最小兼容 | — | 已有 API audit、`__jy_missing_calls/__jy_missing_objects`，主流程大量调用已实装 | 兼容层仍保留明确 no-op / 平台副作用替代；必须分类并让关键静默缺失归零 | [#23](https://github.com/liyh1999/jy3-web-remake/issues/23) |
-| 固定回归样本 / snapshot | 最小兼容 | — | 已固定 upstream revision、大量 deterministic smoke fixture 和随机种子 | 尚未形成统一版本化 snapshot 数据集与差异输出 | [#24](https://github.com/liyh1999/jy3-web-remake/issues/24) |
+| 固定回归样本 / snapshot | 行为一致 | — | `tools/regression-snapshots.json` 统一固定 upstream/runtime、开局、地图、商店、战斗、人物、存档、五小游戏；9 个权威回归消费者 + CI validator；CI #775 全绿 | snapshot 更新必须显式评审；视觉截图基线继续由 #18 负责 | [#24](https://github.com/liyh1999/jy3-web-remake/issues/24) |
 | 现场诊断 / 开发者模式 | 最小兼容 | — | console、CI 日志、E2 runtime trace 可定位错误 | 页面内 missing call/object、当前事件/地图、Lua 堆栈、资源失败报告尚未形成统一调试面板 | [#25](https://github.com/liyh1999/jy3-web-remake/issues/25) |
 | runtime / build / save 版本协议 | 最小兼容 | — | 存档已有 schemaVersion 与 upstream revision；offline manifest 有固定依赖 | 缺独立 runtime version、构建时间/commit 展示和明确不兼容提示协议 | [#27](https://github.com/liyh1999/jy3-web-remake/issues/27) |
 | 整体视觉复刻 / 浏览器兼容 / 发布 | 可玩 | 可玩 | 原背景、头像、战斗角色与特效、音频均已进入 Web；853×480 逻辑画面保留；完整流程可浏览器运行 | 当前仍明显是 Web Runtime 重建界面，未达到“视觉一致”；Chrome/Edge/Firefox、缩放、设置、性能、发布包需最终验收 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
