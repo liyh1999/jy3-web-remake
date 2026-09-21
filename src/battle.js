@@ -14,6 +14,48 @@
     return Math.max(0, Math.min(100, n / m * 100));
   };
 
+  const originalBattleResources = Object.freeze({
+    foreground: 0x56050058,
+    chargeFrame: 0x56160069,
+    statusPanel: 0x560a0001,
+    commandBar: 0x560a0002,
+    bottomPanel: 0x56160067,
+    talkLeft: 0x5616004b,
+    talkRight: 0x5616004a,
+    victory: 0x5616004c,
+    defeat: 0x5616004d,
+  });
+
+  const resourceUrl = id => window.JYResources?.url?.(Number(id) >>> 0) || '';
+
+  function setCssResource(node, property, id) {
+    if (!node) return '';
+    const url = resourceUrl(id);
+    node.style.setProperty(property, url ? `url("${url}")` : 'none');
+    return url;
+  }
+
+  function applyOriginalBattleResources(panel, background) {
+    if (!panel) return;
+    const backgroundId = 0x56050000 + Math.max(0, Number(background) || 0);
+    const ids = { ...originalBattleResources, background: backgroundId };
+    for (const [name, id] of Object.entries(ids)) {
+      const cssName = name.replace(/[A-Z]/g, ch => `-${ch.toLowerCase()}`);
+      const url = setCssResource(panel, `--battle-${cssName}`, id);
+      panel.dataset[`${name}ResourceId`] = `0x${(Number(id) >>> 0).toString(16).padStart(8, '0')}`;
+      if (url) panel.dataset[`${name}ResourceUrl`] = url;
+    }
+  }
+
+  function setBattleResult(result) {
+    const node = $('battleResult');
+    if (!node) return;
+    const value = Number(result) || 0;
+    node.classList.toggle('victory', value === 1);
+    node.classList.toggle('defeat', value === 2);
+    node.textContent = value === 1 ? '胜利' : value === 2 ? '失败' : value ? '战斗结束' : '';
+  }
+
   const battleAnimationPositions = [...positions, 'all1', 'all2', 'all3', 'all', 'icon'];
   const animationKey = (kind, position) => `battle:${kind}:${position}`;
 
@@ -224,10 +266,12 @@
     itemState.clear();
     ensureEffectLayer();
     const panel = $('battle');
+    applyOriginalBattleResources(panel, background);
+    $('game')?.classList.add('battle-mode');
     panel?.classList.remove('hidden');
     if ($('battleTitle')) $('battleTitle').textContent = Number(mode) === 1 ? '单挑战斗' : '战斗';
     if ($('battleMeta')) $('battleMeta').textContent = `地图 ${Number(background) || 0} · 模式 ${Number(mode) || 0}`;
-    if ($('battleResult')) $('battleResult').textContent = '';
+    setBattleResult(0);
     if ($('battleLog')) $('battleLog').textContent = '原 p_battle.lua 已接管战斗流程。';
     if ($('battleEffectLayer')) $('battleEffectLayer').innerHTML = '';
     if ($('battleAbnormal')) $('battleAbnormal').textContent = '无';
@@ -334,8 +378,7 @@
     if ($('battleAbnormal')) $('battleAbnormal').textContent = String(abnormal || '无').replace(/\[[^\]]+\]/g, '');
     if ($('battleRageText')) $('battleRageText').textContent = `${Math.floor(Number(rage) || 0)} / ${Math.max(1, Math.floor(Number(maxRage) || 100))}`;
     if ($('battleRageBar')) $('battleRageBar').style.width = `${pct(rage, maxRage)}%`;
-    if (Number(result) === 1 && $('battleResult')) $('battleResult').textContent = '胜利';
-    if (Number(result) === 2 && $('battleResult')) $('battleResult').textContent = '失败';
+    if (Number(result) === 1 || Number(result) === 2) setBattleResult(result);
   }
 
   function effect(actor, target, damage) {
@@ -451,6 +494,7 @@
     button.querySelector('kbd').textContent = data.hotkey;
     button.querySelector('span').textContent = data.name || '空';
     button.querySelector('small').textContent = data.skillId ? rangeLabel(data.range) : '';
+    button.title = data.skillId ? `${data.hotkey} · ${data.name} · ${rangeLabel(data.range)}` : `${data.hotkey} · 空`;
   }
 
   function itemOption(slot, itemId, name, count, enabled, hotkey) {
@@ -465,6 +509,7 @@
     button.querySelector('kbd').textContent = data.hotkey;
     button.querySelector('span').textContent = data.name || '空';
     button.querySelector('small').textContent = data.itemId ? `×${data.count}` : '';
+    button.title = data.itemId ? `${data.hotkey} · ${data.name} ×${data.count}` : `${data.hotkey} · 空`;
   }
 
   function controls(autoEnabled, canInput, targetPending, canEscape) {
@@ -518,7 +563,7 @@
 
   function end(result) {
     const win = Number(result) === 1;
-    if ($('battleResult')) $('battleResult').textContent = win ? '胜利' : Number(result) === 2 ? '失败' : '战斗结束';
+    setBattleResult(result);
     if ($('battleLog')) $('battleLog').textContent = win ? '战斗胜利，正在结算原版经验与熟练度。' : '战斗结束，正在返回原剧情。';
   }
 
@@ -526,6 +571,8 @@
     stopBattleAnimations();
     $('battleEffectLayer')?.querySelectorAll?.('.battle-sequence')?.forEach?.(node => node.remove());
     $('battle')?.classList.add('hidden');
+    $('game')?.classList.remove('battle-mode');
+    setBattleResult(0);
   }
 
   function fallbackActionForKey(key) {
