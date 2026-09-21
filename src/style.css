@@ -828,3 +828,29 @@ button:disabled { opacity: .45; cursor: wait; }
 .debug-panel h3 { margin: 0 0 3px; color: #aa956d; font-size: 10px; font-weight: 700; }
 .debug-panel pre { margin: 0; max-height: 112px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid #3d3326; background: #0b0908d9; padding: 5px; color: #c8baa0; }
 .debug-copy-status { min-height: 14px; margin-top: 6px; color: #d5b76f; }
+
+
+.runtime-notice {
+  position: absolute;
+  left: 54px;
+  right: 54px;
+  bottom: 14px;
+  z-index: 90;
+  box-sizing: border-box;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 214, 122, 0.75);
+  border-radius: 4px;
+  background: rgba(42, 14, 10, 0.93);
+  color: #ffe6b0;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+  text-shadow: 0 1px 1px #000;
+  pointer-events: none;
+}
+
+.runtime-notice[data-kind="warning"] {
+  background: rgba(53, 38, 7, 0.93);
+  border-color: rgba(244, 205, 98, 0.72);
+  color: #fff0b5;
+}

@@ -2,6 +2,15 @@
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
   const LEGACY_FILE_KEY = 'jy3-web-remake:legacy-file:';
+  const bootClock = () => window.performance?.now?.() ?? Date.now();
+  const bootMetrics = window.JYBootMetrics = {
+    startedAt: bootClock(),
+    readyAt: 0,
+    durationMs: 0,
+    failed: false,
+    mode: 'booting',
+    error: '',
+  };
   const saveStorage = (() => {
     try { return window.localStorage || null; }
     catch (_) { return null; }
@@ -13,7 +22,7 @@
   }) : null;
   const ui = {
     game: $('#game'),
-    status: $('#runtimeStatus'), start: $('#startBtn'), titleContinue: $('#titleContinueBtn'), titleGuide: $('#titleGuideBtn'), titleExit: $('#titleExitBtn'),
+    status: $('#runtimeStatus'), notice: $('#runtimeNotice'), start: $('#startBtn'), titleContinue: $('#titleContinueBtn'), titleGuide: $('#titleGuideBtn'), titleExit: $('#titleExitBtn'),
     village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'), saveSlot: $('#saveSlotSelect'),
     scene: $('#scene'), hud: $('#hud'), stats: $('#statGrid'), money: $('#money'),
@@ -63,6 +72,35 @@
 
   function recordDiagnostic(error, context) {
     window.JYDiagnostics?.recordError?.(error, context);
+  }
+
+  function showRuntimeNotice(message, kind = 'error') {
+    if (!ui.notice) return;
+    ui.notice.textContent = String(message || '');
+    ui.notice.dataset.kind = kind;
+    ui.notice.classList.toggle('hidden', !message);
+  }
+
+  function clearRuntimeNotice() {
+    showRuntimeNotice('');
+  }
+
+  function markBootReady(mode) {
+    bootMetrics.readyAt = bootClock();
+    bootMetrics.durationMs = Math.max(0, bootMetrics.readyAt - bootMetrics.startedAt);
+    bootMetrics.failed = false;
+    bootMetrics.mode = mode || 'ready';
+    bootMetrics.error = '';
+    window.dispatchEvent(new CustomEvent('jy3:boot-ready', { detail: { ...bootMetrics } }));
+  }
+
+  function markBootFailed(error) {
+    bootMetrics.readyAt = bootClock();
+    bootMetrics.durationMs = Math.max(0, bootMetrics.readyAt - bootMetrics.startedAt);
+    bootMetrics.failed = true;
+    bootMetrics.mode = 'failed';
+    bootMetrics.error = String(error?.message || error || 'unknown');
+    window.dispatchEvent(new CustomEvent('jy3:boot-failed', { detail: { ...bootMetrics } }));
   }
 
   function replaceSceneMarkup(markup) {
@@ -990,11 +1028,16 @@
   async function boot() {
     resetJsState();
     if (!window.fengari) {
-      ui.status.textContent = 'Fengari 加载失败（需要网络）';
+      const error = new Error('Fengari 运行时文件未加载');
+      ui.status.textContent = 'Fengari 加载失败';
+      showRuntimeNotice('运行时组件加载失败，请刷新页面；若仍失败，请重新部署完整 dist 目录。');
+      markBootFailed(error);
+      recordDiagnostic(error, 'fengari-bootstrap');
       return;
     }
 
     try {
+      clearRuntimeNotice();
       applyTitleResources();
       applyDialogueResources();
       const [compat, shims, programRuntime, storyProgramCompat, minigameCompat, battleCompat, saveState, demo] = await Promise.all([
@@ -1037,6 +1080,7 @@
         console.warn('upstream data bootstrap failed', dataError);
         originalProgramLoaded = false;
         ui.status.textContent = '原数据加载失败，进入兼容层降级模式';
+        showRuntimeNotice('原版数据加载不完整，当前已进入兼容层降级模式；建议刷新或检查部署文件。', 'warning');
       }
 
       ui.start.disabled = false;
@@ -1154,10 +1198,15 @@
         }
       };
 
-      $$('.village-actions button').forEach(b => b.onclick = () => runEvent(b.dataset.event));
+      $('.village-actions button').forEach(b => b.onclick = () => runEvent(b.dataset.event));
+      markBootReady(originalProgramLoaded ? 'original' : 'compat');
     } catch (e) {
+      recordDiagnostic(e, 'runtime-bootstrap');
       console.error(e);
-      ui.status.textContent = '启动失败：请使用本地 HTTP 服务';
+      const detail = String(e?.message || e || '未知错误');
+      ui.status.textContent = `启动失败：${detail}`;
+      showRuntimeNotice(`启动失败：${detail}。请确认通过 HTTP/HTTPS 访问，并重新部署完整 dist 目录。`);
+      markBootFailed(e);
     }
   }
 

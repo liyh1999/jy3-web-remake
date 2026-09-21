@@ -116,6 +116,11 @@ if (indexHtml.includes('cdn.jsdelivr.net/npm/fengari-web')) {
 writeFile(path.join(dist, 'index.html'), indexHtml);
 
 const generatedAt = new Date().toISOString();
+const cacheVersion = `${runtimeVersion}-${generatedAt.replace(/\D/g, '').slice(0, 14)}`;
+const serviceWorkerSource = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8')
+  .replaceAll('__JY3_CACHE_VERSION__', cacheVersion);
+writeFile(path.join(dist, 'service-worker.js'), serviceWorkerSource);
+
 const imageSizes = {};
 for (const relativePath of requiredAssets) {
   if (!relativePath.toLowerCase().endsWith('.png')) continue;
@@ -133,6 +138,7 @@ const runtimeConfig = {
   protocolVersion,
   buildGeneratedAt: generatedAt,
   fengariVersion: manifest.fengariVersion,
+  cacheVersion,
   imageSizes,
 };
 writeFile(
@@ -155,6 +161,7 @@ const buildInfo = {
   cachedAssets: requiredAssets,
   cacheEntries: manifest.entries.length,
   cacheBytes: manifest.totalBytes,
+  cacheVersion,
   imageSizes,
 };
 writeFile(path.join(dist, 'build-info.json'), `${JSON.stringify(buildInfo, null, 2)}\n`);

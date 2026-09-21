@@ -41,6 +41,7 @@ jobs:
           node --check src/shop.js
           node --check src/resource-catalog.js
           node --check src/resources.js
+          node --check src/cache.js
           node --check src/renderer.js
           node --check src/upstream.js
           node --check tools/audit-minigames.mjs
@@ -133,6 +134,8 @@ jobs:
           node --check tools/e2e-panel-visual.mjs
           node --check tools/e2e-battle-minigame-visual.mjs
           node --check tools/e2e-browser-compat.mjs
+          node --check tools/e2e-release-readiness.mjs
+          node --check service-worker.js
           node --check tools/e2e-keybindings.mjs
           node --check tools/test-keybindings.mjs
           node --check tools/e2e-debug-panel.mjs
@@ -712,6 +715,12 @@ jobs:
         env:
           JY3_BROWSER_COMPAT_DIST: "1"
         run: node tools/e2e-browser-compat.mjs
+
+      - name: Browser startup cache and error readiness on offline dist
+        env:
+          JY3_READINESS_DIST: "1"
+          JY3_MAX_BOOT_MS: "12000"
+        run: node tools/e2e-release-readiness.mjs
 
       - name: Browser E2E core flow on offline dist
         env:

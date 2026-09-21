@@ -64,6 +64,15 @@ if (!Number.isInteger(Number(context.window.JY_CONFIG?.protocolVersion)) || Numb
   throw new Error('dist runtime config missing protocolVersion');
 }
 if (!context.window.JY_CONFIG?.buildGeneratedAt) throw new Error('dist runtime config missing buildGeneratedAt');
+if (!context.window.JY_CONFIG?.cacheVersion) throw new Error('dist runtime config missing cacheVersion');
+
+const serviceWorkerPath = path.join(dist, 'service-worker.js');
+if (!fs.existsSync(serviceWorkerPath)) throw new Error('dist service-worker.js missing');
+const serviceWorkerSource = fs.readFileSync(serviceWorkerPath, 'utf8');
+if (serviceWorkerSource.includes('__JY3_CACHE_VERSION__')) throw new Error('service worker cache version placeholder was not replaced');
+if (!serviceWorkerSource.includes(`jy3-web-shell-${context.window.JY_CONFIG.cacheVersion}`)) {
+  throw new Error('service worker cache version does not match runtime config');
+}
 
 vm.runInContext(fs.readFileSync(path.join(dist, 'src/upstream.js'), 'utf8'), context, {
   filename: 'src/upstream.js'
@@ -153,5 +162,6 @@ if (buildInfo.runtimeVersion !== context.window.JY_CONFIG.runtimeVersion) throw 
 if (Number(buildInfo.protocolVersion) !== Number(context.window.JY_CONFIG.protocolVersion)) throw new Error('build-info protocolVersion mismatch');
 if (buildInfo.generatedAt !== context.window.JY_CONFIG.buildGeneratedAt) throw new Error('build-info generatedAt mismatch');
 if (buildInfo.fengariVersion !== '0.1.4') throw new Error('unexpected Fengari version in build-info');
+if (buildInfo.cacheVersion !== context.window.JY_CONFIG.cacheVersion) throw new Error('build-info cacheVersion mismatch');
 
 console.log(`offline dist PASS: ${upstream.CORE_DATA.length} boot data + ${upstream.ON_DEMAND_DATA.length} on-demand data, ${upstream.CORE_PROGRAMS.length} boot programs + ${upstream.ON_DEMAND_PROGRAMS.length} on-demand programs, ${refs.length} local page dependencies`);
