@@ -159,7 +159,7 @@
 
   function setScene(kind) {
     const title = kind !== 'village';
-    ui.game?.classList.remove('minigame-mode');
+    ui.game?.classList.remove('minigame-mode', 'opening-flow');
     ui.game?.classList.toggle('title-mode', title);
     ui.scene.className = `scene ${kind === 'village' ? 'village-scene' : 'title-scene'}`;
     if (kind === 'village') {
@@ -1022,6 +1022,7 @@
   function freshRun(eventName) {
     resetJsState();
     resetLuaState();
+    if (eventName === '回答问题') ui.game?.classList.add('opening-flow');
     runEvent(eventName);
   }
 
