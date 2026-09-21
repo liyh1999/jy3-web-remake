@@ -79,7 +79,7 @@ try {
   await click('#startBtn');
   const openingAnswers = openingSnapshot.answers.slice(0, -1);
   await drainDialogueUntil(
-    "document.querySelector('#scene')?.classList.contains('village-scene') && document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0 && (() => { try { return Number(window.fengari.load(\"local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0\", '@e2e/opening-map')()) === ${openingSnapshot.expected.mapId}; } catch (_) { return false; } })()",
+    `document.querySelector('#scene')?.classList.contains('village-scene') && document.querySelector('#dialogue')?.classList.contains('hidden') && !document.querySelector('#continueBtn:not(.hidden)') && document.querySelectorAll('#options button').length===0 && (() => { try { return Number(window.fengari.load("local G=require 'gf'; return tonumber(G.QueryName(0x10030001)[tostring(140)]) or 0", '@e2e/opening-map')()) === ${openingSnapshot.expected.mapId}; } catch (_) { return false; } })()`,
     openingAnswers,
     30000
   );
