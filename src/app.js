@@ -753,13 +753,17 @@
       ui.text.textContent = question || '';
       ui.dialogue.classList.remove('hidden');
       [...options].forEach((opt, idx) => {
+        const rawOption = String(opt);
+        const encodedChoice = rawOption.match(/^\s*(\d+)\s*,/);
+        const choice = encodedChoice ? Number(encodedChoice[1]) : idx + 1;
         const b = document.createElement('button');
-        b.textContent = String(opt).replace(/^\d+,/, '');
+        b.textContent = rawOption.replace(/^\s*\d+\s*,/, '');
+        b.dataset.choice = String(choice);
         b.onclick = () => {
           const cb = modalCallback;
           modalCallback = null;
           closeDialogue();
-          cb(idx + 1);
+          cb(choice);
         };
         ui.options.appendChild(b);
       });
