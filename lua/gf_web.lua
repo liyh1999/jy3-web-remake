@@ -572,9 +572,23 @@ function G.call(name, ...)
         web:showTalk(speaker ~= "" and speaker or "旁白", text, 0, tonumber(body()["119"]) or 0, 0, function(v) resume_after_ui(v) end)
         return coroutine.yield()
     elseif name == "menu" and not G.__original_dialogue_enabled then
+        local speaker = tostring(args[1] or "")
+        local role_id = tonumber(args[2]) or 0
         local question = tostring(args[3] or "")
+        local dialogue_mod = tonumber(args[4]) or 0
+        local menu_mod = tonumber(args[5]) or 0
         local options = first_array_arg(args, 4)
-        web:showMenu(question, js_array(options), function(choice) resume_after_ui(tonumber(choice)) end)
+        local portrait_id = 0
+        if role_id > 0 then
+            local role = G.QueryName(0x10040000 + role_id)
+            portrait_id = tonumber(role and role["头像"]) or (0x56080000 + role_id)
+        else
+            portrait_id = tonumber(body()["119"]) or 0
+        end
+        web:showMenu(
+            question, js_array(options), role_id, portrait_id, dialogue_mod, menu_mod,
+            function(choice) resume_after_ui(tonumber(choice)) end
+        )
         local choice = coroutine.yield()
         trace_runtime("menu:" .. tostring(choice))
         return choice
