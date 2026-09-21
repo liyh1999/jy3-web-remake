@@ -12,6 +12,7 @@ if (snapshots.upstreamRevision !== UPSTREAM_REV) {
   throw new Error(`opening snapshot upstream mismatch: ${snapshots.upstreamRevision} != ${UPSTREAM_REV}`);
 }
 const openingSnapshot = snapshots.opening;
+const openingExpected = openingSnapshot.expected;
 const answersLua = openingSnapshot.answers.join(',');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'jy3-opening-flow-'));
@@ -155,11 +156,11 @@ while coroutine.status(co)~='dead' do
   end
 end
 
-assert(menu_count==14, 'opening menu snapshot changed: '..menu_count)
-assert(ui_count==37, 'opening UI-yield snapshot changed: '..ui_count)
-assert(entered_village==true, 'opening village transition snapshot changed')
-assert(village_opened==true, 'opening village/mapon snapshot changed')
-assert(tonumber(body()['140'])==268828674, 'opening map snapshot changed: '..tostring(body()['140']))
+assert(menu_count==${openingExpected.menus}, 'opening menu snapshot changed: '..menu_count)
+assert(ui_count==${openingExpected.uiYields}, 'opening UI-yield snapshot changed: '..ui_count)
+assert(entered_village==${openingExpected.village ? 'true' : 'false'}, 'opening village transition snapshot changed')
+assert(village_opened==${openingExpected.village ? 'true' : 'false'}, 'opening village/mapon snapshot changed')
+assert(tonumber(body()['140'])==${openingExpected.mapId}, 'opening map snapshot changed: '..tostring(body()['140']))
 assert((tonumber(body()['16']) or 0) >= 2, 'questionnaire stat effects were not applied')
 print(string.format('original opening flow PASS: menus=%d ui=%d village=%s', menu_count, ui_count, tostring(village_opened)))
 `;
