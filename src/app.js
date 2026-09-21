@@ -54,6 +54,10 @@
     setTimeout(() => window.dispatchEvent(new CustomEvent('jy3:relationship-changed')), 0);
   }
 
+  function recordDiagnostic(error, context) {
+    window.JYDiagnostics?.recordError?.(error, context);
+  }
+
   function replaceSceneMarkup(markup) {
     const existingCanvas = ui.scene.querySelector('#gcoreCanvas');
     if (existingCanvas) existingCanvas.remove();
@@ -697,6 +701,7 @@
           '@web/battle-frame-end'
         )();
       } catch (error) {
+        recordDiagnostic(error, 'battle-frame-end');
         console.warn('battle frame-end bridge failed', error);
         return false;
       }
@@ -920,6 +925,7 @@
         }
         ui.status.textContent = `原始数据 ${loaded.loadedModules} 组 / 核心程序 ${loaded.loadedPrograms} 个 / 基础剧情 ${story.storyPrograms.length} 个 / 已接门派 ${story.allSectPrograms.length} 个 / 天书任务 ${story.bookLakesPrograms.length} 个已就绪`;
       } catch (dataError) {
+        recordDiagnostic(dataError, 'upstream-data-bootstrap');
         console.warn('upstream data bootstrap failed', dataError);
         originalProgramLoaded = false;
         ui.status.textContent = '原数据加载失败，进入兼容层降级模式';
