@@ -104,6 +104,11 @@ try {
   if (!autosaveRaw) throw new Error('completed NPC event did not create autosave');
 
   // 3) Original Mu Nianci event -> menu -> original battle UI. Exercise browser escape control.
+  // Keep the original event/data path, but use the Web dialogue bridge here so the
+  // menu result is resumed into the same story coroutine deterministically. The
+  // original dialogue runtime has its own async program wrapper and can finish the
+  // event before the E2E click result reaches this direct __jy_run coroutine.
+  await evaluate(`window.JYWeb.disableOriginalDialogue()`);
   const muStarted = await evaluate(`window.fengari.load("return __jy_run('牛家村-穆念慈')", '@e2e/mu-nianci')()`);
   if (!muStarted) throw new Error('Mu Nianci event did not start');
 
