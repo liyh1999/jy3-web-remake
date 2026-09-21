@@ -39,7 +39,7 @@ try {
   const report = await evaluate('window.JYDiagnostics.snapshot()');
   if (!report?.lua?.ready) throw new Error('diagnostics report did not read Lua runtime state: ' + JSON.stringify(report?.lua));
   if (!report.runtimeVersion || Number(report.protocolVersion) <= 0) throw new Error('diagnostics version protocol missing');
-  if (browser.baseUrl.includes('8093') && process.env.JY3_DEBUG_E2E_DIST === '1' && !report.buildGeneratedAt) {
+  if (process.env.JY3_DEBUG_E2E_DIST === '1' && !report.buildGeneratedAt) {
     throw new Error('offline diagnostics build timestamp missing');
   }
   if (Number(directMap) !== expectedMapId) throw new Error('direct Lua current map mismatch: ' + directMap + ' expected=' + expectedMapId);
