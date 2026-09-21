@@ -38,7 +38,7 @@
 | 关键 G.call / 平台占位 | 最小兼容 | — | 已有 API audit、`__jy_missing_calls/__jy_missing_objects`，主流程大量调用已实装 | 兼容层仍保留明确 no-op / 平台副作用替代；必须分类并让关键静默缺失归零 | [#23](https://github.com/liyh1999/jy3-web-remake/issues/23) |
 | 固定回归样本 / snapshot | 行为一致 | — | `tools/regression-snapshots.json` 统一固定 upstream/runtime、开局、地图、商店、战斗、人物、存档、五小游戏；9 个权威回归消费者 + CI validator；CI #775 全绿 | snapshot 更新必须显式评审；视觉截图基线继续由 #18 负责 | [#24](https://github.com/liyh1999/jy3-web-remake/issues/24) |
 | 现场诊断 / 开发者模式 | 行为一致 | — | `?debug=1` 开启统一诊断面板；显示 missing call/object、当前/最近事件、地图、存档/运行对象数、Lua runtime trace、JS/Lua 异常堆栈、图片/音频失败；可复制 JSON 报告；正式页面默认隐藏；离线 Chrome E2E 已覆盖 | 后续只需随新模块扩展诊断字段，不再是阻塞项 | [#25](https://github.com/liyh1999/jy3-web-remake/issues/25) |
-| runtime / build / save 版本协议 | 最小兼容 | — | 存档已有 schemaVersion 与 upstream revision；offline manifest 有固定依赖 | 缺独立 runtime version、构建时间/commit 展示和明确不兼容提示协议 | [#27](https://github.com/liyh1999/jy3-web-remake/issues/27) |
+| runtime / build / save 版本协议 | 行为一致 | — | `src/version.js` 提供 runtimeVersion/protocolVersion；runtime-config/build-info 记录 runtime/protocol/upstream/build time；新存档记录 schema/runtime/protocol/upstream；legacy 兼容；protocol/upstream 不匹配明确阻止导入；debug 可查看版本；CI #810 全绿 | 后续版本升级必须按 `docs/E7_VERSION_PROTOCOL.md` 更新并重跑 E5/E2/D4 | [#27](https://github.com/liyh1999/jy3-web-remake/issues/27) |
 | 整体视觉复刻 / 浏览器兼容 / 发布 | 可玩 | 可玩 | 原背景、头像、战斗角色与特效、音频均已进入 Web；853×480 逻辑画面保留；完整流程可浏览器运行 | 当前仍明显是 Web Runtime 重建界面，未达到“视觉一致”；Chrome/Edge/Firefox、缩放、设置、性能、发布包需最终验收 | [#18](https://github.com/liyh1999/jy3-web-remake/issues/18) |
 
 ## 当前结论
