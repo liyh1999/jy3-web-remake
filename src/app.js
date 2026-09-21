@@ -190,6 +190,7 @@
     ui.dialogue.dataset.mod = '0';
     ui.dialogue.dataset.roleId = '0';
     ui.options.innerHTML = '';
+    ui.options.scrollTop = 0;
     ui.cont.classList.add('hidden');
     ui.dialogueHint?.classList.remove('hidden');
     if (ui.dialoguePortrait) {
@@ -928,6 +929,7 @@
         };
         ui.options.appendChild(b);
       });
+      ui.options.scrollTop = 0;
     },
     showShop(names, prices, resume) {
       const products = [...names].map((name, idx) => `${name}　${Number(prices[idx]) || 0} 两`);
