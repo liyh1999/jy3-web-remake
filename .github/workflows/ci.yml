@@ -154,6 +154,7 @@ jobs:
           node --check tools/prepare-release.mjs
           node --check tools/verify-release-package.mjs
           node --check tools/final-release-acceptance.mjs
+          node --check tools/headless-playtest.mjs
 
       - name: Validate shared regression snapshot dataset
         run: node tools/validate-regression-snapshots.mjs
@@ -917,6 +918,19 @@ jobs:
 
       - name: Final long-flow acceptance on versioned release package
         run: node tools/final-release-acceptance.mjs
+
+      - name: Headless exploratory playtest on versioned release package
+        run: node tools/headless-playtest.mjs
+
+      - name: Upload headless playtest evidence
+        if: always() && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jy3-web-remake-headless-playtest
+          path: reports/headless-playtest/
+          if-no-files-found: error
+          compression-level: 6
+          retention-days: 30
 
       - name: Upload versioned static release package
         if: github.event_name == 'push'
