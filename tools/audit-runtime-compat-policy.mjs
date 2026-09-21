@@ -20,6 +20,25 @@ assert.deepStrictEqual(
   'gf_web platform call fallbacks changed without updating tools/runtime-compat-policy.json'
 );
 
+const directFiles = ['lua/gf_web.lua', 'lua/runtime_shims.lua', 'lua/gcore_web.lua'];
+const trivialDirect = [];
+for (const file of directFiles) {
+  const text = fs.readFileSync(file, 'utf8');
+  for (const match of text.matchAll(/function\s+((?:G|c)\.[A-Za-z_][A-Za-z0-9_]*)\s*\([^)]*\)\s*return\s+(true|nil|\{\}|\"\"|0)\s+end/g)) {
+    trivialDirect.push({ name: match[1], file });
+  }
+}
+const classifiedDirect = [
+  ...policy.bootstrapFallbacks.map(row => ({ name: row.name, file: 'lua/gf_web.lua' })),
+  ...(policy.directHostSurfaces || []).map(row => ({ name: row.name, file: row.file })),
+].sort((a,b) => (a.file + ':' + a.name).localeCompare(b.file + ':' + b.name));
+trivialDirect.sort((a,b) => (a.file + ':' + a.name).localeCompare(b.file + ':' + b.name));
+assert.deepStrictEqual(
+  trivialDirect,
+  classifiedDirect,
+  'one-line direct host stubs changed without updating tools/runtime-compat-policy.json'
+);
+
 const bootstrapNames = policy.bootstrapFallbacks.map(row => row.name.replace(/^G\./, ''));
 for (const name of bootstrapNames) {
   const re = new RegExp('function\\s+G\\.' + name.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&') + '\\s*\\(');
@@ -44,6 +63,7 @@ const rows = [
   ['visual no-op', policy.platformCalls.filter(row => row.category === 'visual-noop').length],
   ['Web side-effect', policy.platformCalls.filter(row => row.category === 'web-side-effect').length],
   ['intentional Web replacement', policy.platformCalls.filter(row => row.category === 'intentional-web-replacement').length],
+  ['direct host surfaces', (policy.directHostSurfaces || []).length],
 ];
 
 fs.mkdirSync('reports', { recursive: true });
