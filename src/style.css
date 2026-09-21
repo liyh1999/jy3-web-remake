@@ -214,7 +214,7 @@ button:disabled { opacity: .45; cursor: wait; }
   max-height: 150px;
   display: grid;
   grid-template-columns: 1fr;
-  align-content: end;
+  align-content: safe end;
   gap: 4px;
   overflow: auto;
   pointer-events: auto;
