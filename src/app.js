@@ -6,7 +6,11 @@
     try { return window.localStorage || null; }
     catch (_) { return null; }
   })();
-  const saveStore = saveStorage && window.JYSaveStore ? window.JYSaveStore.create(saveStorage) : null;
+  const saveStore = saveStorage && window.JYSaveStore ? window.JYSaveStore.create(saveStorage, {
+    runtimeVersion: window.JYRuntimeVersion?.runtimeVersion || '',
+    protocolVersion: window.JYRuntimeVersion?.protocolVersion || 0,
+    upstream: window.JYUpstream?.UPSTREAM_REV || '',
+  }) : null;
   const ui = {
     status: $('#runtimeStatus'), start: $('#startBtn'), village: $('#villageBtn'), original: $('#originalBtn'), logging: $('#loggingBtn'), dig: $('#digBtn'), fishing: $('#fishingBtn'), hunting: $('#huntingBtn'), gambling: $('#gamblingBtn'),
     save: $('#saveBtn'), load: $('#loadBtn'), saveSlot: $('#saveSlotSelect'),
@@ -189,6 +193,7 @@
     const base = baseSlotLabel(row.slot);
     if (row.empty) return `${base} · 空`;
     if (!row.ok) return `${base} · 损坏`;
+    if (row.compatible === false) return `${base} · 不兼容`;
     const meta = row.meta || {};
     const pieces = [meta.characterName || '无名侠客'];
     if (Number(meta.level) > 0) pieces.push(`Lv.${Number(meta.level)}`);
@@ -248,6 +253,11 @@
     const result = saveStore.read(slot);
     if (!result.ok) {
       ui.status.textContent = result.empty ? `${baseSlotLabel(slot)}为空` : `读档失败：${result.error}`;
+      refreshSaveControls();
+      return false;
+    }
+    if (result.compatibility?.compatible === false) {
+      ui.status.textContent = `无法读取${baseSlotLabel(slot)}：${result.compatibility.message || '存档与当前运行时不兼容'}`;
       refreshSaveControls();
       return false;
     }
