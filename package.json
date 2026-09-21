@@ -14,7 +14,8 @@
     "test:browser-compat": "node tools/e2e-browser-compat.mjs",
     "release:prepare": "node tools/prepare-release.mjs",
     "release:verify": "node tools/verify-release-package.mjs",
-    "release:package": "npm run package && npm run release:prepare && npm run release:verify"
+    "release:package": "npm run package && npm run release:prepare && npm run release:verify",
+    "release:accept": "node tools/final-release-acceptance.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

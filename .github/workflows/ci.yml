@@ -153,6 +153,7 @@ jobs:
           node --check tools/verify-offline-dist.mjs
           node --check tools/prepare-release.mjs
           node --check tools/verify-release-package.mjs
+          node --check tools/final-release-acceptance.mjs
 
       - name: Validate shared regression snapshot dataset
         run: node tools/validate-regression-snapshots.mjs
@@ -913,6 +914,9 @@ jobs:
           test -f "release/jy3-web-remake-v$VERSION/release-manifest.json"
           test -f "release/jy3-web-remake-v$VERSION/SHA256SUMS"
           test -f "release/jy3-web-remake-v$VERSION/DEPLOY.md"
+
+      - name: Final long-flow acceptance on versioned release package
+        run: node tools/final-release-acceptance.mjs
 
       - name: Upload versioned static release package
         if: github.event_name == 'push'

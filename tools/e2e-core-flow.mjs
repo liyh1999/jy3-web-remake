@@ -5,6 +5,7 @@ const snapshots = JSON.parse(fs.readFileSync('tools/regression-snapshots.json', 
 const openingSnapshot = snapshots.opening;
 
 const browser = await launchBrowserHarness({
+  root: process.env.JY3_E2E_ROOT || process.cwd(),
   port: Number(process.env.JY3_E2E_PORT || 8092),
   debugPort: Number(process.env.JY3_E2E_DEBUG_PORT || 9228),
   dist: process.env.JY3_E2E_DIST === '1',
