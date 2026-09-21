@@ -210,6 +210,14 @@
             <output id="displayScaleEffective">当前 100%</output>
           </div>
         </div>
+        <div class="key-settings">
+          <button id="keySettingsBtn" class="key-settings-toggle" type="button" aria-expanded="false" aria-controls="keySettingsPanel">快捷键</button>
+          <div id="keySettingsPanel" class="key-settings-panel hidden" aria-label="快捷键设置">
+            <div id="keyBindingsList" class="keybindings-list"></div>
+            <div id="keyBindingsStatus" class="keybindings-status"></div>
+            <button id="keyBindingsReset" class="keybindings-reset" type="button">恢复默认</button>
+          </div>
+        </div>
         <div class="audio-settings">
           <button id="audioSettingsBtn" class="audio-settings-toggle" type="button" aria-expanded="false" aria-controls="audioSettingsPanel">音频 100%</button>
           <div id="audioSettingsPanel" class="audio-settings-panel hidden" aria-label="音频设置">
@@ -283,11 +291,13 @@
   <script src="./src/resources.js"></script>
   <script src="./src/audio.js"></script>
   <script src="./src/debug.js"></script>
+  <script src="./src/keybindings-controls.js"></script>
   <script src="./src/display-controls.js"></script>
   <script src="./src/audio-controls.js"></script>
   <script src="./src/animation-resources.js"></script>
   <script src="./src/renderer.js"></script>
   <script src="./src/animation-player.js"></script>
+  <script src="./src/keybindings.js"></script>
   <script src="./src/input.js"></script>
   <script src="./src/map-scene.js"></script>
   <script src="./src/upstream.js"></script>
