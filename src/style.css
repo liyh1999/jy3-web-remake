@@ -6,9 +6,9 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at 50% 10%, #4a3e31, #17130f 58%); }
 button { font: inherit; cursor: pointer; }
-#shell { width: min(96vw, 1100px); }
+#shell { width: 853px; height: 480px; }
 #game {
-  position: relative; width: 100%; aspect-ratio: 853 / 480; min-height: 520px; overflow: hidden;
+  position: relative; width: 853px; height: 480px; min-height: 0; overflow: hidden;
   border: 1px solid #7d694d; border-radius: 8px; background: #c7b58b;
   box-shadow: 0 24px 80px #0009, inset 0 0 0 1px #e6d7ad66;
 }
@@ -61,7 +61,6 @@ button:disabled { opacity: .45; cursor: wait; }
 .footer { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: #17120e; color: #83765e; font: 10px ui-monospace, Consolas, monospace; }
 .hidden { display: none !important; }
 @media (max-width: 760px) {
-  #game { min-height: 620px; aspect-ratio: auto; }
   .title-copy { width: 82%; left: 9%; }
   .hud { width: 180px; }
   .dialogue { left: 5%; right: 5%; }
