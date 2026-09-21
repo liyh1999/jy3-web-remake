@@ -68,6 +68,8 @@ try {
     "document.querySelector('#startBtn') && !document.querySelector('#startBtn').disabled && document.querySelector('#startBtn').textContent.includes('原版')",
     { timeoutMs: 30000, label: 'original runtime bootstrap' }
   );
+  const strictMissing = await evaluate(`window.fengari.load("return __jy_set_strict_missing_calls(true)", '@e2e/strict-missing')()`);
+  if (!strictMissing) throw new Error('failed to enable strict missing-call mode');
 
   // 1) Real page new-game button + original questionnaire menus.
   await click('#startBtn');
