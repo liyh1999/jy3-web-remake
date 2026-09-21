@@ -76,5 +76,75 @@
       "proficiencyAfter": 110,
       "schedulerSteps": 642
     }
+  },
+  "person": {
+    "profile": {
+      "fullName": "令狐冲",
+      "nickname": "浪子",
+      "school": "华山派",
+      "rank": "大弟子",
+      "master": "岳不群",
+      "hp": {
+        "current": 321,
+        "max": 500
+      },
+      "mp": {
+        "current": 222,
+        "max": 400
+      },
+      "qualities": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66
+      ],
+      "equipmentSlots": 8
+    }
+  },
+  "save": {
+    "schemaVersion": 2,
+    "legacySchemaVersion": 1,
+    "slots": [
+      "slot1",
+      "slot2",
+      "slot3",
+      "autosave"
+    ]
+  },
+  "minigames": {
+    "logging": {
+      "strengthProgress": 70,
+      "woodItemId": 280,
+      "woodCount": 1
+    },
+    "mining": {
+      "strikeProgress": 10,
+      "minOreCount": 1
+    },
+    "fishing": {
+      "progress": 10,
+      "shellItemId": 319,
+      "shellCount": 1,
+      "wormItemId": 318,
+      "wormDelta": -1,
+      "score": 5
+    },
+    "hunting": {
+      "itemId": 291,
+      "itemCount": 1,
+      "score": 5,
+      "totalScore": 20,
+      "progress": 15
+    },
+    "gambling": {
+      "playerMoneyStart": 100,
+      "houseMoneyStart": 100,
+      "afterTwoBets": 90,
+      "afterWin": 110,
+      "houseAfterWin": 90,
+      "achievementProgress": 10
+    }
   }
 }
