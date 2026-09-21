@@ -22,6 +22,9 @@
     '01_data/o_teammate.lua',
     '01_data/o_shop.lua',
     '01_data/o_headevent.lua',
+    '01_data/o_Gut.lua',
+    '01_data/o_story.lua',
+    '01_data/o_book_story.lua',
     '01_data/o_citymap_system_map.lua',
     '01_data/o_citymap_system_city.lua'
   ];
