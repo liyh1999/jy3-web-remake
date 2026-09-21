@@ -206,12 +206,30 @@ export async function launchBrowserHarness({
     if (!ok) throw new Error(`cannot click ${selector}`);
   }
 
+  async function stopProcess(child) {
+    if (!child || child.exitCode !== null || child.signalCode !== null) return;
+    const exited = new Promise(resolve => child.once('exit', resolve));
+    try { child.kill('SIGTERM'); } catch (_) {}
+    await Promise.race([exited, sleep(800)]);
+    if (child.exitCode === null && child.signalCode === null) {
+      try { child.kill('SIGKILL'); } catch (_) {}
+      await Promise.race([
+        new Promise(resolve => child.once('exit', resolve)),
+        sleep(500),
+      ]);
+    }
+  }
+
   async function cleanup() {
     cdp.close();
-    browser.kill('SIGTERM');
-    server.kill('SIGTERM');
-    await sleep(150);
-    fs.rmSync(profile, { recursive: true, force: true });
+    await stopProcess(browser);
+    await stopProcess(server);
+    fs.rmSync(profile, {
+      recursive: true,
+      force: true,
+      maxRetries: 6,
+      retryDelay: 100,
+    });
   }
 
   return {
