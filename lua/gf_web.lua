@@ -10,6 +10,8 @@ local table_ids = {}
 local dynamic_ids = {}
 local dynamic_next = {}
 local active = nil
+local active_event_name = ""
+local last_event_name = ""
 local active_wait_event = nil
 local active_event_info = nil
 local queued_story_events = {}
@@ -73,8 +75,14 @@ end
 local function resume_active(...)
     if not active or coroutine.status(active) == "dead" then return false end
     local ok, err = coroutine.resume(active, ...)
-    if not ok then error(err) end
+    if not ok then
+        last_event_name = active_event_name ~= "" and active_event_name or last_event_name
+        active_event_name = ""
+        error(err)
+    end
     if coroutine.status(active) == "dead" then
+        last_event_name = active_event_name ~= "" and active_event_name or last_event_name
+        active_event_name = ""
         active_wait_event = nil
         active_event_info = nil
         notify_event_finished()
@@ -688,6 +696,8 @@ function __jy_reset_runtime()
     if type(_G.__jy_story_program_reset) == "function" then
         pcall(_G.__jy_story_program_reset)
     end
+    active_event_name = ""
+    last_event_name = ""
     active_wait_event = nil
     active_event_info = nil
     queued_story_events = {}
@@ -721,6 +731,18 @@ function __jy_missing_objects()
     return table.concat(rows, ", ")
 end
 
+function __jy_runtime_object_count()
+    local count = 0
+    for _ in pairs(objects) do count = count + 1 end
+    return count
+end
+
+function __jy_debug_event_state()
+    local status = active and coroutine.status(active) or "none"
+    return tostring(active_event_name or ""), tostring(status or "none"),
+           tostring(last_event_name or ""), tostring(active_wait_event or "")
+end
+
 function __jy_run(event_name)
     if active and coroutine.status(active) ~= "dead" then return false end
     active_wait_event = nil
@@ -728,10 +750,20 @@ function __jy_run(event_name)
     queued_story_events = {}
     local fn = G.api[event_name]
     if type(fn) ~= "function" then error("unknown JY3 event: " .. tostring(event_name)) end
+    active_event_name = tostring(event_name or "")
+    trace_runtime("run:" .. active_event_name)
     active = coroutine.create(function() fn() end)
     local ok, err = coroutine.resume(active)
-    if not ok then error(err) end
-    if coroutine.status(active) == "dead" then notify_event_finished() end
+    if not ok then
+        last_event_name = active_event_name
+        active_event_name = ""
+        error(err)
+    end
+    if coroutine.status(active) == "dead" then
+        last_event_name = active_event_name
+        active_event_name = ""
+        notify_event_finished()
+    end
     return true
 end
 
