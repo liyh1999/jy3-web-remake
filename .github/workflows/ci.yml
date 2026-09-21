@@ -123,6 +123,7 @@ jobs:
           node --check tools/smoke-d4-long-flow.mjs
           node --check tools/browser-e2e-core.mjs
           node --check tools/e2e-core-flow.mjs
+          node --check tools/e2e-display-scaling.mjs
           node --check tools/e2e-debug-panel.mjs
           node --check tools/validate-regression-snapshots.mjs
           node --check tools/test-strict-missing-calls.mjs
@@ -704,6 +705,22 @@ jobs:
           fi
           "$CHROME_BIN" --version
           node tools/e2e-core-flow.mjs
+
+      - name: Browser 853x480 scaling on offline dist
+        env:
+          JY3_DISPLAY_E2E_DIST: "1"
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v google-chrome)"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v google-chrome-stable)"
+          elif command -v chromium >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v chromium)"
+          else
+            echo "Chrome/Chromium is required for display scaling E2E" >&2
+            exit 1
+          fi
+          node tools/e2e-display-scaling.mjs
 
       - name: Browser developer diagnostics on offline dist
         env:
