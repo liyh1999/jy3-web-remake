@@ -254,7 +254,7 @@
     ui.saveSlot.disabled = !saveReady;
     const current = rows.find(item => item.slot === selected);
     if (ui.save) ui.save.disabled = !saveReady || selected === 'autosave';
-    if (ui.load) ui.load.disabled = !saveReady || !current?.ok || current?.compatible === false;
+    if (ui.load) ui.load.disabled = !saveReady || !current?.ok;
     if (ui.titleContinue) {
       ui.titleContinue.disabled = !saveReady || !rows.some(row => row.ok && row.compatible !== false && !row.empty);
     }
