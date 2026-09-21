@@ -164,8 +164,23 @@ function G.RegisterData(module)
             if not templates[object_id] then
                 table.insert(table_ids[type_name], object_id)
             end
-            templates[object_id] = deep_copy(entry)
-            objects[object_id] = deep_copy(entry)
+            local normalized = deep_copy(entry)
+            -- Original gcore data objects expose unset combat-status numeric fields
+            -- as zero. Raw Lua tables omit those keys, so normalize the o_role
+            -- status/timer ranges before original p_battle.lua reads or increments
+            -- them (for example get_role(role, 91) during 集气).
+            if type_name == "o_role" then
+                for field = 81, 115 do
+                    local key = tostring(field)
+                    if normalized[key] == nil then normalized[key] = 0 end
+                end
+                for field = 240, 259 do
+                    local key = tostring(field)
+                    if normalized[key] == nil then normalized[key] = 0 end
+                end
+            end
+            templates[object_id] = normalized
+            objects[object_id] = deep_copy(normalized)
         end
     end
     return #entries
