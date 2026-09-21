@@ -128,6 +128,7 @@ jobs:
           node --check tools/browser-e2e-core.mjs
           node --check tools/e2e-core-flow.mjs
           node --check tools/e2e-display-scaling.mjs
+          node --check tools/e2e-title-visual.mjs
           node --check tools/e2e-keybindings.mjs
           node --check tools/test-keybindings.mjs
           node --check tools/e2e-debug-panel.mjs
@@ -730,6 +731,22 @@ jobs:
             exit 1
           fi
           node tools/e2e-display-scaling.mjs
+
+      - name: Browser original title visual on offline dist
+        env:
+          JY3_TITLE_E2E_DIST: "1"
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v google-chrome)"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v google-chrome-stable)"
+          elif command -v chromium >/dev/null 2>&1; then
+            export CHROME_BIN="$(command -v chromium)"
+          else
+            echo "Chrome/Chromium is required for title visual E2E" >&2
+            exit 1
+          fi
+          node tools/e2e-title-visual.mjs
 
       - name: Browser battle keybindings on offline dist
         env:
