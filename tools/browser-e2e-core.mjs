@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { chromium } from 'playwright';
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -9,6 +10,7 @@ export function findChrome() {
   const candidates = [
     process.env.CHROME_BIN,
     process.env.GOOGLE_CHROME_BIN,
+    chromium.executablePath(),
     '/usr/bin/google-chrome',
     '/usr/bin/google-chrome-stable',
     '/usr/bin/chromium',

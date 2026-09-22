@@ -7,6 +7,7 @@ const CORE_SHELL = [
   './src/inventory.css',
   './src/person.css',
   './src/shop.css',
+  './vendor/fonts/noto-serif-sc-chinese-simplified-400-normal.woff2',
   './vendor/fengari/fengari-web.js',
   './src/version.js',
   './src/display.js',

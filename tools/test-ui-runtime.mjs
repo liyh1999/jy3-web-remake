@@ -71,6 +71,14 @@ function G.DBTable() return {} end
 function G.misc() return {} end
 assert(loadfile('lua/runtime_shims.lua'))()
 
+assert(G.SetResourceSize(960,540)==true,'resource size setter failed')
+local resource_w,resource_h=G.GetResourceSize()
+assert(resource_w==960 and resource_h==540,'resource size host state did not roundtrip')
+assert(G.SetSizeMode(2)==true and G.GetSizeMode()==2,'size mode host state did not roundtrip')
+assert(loadfile('lua/gcore_web.lua'))()
+local gcore=require('gcore.c')
+assert(gcore.SetDefaultAnim(180)==true and gcore.GetDefaultAnim()==180,'default animation host state did not roundtrip')
+
 local text_node=G.TextQuad()
 text_node.text=0
 assert(type(text_node.text)=='string' and text_node.text=='0','TextQuad numeric text must roundtrip as a string')
@@ -114,6 +122,9 @@ assert(mounted.parent==nil,'removeUI did not detach from stage')
 print('gcore UI template runtime PASS')
 `;
 fs.writeFileSync(file, harness, 'utf8');
-const run=spawnSync('lua5.3',[file],{encoding:'utf8'});
+const lua53=spawnSync('lua5.3',['-v'],{encoding:'utf8'});
+const luaBin=process.env.LUA_BIN || (lua53.error ? 'lua' : 'lua5.3');
+const run=spawnSync(luaBin,[file],{encoding:'utf8'});
+if(run.error) throw run.error;
 if(run.status!==0){console.error(run.stdout);console.error(run.stderr);process.exit(run.status||1);}
 process.stdout.write(run.stdout);

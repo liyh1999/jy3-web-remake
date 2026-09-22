@@ -657,9 +657,30 @@ function G.call(name, ...)
         if map == 2 then web:enterVillage() end
         sync_web_snapshot()
         return true
-    elseif name == "photo0" or name == "photo0_off" or name == "mapon" or
-           name == "all_over" or name == "dark" or name == "turn_map" or
-           name == "notice1" or name == "list" then
+    elseif name == "photo0" then
+        if web and web.showEventPhoto then return web:showEventPhoto(tonumber(args[1]) or 0) end
+        return true
+    elseif name == "photo0_off" then
+        if web and web.hideEventPhoto then return web:hideEventPhoto() end
+        return true
+    elseif name == "all_over" then
+        if web and web.closeStoryUi then return web:closeStoryUi() end
+        return true
+    elseif name == "dark" then
+        if web and web.closeStoryUi then web:closeStoryUi() end
+        if web and web.hideEventPhoto then web:hideEventPhoto() end
+        if web and web.darkTransition then return web:darkTransition() end
+        return true
+    elseif name == "notice1" then
+        local shown = true
+        if web and web.showNotice then shown = web:showNotice(tostring(args[1] or "")) end
+        G.trig_event("提示结束")
+        return shown
+    elseif name == "list" then
+        if not (web and web.showStats) then return true end
+        web:showStats(function() G.trig_event("offlist") end)
+        return G.wait1("offlist")
+    elseif name == "mapon" or name == "turn_map" then
         return true
     elseif name == "地图系统_防修改监控" or name == "通用_存档" then
         return true

@@ -291,10 +291,13 @@ print('  player/team/item/magic/story state persisted across one Lua runtime lif
 const harnessPath = path.join(temp, 'long-flow.lua');
 fs.writeFileSync(harnessPath, harness, 'utf8');
 const dataFiles = dataNames.map(name => path.join(dataTemp, name));
-const run = spawnSync('lua5.3', [harnessPath, ...dataFiles], {
+const lua53 = spawnSync('lua5.3', ['-v'], { encoding: 'utf8' });
+const luaBin = process.env.LUA_BIN || (lua53.error ? 'lua' : 'lua5.3');
+const run = spawnSync(luaBin, [harnessPath, ...dataFiles], {
   env: { ...process.env, JY3_LONGFLOW_TMP: temp, JY3_RUNTIME_ROOT: runtimeRoot },
   encoding: 'utf8',
 });
+if (run.error) throw new Error(`Lua interpreter unavailable (${luaBin}): ${run.error.message}`);
 if (run.stdout) process.stdout.write(run.stdout);
 if (run.stderr) process.stderr.write(run.stderr);
 if (run.status !== 0) process.exit(run.status || 1);

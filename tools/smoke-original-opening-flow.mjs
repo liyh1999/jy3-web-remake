@@ -28,15 +28,32 @@ const FLOW_DATA = [
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function fetchSource(remotePath) {
+  const cachedPath = path.join('vendor', 'upstream', 'JY3', 'script', ...remotePath.split('/'));
+  if (fs.existsSync(cachedPath)) return fs.readFileSync(cachedPath, 'utf8');
   const url = `${RAW_BASE}/${remotePath}`;
   let lastStatus = 0;
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const response = await fetch(url, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
-    if (response.ok) return response.text();
-    lastStatus = response.status;
-    if (response.status !== 429 && response.status < 500) break;
-    await sleep(500 * (attempt + 1));
+  let lastError = null;
+  const candidates = [
+    url,
+    `https://github.com/ssz66666/jy3-mirror/raw/${UPSTREAM_REV}/JY3/script/${remotePath}`,
+  ];
+  for (const candidate of candidates) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      let response;
+      try {
+        response = await fetch(candidate, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) await sleep(500 * (attempt + 1));
+        continue;
+      }
+      if (response.ok) return response.text();
+      lastStatus = response.status;
+      if (response.status !== 429 && response.status < 500) break;
+      await sleep(500 * (attempt + 1));
+    }
   }
+  if (lastError && lastStatus === 0) throw new Error(`${remotePath}: network failure`, { cause: lastError });
   throw new Error(`${remotePath}: HTTP ${lastStatus}`);
 }
 
@@ -168,6 +185,9 @@ print(string.format('original opening flow PASS: menus=%d ui=%d village=%s', men
 const dataFiles=FLOW_DATA.map(p=>path.join(tmp,p.split('/').pop()));
 const harnessPath=path.join(tmp,'flow.lua');
 fs.writeFileSync(harnessPath,harness,'utf8');
-const run=spawnSync('lua5.3',[harnessPath,...dataFiles],{encoding:'utf8'});
+const lua53=spawnSync('lua5.3',['-v'],{encoding:'utf8'});
+const luaBin=process.env.LUA_BIN || (lua53.error ? 'lua' : 'lua5.3');
+const run=spawnSync(luaBin,[harnessPath,...dataFiles],{encoding:'utf8'});
+if(run.error) throw run.error;
 if(run.status!==0){console.error(run.stdout||'');console.error(run.stderr||'');process.exit(run.status||1);}
 process.stdout.write(run.stdout);

@@ -1,6 +1,7 @@
 # Generated local/offline runtime cache
 /vendor/upstream/
 /vendor/fengari/
+/vendor/fonts/
 /vendor/manifest.json
 /vendor/upstream-file-index.json
 

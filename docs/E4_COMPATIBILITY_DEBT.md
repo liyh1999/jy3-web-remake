@@ -6,7 +6,7 @@ E4 不把所有 `return true/0` 一概视为错误。Web Runtime 与原桌面 gc
 
 1. **bootstrap fallback**：兼容层最早加载时提供占位，随后由正式 runtime shim 覆盖。
 2. **Web side-effect / replacement**：原桌面平台行为由浏览器系统等价承担，例如地图刷新、存档。
-3. **visual no-op**：不改变核心数值/剧情状态，但目前仍缺原版视觉表现，必须留到 #18 收口。
+3. **visual no-op**：不改变核心数值/剧情状态，但缺少原版视觉表现；进入最终验收前必须实现或证明可安全省略。
 
 除此之外，未知 `G.call` 继续静默 `return 0` 属于真正的兼容债务，不能作为最终状态保留。
 
@@ -39,17 +39,17 @@ E4 不把所有 `return true/0` 一概视为错误。Web Runtime 与原桌面 gc
 - `通用_存档`：游戏状态由 Web 多槽存档系统统一管理，原桌面文件存档 UI 不再直接写宿主文件。
 - `地图系统_防修改监控`：桌面环境防修改监控不直接搬到浏览器；需要在 E4 最终确认它不承载 gameplay state。
 
-### Visual no-op
+### 剧情视觉平台桥
 
-当前仍由 #18 负责还原表现：
+此前分类为 visual no-op 的剧情调用已在 E9 改为显式 Web side-effect：
 
-- `photo0 / photo0_off`
-- `all_over`
-- `dark`
-- `notice1`
-- `list`
+- `photo0 / photo0_off`：显示和关闭原 `image/eventmap` 事件图。
+- `all_over`：关闭当前对话/选项 UI，清理待回调状态。
+- `dark`：关闭剧情浮层并执行黑幕转场。
+- `notice1`：显示自动消退的剧情提示，处理原颜色标记，并保留原 `提示结束` 事件。
+- `list`：开局问答后显示人物属性，等待玩家确认后才继续序幕。
 
-这些调用可以暂时不改变玩法状态，但不能因为“剧情能继续”就视为完成；视觉一致验收前应逐项确认原版表现并实现或证明可安全省略。
+这些调用不再静默返回；Lua 路由由 `tools/test-strict-missing-calls.mjs` 覆盖，浏览器 DOM、原事件图和层级由 `tools/e2e-dialogue-visual.mjs` 覆盖。
 
 ## 当前真正风险
 
@@ -71,7 +71,7 @@ E4 后续按以下顺序收紧：
 
 ## 与其他阶段边界
 
-- 视觉表现缺失：#18。
+- 剧情视觉平台桥：#19 最终验收。
 - 固定输入和状态 snapshot：#24。
 - 页面内缺失调用/对象诊断：#25。
 - runtime/build/save 版本协议：#27。
@@ -88,4 +88,5 @@ E4 只负责“调用语义不能静默错误”，不在这里重新实现已�
 - 直接宿主空壳已加入 `runtime-compat-policy.json` 分类。
 - runtime missing-object 已在浏览器 E2E、D4 source、D4 offline dist 三条关键路径收紧为 **0**；CI #758 全绿。
 - 之前暴露的 `0x1008001f / 0x10090001 / 0x101c0003` 均确认是原 `o_Gut / o_story / o_book_story` 真实对象，现已纳入正式 `CORE_DATA`，不再依赖 placeholder。
-- E4 完成：关键长流程 unknown call / missing object 均为 0；视觉 no-op 与 debug no-op 分别继续由 #18 / #25 收口。
+- E4 完成：关键长流程 unknown call / missing object 均为 0。
+- E9 继续清债：`photo0 / photo0_off / all_over / dark / notice1 / list` 已从 visual no-op 降为 0 项，并改由真实 Web 视觉桥承接；剩余 direct host surface 仍按机器策略表逐项管理。

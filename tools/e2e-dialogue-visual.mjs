@@ -13,6 +13,8 @@ try {
     "window.JYWeb && window.JYResources && document.querySelector('#startBtn') && !document.querySelector('#startBtn').disabled",
     { timeoutMs: 30000, label: 'dialogue visual runtime' }
   );
+  const loadedFonts = await evaluate("document.fonts.load('16px \\\"Noto Serif SC\\\"', '金庸群侠传').then(faces => faces.length)");
+  if (loadedFonts < 1) throw new Error('bundled Chinese font did not load');
 
   await evaluate("window.JYWeb.enterVillage()");
   await waitFor("document.querySelector('#scene')?.classList.contains('village-scene')", { label: 'village scene' });
@@ -42,12 +44,29 @@ try {
   if (menu.columns.split(' ').length !== 1) throw new Error('dialogue menu is not a single original-style column: ' + menu.columns);
   if (menu.hint !== 'none') throw new Error('continue hint remained visible during menu');
 
+  const immediateVisuals = await evaluate("(() => { window.JYWeb.showNotice('【搏击】+[03]3'); window.JYWeb.showEventPhoto(2); window.JYWeb.darkTransition(); return { notice:document.querySelector('#storyNotice').textContent, noticeVisible:!document.querySelector('#storyNotice').classList.contains('hidden'), darkActive:document.querySelector('#darkTransition').classList.contains('active') }; })()");
+  if (immediateVisuals.notice !== '【搏击】+3' || !immediateVisuals.noticeVisible || !immediateVisuals.darkActive) {
+    throw new Error('story notice/dark transition bridge mismatch: ' + JSON.stringify(immediateVisuals));
+  }
+  await waitFor("document.querySelector('#eventPhotoImage')?.complete && document.querySelector('#eventPhotoImage')?.naturalWidth>0", { timeoutMs: 30000, label: 'story event photo' });
+  const platformVisuals = await evaluate("(() => ({ photo:document.querySelector('#eventPhotoImage').src, photoVisible:!document.querySelector('#eventPhoto').classList.contains('hidden'), photoZ:Number(getComputedStyle(document.querySelector('#eventPhoto')).zIndex), dialogueZ:Number(getComputedStyle(document.querySelector('#dialogue')).zIndex) }))()");
+  if (!platformVisuals.photo.includes('/image/eventmap/0002.png') || !platformVisuals.photoVisible) {
+    throw new Error('event photo bridge did not render original artwork: ' + JSON.stringify(platformVisuals));
+  }
+  if (!(platformVisuals.photoZ < platformVisuals.dialogueZ)) throw new Error('event photo obscures dialogue: ' + JSON.stringify(platformVisuals));
+
+  await evaluate("window.JYWeb.hideEventPhoto(); window.JYWeb.closeStoryUi()");
+  const closedVisuals = await evaluate("({ photoHidden:document.querySelector('#eventPhoto').classList.contains('hidden'), dialogueHidden:document.querySelector('#dialogue').classList.contains('hidden') })");
+  if (!closedVisuals.photoHidden || !closedVisuals.dialogueHidden) throw new Error('story visual cleanup failed: ' + JSON.stringify(closedVisuals));
+
   const unexpected = errors.filter(row => !row.includes('favicon'));
   if (unexpected.length) throw new Error('unexpected browser dialogue errors:\n' + unexpected.join('\n'));
 
   console.log('original village/dialogue visual E2E PASS');
   console.log('  village explanatory Web card removed');
   console.log('  original UI/0047 frame + role portrait + one-column menu layout active');
+  console.log('  original event photo + notice + dark transition platform bridges active');
+  console.log('  bundled offline Chinese font loaded');
 } finally {
   await cleanup();
 }

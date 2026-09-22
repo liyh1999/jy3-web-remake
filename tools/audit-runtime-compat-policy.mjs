@@ -60,11 +60,20 @@ assert.deepStrictEqual(apiBaseline.directMissing, [], 'static original direct G.
 
 const rows = [
   ['bootstrap fallback', policy.bootstrapFallbacks.length],
-  ['visual no-op', policy.platformCalls.filter(row => row.category === 'visual-noop').length],
+  ['platform visual no-op', policy.platformCalls.filter(row => row.category === 'visual-noop').length],
   ['Web side-effect', policy.platformCalls.filter(row => row.category === 'web-side-effect').length],
   ['intentional Web replacement', policy.platformCalls.filter(row => row.category === 'intentional-web-replacement').length],
   ['direct host surfaces', (policy.directHostSurfaces || []).length],
+  ['stateful host surfaces', (policy.hostStateSurfaces || []).length],
 ];
+
+for (const row of policy.hostStateSurfaces || []) {
+  const sourceText = fs.readFileSync(row.file, 'utf8');
+  for (const name of row.name.split('/').map(value => value.trim())) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(' / ', '');
+    assert(new RegExp(`function\\s+${escaped}\\s*\\(`).test(sourceText), `stateful host surface missing: ${name}`);
+  }
+}
 
 fs.mkdirSync('reports', { recursive: true });
 const report = [

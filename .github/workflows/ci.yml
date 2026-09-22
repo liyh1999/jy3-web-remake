@@ -541,6 +541,8 @@ jobs:
         run: |
           npm run build:offline
           test -f dist/vendor/fengari/fengari-web.js
+          test -f dist/vendor/fonts/noto-serif-sc-chinese-simplified-400-normal.woff2
+          test -f dist/vendor/fonts/OFL.txt
           test -f dist/vendor/upstream/JY3/script/01_data/o_headevent.lua
           test -f dist/vendor/upstream/JY3/script/01_data/o_battle.lua
           test -f dist/vendor/upstream/JY3/script/01_data/o_notebook.lua
@@ -586,6 +588,7 @@ jobs:
           test -f dist/vendor/upstream/JY3/image/head/0082.png
           test -f dist/vendor/upstream/JY3/image/standmap/0001.png
           test -f dist/vendor/upstream/JY3/image/dump/0001.png
+          test -f dist/vendor/upstream/JY3/image/eventmap/0002.png
           test -f dist/vendor/upstream/JY3/image/worldmap/1001.png
           test -f dist/vendor/upstream/JY3/image/worldmap/101c.png
           test -f dist/vendor/upstream/JY3/audio/01/0038.mp3
@@ -867,6 +870,7 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:8090/index.html >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/src/save-store.js >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fengari/fengari-web.js >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8090/vendor/fonts/noto-serif-sc-chinese-simplified-400-normal.woff2 >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_body.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_headevent.lua >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8090/vendor/upstream/JY3/script/01_data/o_battle.lua >/dev/null

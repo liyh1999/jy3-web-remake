@@ -11,6 +11,7 @@ local node_cache = setmetatable({}, { __mode = "v" })
 local text_values = {}
 local resource_w, resource_h = 853, 480
 local size_mode = 0
+local default_anim = 0
 local mainloop = nil
 
 local function handle_of(value)
@@ -218,7 +219,11 @@ function c.GetTextRecorded(output)
 end
 
 function c.SetTextRecording(_) return true end
-function c.SetDefaultAnim(_) return true end
+function c.SetDefaultAnim(value)
+    default_anim = tonumber(value) or 0
+    return true
+end
+function c.GetDefaultAnim() return default_anim end
 
 function c.SetMainloop(fn)
     mainloop = fn

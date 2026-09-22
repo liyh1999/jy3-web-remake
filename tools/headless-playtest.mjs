@@ -39,7 +39,12 @@ async function waitServer() {
   throw new Error('playtest server failed: ' + serverError);
 }
 
-const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.CHROME_BIN
+    ? { executablePath: process.env.CHROME_BIN }
+    : { executablePath: chromium.executablePath() }),
+});
 const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
 const page = await context.newPage();
 const errors = [];

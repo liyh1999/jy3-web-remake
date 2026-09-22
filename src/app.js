@@ -29,6 +29,8 @@
     dialogue: $('#dialogue'), dialogueFrame: $('#dialogueFrame'), dialoguePortrait: $('#dialoguePortrait'),
     dialogueHint: $('#dialogueContinueHint'), speaker: $('#speaker'), text: $('#dialogueText'),
     options: $('#options'), cont: $('#continueBtn'), actions: $('#villageActions'),
+    eventPhoto: $('#eventPhoto'), eventPhotoImage: $('#eventPhotoImage'),
+    storyNotice: $('#storyNotice'), darkTransition: $('#darkTransition'),
     battle: $('#battle'), battleTitle: $('#battleTitle'), enemyName: $('#enemyName'),
     playerBar: $('#playerHpBar'), enemyBar: $('#enemyHpBar'), playerText: $('#playerHpText'),
     enemyText: $('#enemyHpText'), battleLog: $('#battleLog'), attack: $('#attackBtn')
@@ -52,6 +54,8 @@
   let saveReady = false;
   let suppressAutosave = false;
   let autosaveTimer = null;
+  let storyNoticeTimer = null;
+  let darkTransitionTimer = null;
 
   function emitTeamChanged() {
     const detail = { team: [...state.team] };
@@ -212,6 +216,14 @@
   }
 
   function resetJsState() {
+    clearTimeout(storyNoticeTimer);
+    clearTimeout(darkTransitionTimer);
+    storyNoticeTimer = null;
+    darkTransitionTimer = null;
+    ui.storyNotice?.classList.add('hidden');
+    ui.darkTransition?.classList.remove('active');
+    ui.eventPhoto?.classList.add('hidden');
+    ui.eventPhotoImage?.removeAttribute('src');
     state.points = {};
     state.money = 0;
     state.items = {};
@@ -867,6 +879,42 @@
     growthChanged() { emitGrowthChanged(); },
     relationshipChanged() { emitRelationshipChanged(); },
     eventFinished() { scheduleAutosave(); },
+    closeStoryUi() {
+      modalCallback = null;
+      closeDialogue();
+      return true;
+    },
+    showNotice(text) {
+      if (!ui.storyNotice) return false;
+      clearTimeout(storyNoticeTimer);
+      ui.storyNotice.textContent = String(text || '').replace(/\[[0-9a-f]+\]/gi, '');
+      ui.storyNotice.classList.remove('hidden');
+      storyNoticeTimer = setTimeout(() => ui.storyNotice?.classList.add('hidden'), 1800);
+      return true;
+    },
+    showEventPhoto(code) {
+      const resourceId = 0x560b0000 + Math.max(0, Number(code) || 0);
+      const url = absoluteResourceUrl(resourceId);
+      if (!ui.eventPhoto || !ui.eventPhotoImage || !url) return false;
+      ui.eventPhotoImage.src = url;
+      ui.eventPhoto.classList.remove('hidden');
+      return true;
+    },
+    hideEventPhoto() {
+      if (!ui.eventPhoto || !ui.eventPhotoImage) return false;
+      ui.eventPhoto.classList.add('hidden');
+      ui.eventPhotoImage.removeAttribute('src');
+      return true;
+    },
+    darkTransition() {
+      if (!ui.darkTransition) return false;
+      clearTimeout(darkTransitionTimer);
+      ui.darkTransition.classList.remove('active');
+      void ui.darkTransition.offsetWidth;
+      ui.darkTransition.classList.add('active');
+      darkTransitionTimer = setTimeout(() => ui.darkTransition?.classList.remove('active'), 650);
+      return true;
+    },
     setTeam(ids) {
       const next = [...ids].map(Number).filter(Boolean);
       const changed = next.length !== state.team.length || next.some((id, i) => state.team[i] !== id);
@@ -956,7 +1004,7 @@
       const summary = Object.entries(labels)
         .filter(([k]) => state.points[k] !== undefined)
         .map(([k,v]) => `${v}：${state.points[k]}`).join('　');
-      this.showTalk('人物属性', `${summary}\n银两：${state.money}　队友：${state.team.length ? state.team.join('、') : '无'}`, resume);
+      this.showTalk('人物属性', `${summary}\n银两：${state.money}　队友：${state.team.length ? state.team.join('、') : '无'}`, 0, 0, 0, resume);
     }
   };
 

@@ -28,7 +28,12 @@ async function waitServer() {
   throw new Error('readiness server failed: ' + serverError);
 }
 
-const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.CHROME_BIN
+    ? { executablePath: process.env.CHROME_BIN }
+    : { executablePath: chromium.executablePath() }),
+});
 
 try {
   await waitServer();

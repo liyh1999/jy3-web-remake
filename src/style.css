@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Noto Serif SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../vendor/fonts/noto-serif-sc-chinese-simplified-400-normal.woff2") format("woff2");
+}
 :root {
   font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
   color: #241a12;
@@ -6,6 +13,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at 50% 10%, #4a3e31, #17130f 58%); }
 button { font: inherit; cursor: pointer; }
+select, input { font: inherit; }
 #shell { width: 853px; height: 480px; }
 #game {
   position: relative; width: 853px; height: 480px; min-height: 0; overflow: hidden;
@@ -14,8 +22,8 @@ button { font: inherit; cursor: pointer; }
 }
 .topbar { height: 72px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(#30261d, #1d1712); color: #e9ddbd; border-bottom: 1px solid #8f774f; }
 .brand { font-size: 24px; letter-spacing: .18em; font-weight: 800; }
-.subtitle { font: 12px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; color: #aa9a7a; margin-top: 4px; }
-.runtime { font: 12px ui-monospace, monospace; padding: 7px 10px; border: 1px solid #695a43; background: #16110d; color: #c9ba95; border-radius: 3px; }
+.subtitle { font: 12px/1.3 ui-monospace, SFMono-Regular, Consolas, "Noto Serif SC", monospace; color: #aa9a7a; margin-top: 4px; }
+.runtime { font: 12px ui-monospace, "Noto Serif SC", monospace; padding: 7px 10px; border: 1px solid #695a43; background: #16110d; color: #c9ba95; border-radius: 3px; }
 .scene { position: absolute; inset: 72px 0 34px; overflow: hidden; }
 .title-scene, .village-scene { background: linear-gradient(180deg, #dfd3b0 0%, #baa77c 56%, #8c7954 100%); }
 
@@ -104,7 +112,7 @@ button:disabled { opacity: .45; cursor: wait; }
 .hud { position: absolute; left: 18px; top: 86px; width: 195px; padding: 11px; background: #d9c9a7ed; border: 1px solid #6d5735; box-shadow: 4px 4px 0 #3b2d1c66; z-index: 5; }
 .portrait { float: left; width: 54px; height: 64px; margin-right: 10px; display: grid; place-items: center; font-size: 28px; background: #3b3126; color: #d7c59e; border: 2px solid #806744; background-repeat: no-repeat; background-position: center; background-size: contain; }
 .portrait.has-image { color: transparent; background-color: #17120e; }
-.stat-grid { font: 11px/1.55 ui-monospace, Consolas, monospace; min-height: 64px; }
+.stat-grid { font: 11px/1.55 ui-monospace, Consolas, "Noto Serif SC", monospace; min-height: 64px; }
 .money { clear: both; border-top: 1px solid #846f4c66; padding-top: 7px; margin-top: 8px; font-size: 12px; }
 .save-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
 .save-actions button, .save-actions select { border: 1px solid #6d5735; background: #efe1bf; color: #332718; padding: 5px 7px; font-size: 11px; border-radius: 2px; }
@@ -251,13 +259,13 @@ button:disabled { opacity: .45; cursor: wait; }
 .fighters { display: flex; align-items: center; gap: 25px; }
 .fighter { flex: 1; }
 .fighter span { font-size: 18px; font-weight: 700; }
-.versus { color: #b94533; font: 900 24px ui-monospace, monospace; }
+.versus { color: #b94533; font: 900 24px ui-monospace, "Noto Serif SC", monospace; }
 .hp { height: 13px; background: #090705; border: 1px solid #69573c; margin: 8px 0; }
 .hp i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg,#7d2d22,#c86043); transition: width .2s; }
 .battle-log { min-height: 46px; margin: 24px 0 10px; border-top: 1px solid #594832; padding-top: 10px; color: #c9b995; }
 .village-actions { position: absolute; left: 240px; top: 100px; right: 22px; z-index: 8; padding: 10px; text-align: right; }
 .village-actions button { background: #e0cda5e8; color: #342718; }
-.footer { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: #17120e; color: #83765e; font: 10px ui-monospace, Consolas, monospace; }
+.footer { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: #17120e; color: #83765e; font: 10px ui-monospace, Consolas, "Noto Serif SC", monospace; }
 .hidden { display: none !important; }
 @media (max-width: 760px) {
   .title-copy { width: 82%; left: 9%; }
@@ -326,7 +334,7 @@ button:disabled { opacity: .45; cursor: wait; }
 .battle-clock span { display: none; }
 .battle-clock b {
   color: #f4e6c8;
-  font: 700 14px/40px ui-monospace, Consolas, monospace;
+  font: 700 14px/40px ui-monospace, Consolas, "Noto Serif SC", monospace;
   text-shadow: 0 1px 2px #000, 0 0 4px #000;
 }
 .battle-result {
@@ -558,7 +566,7 @@ button:disabled { opacity: .45; cursor: wait; }
   left: 50%;
   top: 45%;
   color: #ffd180;
-  font: 900 21px ui-monospace, Consolas, monospace;
+  font: 900 21px ui-monospace, Consolas, "Noto Serif SC", monospace;
   text-shadow: 0 2px 2px #000;
   animation: battle-float .7s ease-out forwards;
 }
@@ -685,7 +693,7 @@ button:disabled { opacity: .45; cursor: wait; }
   border: 0;
   background: transparent;
   color: inherit;
-  font: 700 10px ui-monospace, Consolas, monospace;
+  font: 700 10px ui-monospace, Consolas, "Noto Serif SC", monospace;
 }
 .battle-skill span,
 .battle-skill small,
@@ -785,19 +793,19 @@ button:disabled { opacity: .45; cursor: wait; }
 }
 
 .display-settings { margin-left: auto; position: relative; }
-.display-settings-toggle, .key-settings-toggle, .audio-settings-toggle, .audio-reset, .keybindings-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, monospace; padding: 4px 7px; border-radius: 2px; }
+.display-settings-toggle, .key-settings-toggle, .audio-settings-toggle, .audio-reset, .keybindings-reset { border: 1px solid #5d503e; background: #201913; color: #c9ba95; font: 10px ui-monospace, Consolas, "Noto Serif SC", monospace; padding: 4px 7px; border-radius: 2px; }
 .display-settings-toggle:hover, .key-settings-toggle:hover, .audio-settings-toggle:hover, .audio-reset:hover, .keybindings-reset:hover { background: #30261d; color: #eee0bd; }
 .display-settings-panel, .key-settings-panel, .audio-settings-panel { position: absolute; z-index: 40; right: 0; bottom: 28px; width: 224px; padding: 10px; border: 1px solid #6d5a40; background: #18120ef2; box-shadow: 0 8px 22px #0008; color: #d8c8a5; }
 .display-settings-panel { width: 190px; display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
 .display-settings-panel label { color: #b9a98a; }
-.display-settings-panel select { min-width: 0; border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 4px 6px; font: 10px ui-monospace, Consolas, monospace; }
-.display-settings-panel output { grid-column: 1 / -1; color: #9f9075; font: 9px ui-monospace, Consolas, monospace; }
+.display-settings-panel select { min-width: 0; border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 4px 6px; font: 10px ui-monospace, Consolas, "Noto Serif SC", monospace; }
+.display-settings-panel output { grid-column: 1 / -1; color: #9f9075; font: 9px ui-monospace, Consolas, "Noto Serif SC", monospace; }
 .key-settings { position: relative; }
 .key-settings-panel { width: 250px; max-height: 360px; overflow: auto; }
 .keybindings-list { display: grid; gap: 3px; }
 .keybinding-row { display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center; font-size: 10px; }
-.keybinding-key { border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 3px 5px; font: 9px ui-monospace, Consolas, monospace; }
-.keybindings-status { min-height: 14px; margin: 7px 0 4px; color: #9f9075; font: 9px ui-monospace, Consolas, monospace; }
+.keybinding-key { border: 1px solid #5d503e; background: #201913; color: #eee0bd; padding: 3px 5px; font: 9px ui-monospace, Consolas, "Noto Serif SC", monospace; }
+.keybindings-status { min-height: 14px; margin: 7px 0 4px; color: #9f9075; font: 9px ui-monospace, Consolas, "Noto Serif SC", monospace; }
 .keybindings-status.error { color: #e08b72; }
 .keybindings-reset { width: 100%; }
 .audio-settings { position: relative; }
@@ -821,7 +829,7 @@ button:disabled { opacity: .45; cursor: wait; }
   box-shadow: 0 12px 36px #000b;
   color: #d9c9a4;
   padding: 10px;
-  font: 10px/1.35 ui-monospace, Consolas, monospace;
+  font: 10px/1.35 ui-monospace, Consolas, "Noto Serif SC", monospace;
   backdrop-filter: blur(6px);
 }
 .debug-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; border-bottom: 1px solid #4d402e; padding-bottom: 7px; }
@@ -861,4 +869,50 @@ button:disabled { opacity: .45; cursor: wait; }
   background: rgba(53, 38, 7, 0.93);
   border-color: rgba(244, 205, 98, 0.72);
   color: #fff0b5;
+}
+
+.event-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.event-photo img {
+  max-width: 853px;
+  max-height: 480px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px #000a);
+}
+.story-notice {
+  position: absolute;
+  z-index: 70;
+  left: 50%;
+  bottom: 54px;
+  max-width: 720px;
+  transform: translateX(-50%);
+  padding: 10px 22px;
+  border: 1px solid #d7b96f;
+  background: #17100ee8;
+  box-shadow: 0 5px 18px #000a, inset 0 0 12px #8f6f2944;
+  color: #f7e4a8;
+  font-size: 17px;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+.dark-transition {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+.dark-transition.active { animation: jy3-dark-transition 600ms ease-in-out both; }
+@keyframes jy3-dark-transition {
+  0%, 100% { opacity: 0; }
+  42%, 58% { opacity: 1; }
 }

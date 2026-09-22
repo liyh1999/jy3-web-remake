@@ -82,6 +82,12 @@
         <span id="dialogueContinueHint" class="dialogue-continue-hint" aria-hidden="true">◆</span>
       </section>
 
+      <section id="eventPhoto" class="event-photo hidden" aria-label="剧情事件图片">
+        <img id="eventPhotoImage" alt="剧情事件图片">
+      </section>
+      <div id="storyNotice" class="story-notice hidden" role="status" aria-live="polite"></div>
+      <div id="darkTransition" class="dark-transition" aria-hidden="true"></div>
+
       <section id="personPanel" class="person-panel hidden" aria-label="人物属性">
         <button id="personBackdrop" class="person-backdrop" aria-label="关闭人物属性"></button>
         <div class="person-window">
@@ -297,10 +303,10 @@
     <div id="debugCopyStatus" class="debug-copy-status"></div>
   </aside>
 
-  <script src="./vendor/fengari/fengari-web.min.js"></script>
+  <script src="./vendor/fengari/fengari-web.js"></script>
   <script>
     if (!window.fengari) {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js"><\\/script>');
+      document.write('<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"><\\/script>');
     }
   </script>
   <script src="./src/version.js"></script>

@@ -82,6 +82,9 @@ for (const remotePath of requiredAssets) {
 if (!entryByPath.has('fengari/fengari-web.js')) {
   throw new Error('Fengari absent from offline manifest');
 }
+if (!entryByPath.has('fonts/noto-serif-sc-chinese-simplified-400-normal.woff2')) {
+  throw new Error('bundled Chinese font absent from offline manifest');
+}
 
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
@@ -89,6 +92,7 @@ fs.mkdirSync(dist, { recursive: true });
 for (const entry of ['src', 'lua']) copyEntry(entry);
 fs.cpSync(path.join(vendor, 'upstream'), path.join(dist, 'vendor', 'upstream'), { recursive: true });
 fs.cpSync(path.join(vendor, 'fengari'), path.join(dist, 'vendor', 'fengari'), { recursive: true });
+fs.cpSync(path.join(vendor, 'fonts'), path.join(dist, 'vendor', 'fonts'), { recursive: true });
 
 let indexHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 // Source/dev mode may use either an older local minified filename or a direct CDN URL.
@@ -138,6 +142,7 @@ const runtimeConfig = {
   protocolVersion,
   buildGeneratedAt: generatedAt,
   fengariVersion: manifest.fengariVersion,
+  fontVersion: manifest.fontVersion,
   cacheVersion,
   imageSizes,
 };
@@ -155,6 +160,7 @@ const buildInfo = {
   protocolVersion,
   upstreamRevision: UPSTREAM_REV,
   fengariVersion: manifest.fengariVersion,
+  fontVersion: manifest.fontVersion,
   generatedAt,
   cacheGeneratedAt: manifest.generatedAt,
   cachedScripts: requiredScripts,

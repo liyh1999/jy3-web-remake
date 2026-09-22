@@ -24,6 +24,8 @@ local node_cache = setmetatable({}, { __mode = "v" })
 local node_components = {}
 local cached_ui_templates = {}
 local active_ui = {}
+local resource_width, resource_height = 853, 480
+local size_mode = 0
 
 local function handle_of(value)
     if type(value) == "table" then return tonumber(rawget(value, "__handle")) or 0 end
@@ -293,8 +295,17 @@ function G.Stop(channel)
     return resources:stop(channel) and true or false
 end
 
-function G.SetResourceSize(...) return true end
-function G.SetSizeMode(...) return true end
+function G.SetResourceSize(width, height)
+    resource_width = tonumber(width) or resource_width
+    resource_height = tonumber(height) or resource_height
+    return resource_width > 0 and resource_height > 0
+end
+function G.GetResourceSize() return resource_width, resource_height end
+function G.SetSizeMode(mode)
+    size_mode = tonumber(mode) or size_mode
+    return true
+end
+function G.GetSizeMode() return size_mode end
 function G.Stage() return wrap_node(renderer:stageHandle()) end
 function G.Entity() return wrap_node(renderer:createNodeHandle("container")) end
 function G.Quad() return wrap_node(renderer:createNodeHandle("quad")) end

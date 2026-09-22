@@ -61,13 +61,13 @@
     },
     {
       "name": "all_over",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "dark",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "goto_map",
@@ -76,8 +76,8 @@
     },
     {
       "name": "list",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "mapon",
@@ -86,18 +86,18 @@
     },
     {
       "name": "notice1",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "photo0",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "photo0_off",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "web-side-effect",
+      "owner": "src/app.js"
     },
     {
       "name": "turn_map",
@@ -130,28 +130,33 @@
       "issue": 23
     },
     {
-      "name": "G.SetResourceSize",
-      "file": "lua/runtime_shims.lua",
-      "category": "visual-noop",
-      "issue": 18
-    },
-    {
-      "name": "G.SetSizeMode",
-      "file": "lua/runtime_shims.lua",
-      "category": "visual-noop",
-      "issue": 18
-    },
-    {
       "name": "c.SetTextRecording",
       "file": "lua/gcore_web.lua",
       "category": "debug-noop",
       "issue": 25
+    }
+  ],
+  "hostStateSurfaces": [
+    {
+      "name": "G.SetResourceSize / G.GetResourceSize",
+      "file": "lua/runtime_shims.lua",
+      "category": "host-state",
+      "owner": "lua/runtime_shims.lua",
+      "issue": 19
     },
     {
-      "name": "c.SetDefaultAnim",
+      "name": "G.SetSizeMode / G.GetSizeMode",
+      "file": "lua/runtime_shims.lua",
+      "category": "host-state",
+      "owner": "lua/runtime_shims.lua",
+      "issue": 19
+    },
+    {
+      "name": "c.SetDefaultAnim / c.GetDefaultAnim",
       "file": "lua/gcore_web.lua",
-      "category": "visual-noop",
-      "issue": 18
+      "category": "host-state",
+      "owner": "lua/gcore_web.lua",
+      "issue": 19
     }
   ]
 }

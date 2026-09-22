@@ -9,6 +9,8 @@ vm.runInThisContext(fs.readFileSync('src/upstream.js', 'utf8'), { filename: 'src
 
 const { RAW_BASE, normalizeLuaSource, CACHED_PROGRAMS } = globalThis.window.JYUpstream;
 const targets = [...CACHED_PROGRAMS];
+const luac53 = spawnSync('luac5.3', ['-v'], { encoding: 'utf8' });
+const luacBin = process.env.LUAC_BIN || (luac53.error ? 'luac' : 'luac5.3');
 
 function printContext(source, stderr) {
   const match = String(stderr || '').match(/:(\d+):/);
@@ -24,14 +26,21 @@ function printContext(source, stderr) {
 }
 
 for (const target of targets) {
-  const response = await fetch(`${RAW_BASE}/${target}`, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
-  if (!response.ok) throw new Error(`${target}: HTTP ${response.status}`);
-  const original = await response.text();
+  const cached = path.join('vendor', 'upstream', 'JY3', 'script', ...target.split('/'));
+  let original;
+  if (fs.existsSync(cached)) {
+    original = fs.readFileSync(cached, 'utf8');
+  } else {
+    const response = await fetch(`${RAW_BASE}/${target}`, { headers: { 'User-Agent': 'jy3-web-remake-ci' } });
+    if (!response.ok) throw new Error(`${target}: HTTP ${response.status}`);
+    original = await response.text();
+  }
   const normalized = normalizeLuaSource(original);
   const out = path.join(os.tmpdir(), target.split('/').pop());
   fs.writeFileSync(out, normalized, 'utf8');
 
-  const check = spawnSync('luac5.3', ['-p', out], { encoding: 'utf8' });
+  const check = spawnSync(luacBin, ['-p', out], { encoding: 'utf8' });
+  if (check.error) throw check.error;
   if (check.status !== 0) {
     console.error(`normalized Lua compile failed: ${target}`);
     console.error(check.stderr || check.stdout);
